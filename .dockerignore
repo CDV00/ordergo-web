@@ -1,0 +1,13 @@
+.next/
+.vscode/
+.yarn/
+ansible/
+node_modules/
+playwright*/
+venv
+next-env.d.ts
+Dockerfile
+.dockerignore
+README.md
+.env.development
+.env.playwright
