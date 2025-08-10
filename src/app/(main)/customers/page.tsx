@@ -31,9 +31,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { tables } from "../tables/page";
-import { staff } from "../staff/page";
-import { orders } from "../orders/page";
+import { orders, staff, tables } from "@/app/data";
 
 const getTableStatusColor = (status: string) => {
   switch (status) {

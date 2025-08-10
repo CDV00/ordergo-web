@@ -39,54 +39,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
-
-export const staff = [
-  {
-    id: "STF001",
-    name: "Thu Hà",
-    role: "Nhân viên phục vụ",
-    phone: "0912345678",
-    email: "thuha@ordergo.com",
-    status: "Đang làm việc",
-    assignedTables: ["T001", "T005"],
-  },
-  {
-    id: "STF002",
-    name: "Minh Anh",
-    role: "Nhân viên phục vụ",
-    phone: "0918765432",
-    email: "minhanh@ordergo.com",
-    status: "Đang làm việc",
-    assignedTables: ["T003", "T007"],
-  },
-  {
-    id: "STF003",
-    name: "Quang Huy",
-    role: "Đầu bếp",
-    phone: "0987654321",
-    email: "quanghuy@ordergo.com",
-    status: "Đang làm việc",
-    assignedTables: [],
-  },
-  {
-    id: "STF004",
-    name: "Thanh Mai",
-    role: "Quản lý",
-    phone: "0909112233",
-    email: "thanhmai@ordergo.com",
-    status: "Đang làm việc",
-    assignedTables: [],
-  },
-  {
-    id: "STF005",
-    name: "Văn Nam",
-    role: "Nhân viên phục vụ",
-    phone: "0908765432",
-    email: "vannam@ordergo.com",
-    status: "Nghỉ phép",
-    assignedTables: [],
-  },
-];
+import { staff } from "@/app/data";
 
 const getStatusColor = (status: string) => {
   switch (status) {

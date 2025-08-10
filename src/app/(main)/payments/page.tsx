@@ -31,8 +31,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
-import { tables } from "../tables/page";
-import { orders } from "../orders/page";
+import { orders, tables } from "@/app/data";
 
 const getTableStatusColor = (status: string) => {
   switch (status) {

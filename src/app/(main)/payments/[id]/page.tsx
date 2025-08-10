@@ -28,9 +28,7 @@ import {
 } from "@/utils/getStatusColor";
 import Link from "next/link";
 import { Users } from "lucide-react"; // Import Users component
-import { tables } from "../../tables/page";
-import { orders } from "../../orders/page";
-import { staff } from "../../staff/page";
+import { orders, staff, tables } from "@/app/data";
 
 const getTableStatusColor = (status: string) => {
   switch (status) {

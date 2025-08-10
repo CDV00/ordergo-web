@@ -23,8 +23,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Info } from "lucide-react";
 import Image from "next/image";
-//import { menuItems } from "@/data/menu-items" // Import menuItems data
 import Link from "next/link";
+import unusedImports from "eslint-plugin-unused-imports";
+import { menuItems } from "@/app/data";
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -36,83 +37,6 @@ const getStatusColor = (status: string) => {
       return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
   }
 };
-
-export const menuItems = [
-  {
-    id: "M001",
-    name: "Phở Bò Tái",
-    category: "Món chính",
-    price: "₫65,000",
-    status: "Còn hàng",
-    image: "/pho-bo.png",
-    description: "Phở bò truyền thống với thịt bò tái mềm và nước dùng đậm đà.",
-    ingredients: [
-      "Thịt bò",
-      "Bánh phở",
-      "Nước dùng xương",
-      "Hành lá",
-      "Ngò gai",
-    ],
-    allergens: ["Gluten"],
-  },
-  {
-    id: "M002",
-    name: "Bún Chả Hà Nội",
-    category: "Món chính",
-    price: "₫70,000",
-    status: "Còn hàng",
-    image: "/bun-cha.png",
-    description:
-      "Bún chả Hà Nội chuẩn vị với chả nướng thơm lừng và nước chấm chua ngọt.",
-    ingredients: ["Thịt heo", "Bún", "Rau sống", "Nước chấm", "Đu đủ xanh"],
-    allergens: ["Đậu phộng"],
-  },
-  {
-    id: "M003",
-    name: "Gỏi Cuốn",
-    category: "Món khai vị",
-    price: "₫45,000",
-    status: "Còn hàng",
-    image: "/goi-cuon.png",
-    description:
-      "Gỏi cuốn tươi ngon với tôm, thịt và rau sống, chấm nước mắm pha.",
-    ingredients: ["Tôm", "Thịt heo", "Bún", "Rau sống", "Bánh tráng"],
-    allergens: ["Hải sản"],
-  },
-  {
-    id: "M004",
-    name: "Cà Phê Sữa Đá",
-    category: "Đồ uống",
-    price: "₫30,000",
-    status: "Còn hàng",
-    image: "/placeholder-h0xr5.png",
-    description: "Cà phê sữa đá Việt Nam đậm đà, thơm ngon.",
-    ingredients: ["Cà phê", "Sữa đặc", "Đá"],
-    allergens: ["Sữa"],
-  },
-  {
-    id: "M005",
-    name: "Chè Ba Màu",
-    category: "Tráng miệng",
-    price: "₫35,000",
-    status: "Hết hàng",
-    image: "/che-ba-mau.png",
-    description: "Chè ba màu mát lạnh với đậu xanh, đậu đỏ và thạch.",
-    ingredients: ["Đậu xanh", "Đậu đỏ", "Đậu trắng", "Nước cốt dừa", "Thạch"],
-    allergens: ["Đậu"],
-  },
-  {
-    id: "M006",
-    name: "Bánh Mì Pate",
-    category: "Món chính",
-    price: "₫40,000",
-    status: "Còn hàng",
-    image: "/banh-mi-pate.png",
-    description: "Bánh mì giòn rụm với pate, chả lụa và rau thơm.",
-    ingredients: ["Bánh mì", "Pate", "Chả lụa", "Rau thơm", "Dưa chuột"],
-    allergens: ["Gluten", "Trứng"],
-  },
-];
 
 export default function MenuItemDetailPage() {
   const params = useParams();

@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Edit, Plus } from "lucide-react";
 import Link from "next/link";
-import { staff, tables } from "../page";
+import { staff, tables } from "@/app/data";
 
 const getStatusColor = (status: string) => {
   switch (status) {

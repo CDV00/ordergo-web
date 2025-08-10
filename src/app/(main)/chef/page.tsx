@@ -27,7 +27,7 @@ import {
   getOrderItemStatusColor,
 } from "@/utils/getStatusColor"; // Import status color utility
 import Link from "next/link";
-import { orders } from "../orders/page";
+import { orders } from "@/app/data";
 
 export default function ChefPage() {
   const [filterStatus, setFilterStatus] = useState<

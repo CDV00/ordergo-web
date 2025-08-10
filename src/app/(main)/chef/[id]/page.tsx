@@ -30,8 +30,7 @@ import {
 } from "lucide-react";
 import { getOrderItemStatusColor } from "@/utils/getStatusColor";
 import Link from "next/link";
-import { staff } from "../../staff/page";
-import { orders } from "../../orders/page";
+import { orders, staff } from "@/app/data";
 
 const getStaffStatusColor = (status: string) => {
   switch (status) {

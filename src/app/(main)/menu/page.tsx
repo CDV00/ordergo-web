@@ -49,65 +49,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-
-const menuItems = [
-  {
-    id: "M001",
-    name: "Phở Bò Tái",
-    category: "Món chính",
-    price: "₫65,000",
-    status: "Còn hàng",
-    image: "/pho-bo.png",
-    description: "Phở bò truyền thống với thịt bò tái mềm và nước dùng đậm đà.",
-  },
-  {
-    id: "M002",
-    name: "Bún Chả Hà Nội",
-    category: "Món chính",
-    price: "₫70,000",
-    status: "Còn hàng",
-    image: "/bun-cha.png",
-    description:
-      "Bún chả Hà Nội chuẩn vị với chả nướng thơm lừng và nước chấm chua ngọt.",
-  },
-  {
-    id: "M003",
-    name: "Gỏi Cuốn",
-    category: "Món khai vị",
-    price: "₫45,000",
-    status: "Còn hàng",
-    image: "/goi-cuon.png",
-    description:
-      "Gỏi cuốn tươi ngon với tôm, thịt và rau sống, chấm nước mắm pha.",
-  },
-  {
-    id: "M004",
-    name: "Cà Phê Sữa Đá",
-    category: "Đồ uống",
-    price: "₫30,000",
-    status: "Còn hàng",
-    image: "/vietnamese-coffee.png",
-    description: "Cà phê sữa đá Việt Nam đậm đà, thơm ngon.",
-  },
-  {
-    id: "M005",
-    name: "Chè Ba Màu",
-    category: "Tráng miệng",
-    price: "₫35,000",
-    status: "Hết hàng",
-    image: "/che-ba-mau.png",
-    description: "Chè ba màu mát lạnh với đậu xanh, đậu đỏ và thạch.",
-  },
-  {
-    id: "M006",
-    name: "Bánh Mì Pate",
-    category: "Món chính",
-    price: "₫40,000",
-    status: "Còn hàng",
-    image: "/banh-mi-pate.png",
-    description: "Bánh mì giòn rụm với pate, chả lụa và rau thơm.",
-  },
-];
+import { menuItems } from "@/app/data";
 
 const getStatusColor = (status: string) => {
   switch (status) {
