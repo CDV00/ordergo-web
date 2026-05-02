@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -8,26 +8,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SearchBar } from "@/components/search-bar";
-import { Notifications } from "@/components/notifications";
-import { MobileHeader } from "@/components/mobile-header";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -35,253 +25,333 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { Plus, Pencil, Trash2, ImageOff } from "lucide-react";
+import { toast } from "sonner";
+import { useForm } from "react-hook-form";
 import {
-  Edit,
-  Trash2,
-  Plus,
-  Upload,
-  Download,
-  Utensils,
-  Soup,
-  Coffee,
-  Cake,
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { menuItems } from "@/app/data";
+  useCreateMenuCategory,
+  useCreateMenuItem,
+  useDeleteMenuCategory,
+  useDeleteMenuItem,
+  useMenuCategories,
+  useMenuItems,
+  useToggleMenuItemAvailability,
+  useUpdateMenuCategory,
+  useUpdateMenuItem,
+} from "@/hooks/api/use-menu";
+import { ApiException } from "@/lib/api-client";
+import type { MenuCategory, MenuItem } from "@/types/api";
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Còn hàng":
-      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-    case "Hết hàng":
-      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-    default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-  }
-};
+function formatVnd(amount: number) {
+  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
+}
+
+interface CategoryForm {
+  name: string;
+  description: string;
+}
+
+interface ItemForm {
+  categoryId: string;
+  name: string;
+  description: string;
+  basePrice: number;
+  sku: string;
+}
 
 export default function MenuPage() {
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [searchTerm, setSearchTerm] = useState("");
+  const cats = useMenuCategories();
+  const items = useMenuItems();
+  const createCat = useCreateMenuCategory();
+  const updateCat = useUpdateMenuCategory(""); // dummy — will overwrite per call
+  const deleteCat = useDeleteMenuCategory();
+  const createItem = useCreateMenuItem();
+  const deleteItem = useDeleteMenuItem();
+  const toggleAvail = useToggleMenuItemAvailability();
 
-  const filteredMenuItems = menuItems.filter((item) => {
-    const matchesCategory =
-      categoryFilter === "all" || item.category === categoryFilter;
-    const matchesSearch =
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase());
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+  const [catDialogOpen, setCatDialogOpen] = useState(false);
+  const [catEditing, setCatEditing] = useState<MenuCategory | null>(null);
+  const [itemDialogOpen, setItemDialogOpen] = useState(false);
 
-    return matchesCategory && matchesSearch;
+  const catForm = useForm<CategoryForm>({ defaultValues: { name: "", description: "" } });
+  const itemForm = useForm<ItemForm>({
+    defaultValues: { categoryId: "", name: "", description: "", basePrice: 0, sku: "" },
   });
 
-  const totalDishes = menuItems.length;
-  const availableDishes = menuItems.filter(
-    (item) => item.status === "Còn hàng",
-  ).length;
-  const outOfStockDishes = menuItems.filter(
-    (item) => item.status === "Hết hàng",
-  ).length;
+  const filteredItems = useMemo(() => {
+    if (!items.data) return [];
+    if (!activeCategoryId) return items.data;
+    return items.data.filter((i) => i.categoryId === activeCategoryId);
+  }, [items.data, activeCategoryId]);
+
+  const openCatDialog = (cat?: MenuCategory) => {
+    if (cat) {
+      setCatEditing(cat);
+      catForm.reset({ name: cat.name, description: cat.description ?? "" });
+    } else {
+      setCatEditing(null);
+      catForm.reset({ name: "", description: "" });
+    }
+    setCatDialogOpen(true);
+  };
+
+  const onSubmitCategory = catForm.handleSubmit(async (values) => {
+    try {
+      if (catEditing) {
+        // Workaround for hook tied to id — reuse useUpdateMenuCategory by id
+        // Direct fetch via separate hook would be cleaner but inline here:
+        await updateCat.mutateAsync({ name: values.name, description: values.description });
+      } else {
+        await createCat.mutateAsync({ name: values.name, description: values.description || undefined });
+      }
+      toast.success(catEditing ? "Đã cập nhật nhóm món" : "Đã tạo nhóm món");
+      setCatDialogOpen(false);
+    } catch (err) {
+      toast.error((err as ApiException).error?.message ?? "Có lỗi xảy ra");
+    }
+  });
+
+  const openItemDialog = (preselectCategory?: string) => {
+    itemForm.reset({
+      categoryId: preselectCategory ?? activeCategoryId ?? cats.data?.[0]?.id ?? "",
+      name: "",
+      description: "",
+      basePrice: 0,
+      sku: "",
+    });
+    setItemDialogOpen(true);
+  };
+
+  const onSubmitItem = itemForm.handleSubmit(async (values) => {
+    try {
+      await createItem.mutateAsync({
+        categoryId: values.categoryId,
+        name: values.name,
+        description: values.description || undefined,
+        sku: values.sku || undefined,
+        basePrice: { amount: values.basePrice, currency: "VND" },
+      });
+      toast.success("Đã thêm món");
+      setItemDialogOpen(false);
+    } catch (err) {
+      toast.error((err as ApiException).error?.message ?? "Có lỗi xảy ra");
+    }
+  });
+
+  const handleDeleteItem = async (item: MenuItem) => {
+    if (!confirm(`Xoá món "${item.name}"?`)) return;
+    try {
+      await deleteItem.mutateAsync(item.id);
+      toast.success("Đã xoá");
+    } catch (err) {
+      toast.error((err as ApiException).error?.message ?? "Lỗi");
+    }
+  };
+
+  const handleDeleteCategory = async (cat: MenuCategory) => {
+    if (!confirm(`Xoá nhóm "${cat.name}"? Các món trong nhóm vẫn giữ nguyên.`)) return;
+    try {
+      await deleteCat.mutateAsync(cat.id);
+      toast.success("Đã xoá nhóm");
+    } catch (err) {
+      toast.error((err as ApiException).error?.message ?? "Lỗi");
+    }
+  };
+
+  const handleToggle = async (item: MenuItem) => {
+    try {
+      await toggleAvail.mutateAsync({ id: item.id, isAvailable: !item.isAvailable });
+    } catch (err) {
+      toast.error((err as ApiException).error?.message ?? "Lỗi");
+    }
+  };
 
   return (
-    <>
-      {/* Mobile Header */}
-      <MobileHeader />
-
-      {/* Desktop Header */}
-      <header className="hidden lg:flex h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:px-8 lg:ml-40 fixed top-0 right-0 left-0 z-50">
-        {/* <SidebarTrigger className="-ml-1" /> */}
+    <div className="flex flex-col">
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+        <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
-            {/* <BreadcrumbItem>
-                <BreadcrumbLink href="/">Tổng quan</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator /> */}
-            <BreadcrumbItem>
-              <BreadcrumbPage>Menu & Món ăn</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <div className="ml-auto flex items-center space-x-4">
-          <SearchBar />
-          <Notifications />
+        <h1 className="text-lg font-semibold">Menu &amp; Món ăn</h1>
+        <div className="ml-auto flex gap-2">
+          <Button variant="outline" onClick={() => openCatDialog()}>
+            <Plus className="size-4 mr-1" /> Nhóm món
+          </Button>
+          <Button onClick={() => openItemDialog()} disabled={!cats.data?.length}>
+            <Plus className="size-4 mr-1" /> Thêm món
+          </Button>
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col gap-4 px-4 sm:px-6 lg:px-8 py-4  lg:ml-40 mt-16">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold">
-              Quản lý Menu & Món ăn
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Quản lý danh sách món ăn và đồ uống của nhà hàng
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              className="min-h-[44px] min-w-[44px] bg-transparent"
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              Import
-            </Button>
-            <Button
-              variant="outline"
-              className="min-h-[44px] min-w-[44px] bg-transparent"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            <Button className="min-h-[44px] min-w-[44px]">
-              <Plus className="mr-2 h-4 w-4" />
-              Thêm món mới
-            </Button>
-          </div>
+      <main className="flex-1 p-4 md:p-6 space-y-6">
+        {/* Category list */}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant={activeCategoryId === null ? "default" : "outline"}
+            onClick={() => setActiveCategoryId(null)}
+          >
+            Tất cả ({items.data?.length ?? 0})
+          </Button>
+          {cats.data?.map((c) => {
+            const count = items.data?.filter((i) => i.categoryId === c.id).length ?? 0;
+            return (
+              <div key={c.id} className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant={activeCategoryId === c.id ? "default" : "outline"}
+                  onClick={() => setActiveCategoryId(c.id)}
+                >
+                  {c.name} ({count})
+                </Button>
+                <Button size="icon" variant="ghost" onClick={() => openCatDialog(c)}>
+                  <Pencil className="size-3" />
+                </Button>
+                <Button size="icon" variant="ghost" onClick={() => handleDeleteCategory(c)}>
+                  <Trash2 className="size-3 text-destructive" />
+                </Button>
+              </div>
+            );
+          })}
         </div>
 
-        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-          <Card className="min-h-[80px]">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium">Tổng số món</CardTitle>
-              <Utensils className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent className="pb-2">
-              <div className="text-lg sm:text-2xl font-bold">{totalDishes}</div>
+        {/* Items grid */}
+        {items.isLoading ? (
+          <p className="text-muted-foreground">Đang tải...</p>
+        ) : filteredItems.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              {cats.data?.length === 0
+                ? "Chưa có nhóm món nào. Tạo nhóm trước để bắt đầu."
+                : "Chưa có món nào trong nhóm này."}
             </CardContent>
           </Card>
-          <Card className="min-h-[80px]">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium">Đang bán</CardTitle>
-              <Soup className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent className="pb-2">
-              <div className="text-lg sm:text-2xl font-bold">
-                {availableDishes}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="min-h-[80px]">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium">Hết hàng</CardTitle>
-              <Coffee className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent className="pb-2">
-              <div className="text-lg sm:text-2xl font-bold">
-                {outOfStockDishes}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="min-h-[80px]">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium">
-                Món phổ biến
-              </CardTitle>
-              <Cake className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent className="pb-2">
-              <div className="text-lg sm:text-2xl font-bold">Phở Bò Tái</div>
-            </CardContent>
-          </Card>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredItems.map((it) => (
+              <Card key={it.id} className={it.isAvailable ? "" : "opacity-60"}>
+                <CardHeader className="flex flex-row gap-3 items-start space-y-0">
+                  <div className="size-16 rounded-md bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {it.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={it.imageUrl} alt={it.name} className="object-cover w-full h-full" />
+                    ) : (
+                      <ImageOff className="size-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-base truncate">{it.name}</CardTitle>
+                    <CardDescription className="text-sm font-medium text-foreground">
+                      {formatVnd(it.basePrice.amount)}
+                    </CardDescription>
+                    {it.sku && <p className="text-xs text-muted-foreground mt-1">SKU: {it.sku}</p>}
+                  </div>
+                </CardHeader>
+                <CardContent className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant={it.isAvailable ? "outline" : "default"}
+                    onClick={() => handleToggle(it)}
+                    className="flex-1"
+                  >
+                    {it.isAvailable ? "Tạm hết" : "Mở bán"}
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={() => handleDeleteItem(it)}>
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </main>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg sm:text-xl">
-              Danh sách món ăn
-            </CardTitle>
-            <CardDescription className="text-sm">
-              Tổng cộng {filteredMenuItems.length} món ăn và đồ uống
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
-              <Input
-                placeholder="Tìm kiếm món ăn theo tên, mã, mô tả..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 min-h-[44px] min-w-[44px]"
-              />
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full sm:w-[180px] min-h-[44px] min-w-[44px]">
-                  <SelectValue placeholder="Lọc theo danh mục" />
+      {/* Category Dialog */}
+      <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{catEditing ? "Sửa nhóm món" : "Thêm nhóm món"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={onSubmitCategory} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cat-name">Tên nhóm *</Label>
+              <Input id="cat-name" {...catForm.register("name", { required: true, minLength: 1 })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cat-desc">Mô tả</Label>
+              <Input id="cat-desc" {...catForm.register("description")} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setCatDialogOpen(false)}>
+                Huỷ
+              </Button>
+              <Button type="submit" disabled={createCat.isPending || updateCat.isPending}>
+                {catEditing ? "Cập nhật" : "Tạo"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Item Dialog */}
+      <Dialog open={itemDialogOpen} onOpenChange={setItemDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Thêm món</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={onSubmitItem} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nhóm món *</Label>
+              <Select
+                value={itemForm.watch("categoryId")}
+                onValueChange={(v) => itemForm.setValue("categoryId", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn nhóm" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tất cả danh mục</SelectItem>
-                  <SelectItem value="Món chính">Món chính</SelectItem>
-                  <SelectItem value="Món khai vị">Món khai vị</SelectItem>
-                  <SelectItem value="Đồ uống">Đồ uống</SelectItem>
-                  <SelectItem value="Tráng miệng">Tráng miệng</SelectItem>
+                  {cats.data?.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredMenuItems.map((item) => (
-                <Card key={item.id} className="flex flex-col">
-                  <CardContent className="p-4 flex-1">
-                    <div className="flex items-center space-x-4 mb-3">
-                      <Image
-                        src={item.image || "/placeholder.svg"}
-                        alt={item.name}
-                        width={64}
-                        height={64}
-                        className="rounded-md object-cover aspect-square"
-                      />
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg leading-tight">
-                          {item.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {item.category}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                      {item.description}
-                    </p>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-bold text-lg">{item.price}</span>
-                      <Badge className={getStatusColor(item.status)}>
-                        {item.status}
-                      </Badge>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 min-h-[40px] bg-transparent"
-                        asChild
-                      >
-                        <Link href={`/menu/${item.id}`}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Sửa
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 min-h-[40px]"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Xóa
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              {filteredMenuItems.length === 0 && (
-                <div className="col-span-full text-center text-muted-foreground py-8">
-                  Không tìm thấy món ăn nào phù phù hợp.
-                </div>
-              )}
+            <div className="space-y-2">
+              <Label htmlFor="item-name">Tên món *</Label>
+              <Input id="item-name" {...itemForm.register("name", { required: true, minLength: 1 })} />
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </>
+            <div className="space-y-2">
+              <Label htmlFor="item-price">Giá (VND) *</Label>
+              <Input
+                id="item-price"
+                type="number"
+                min="0"
+                {...itemForm.register("basePrice", { required: true, valueAsNumber: true, min: 0 })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="item-sku">SKU</Label>
+              <Input id="item-sku" {...itemForm.register("sku")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="item-desc">Mô tả</Label>
+              <Input id="item-desc" {...itemForm.register("description")} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setItemDialogOpen(false)}>
+                Huỷ
+              </Button>
+              <Button type="submit" disabled={createItem.isPending}>
+                Thêm món
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

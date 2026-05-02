@@ -1,18 +1,92 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-//import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Package, Eye, EyeOff } from "lucide-react"
-import Link from "next/link"
-import { Card,CardHeader,CardTitle, CardContent, CardDescription,} from "@/components/ui/card"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Eye, EyeOff, Package } from "lucide-react";
+import { useLogin, useRegister } from "@/hooks/api/use-auth";
+import { useAuth } from "@/contexts/auth-context";
+import { ApiException } from "@/lib/api-client";
+
+interface LoginForm {
+  phone: string;
+  password: string;
+}
+
+interface RegisterForm {
+  displayName: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+}
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  const { isReady, isAuthenticated, activeTenantId } = useAuth();
+
+  const login = useLogin();
+  const register = useRegister();
+
+  const loginForm = useForm<LoginForm>({
+    defaultValues: { phone: "", password: "" },
+  });
+  const regForm = useForm<RegisterForm>({
+    defaultValues: { displayName: "", phone: "", password: "", confirmPassword: "" },
+  });
+
+  // Auto-redirect khi đã login
+  useEffect(() => {
+    if (!isReady) return;
+    if (isAuthenticated) {
+      router.replace(activeTenantId ? "/" : "/setup");
+    }
+  }, [isReady, isAuthenticated, activeTenantId, router]);
+
+  const onLogin = loginForm.handleSubmit(async (values) => {
+    try {
+      const res = await login.mutateAsync({
+        phone: values.phone.trim(),
+        password: values.password,
+      });
+      toast.success("Đăng nhập thành công");
+      router.replace(res.needsSetup || !res.membership.tenantId ? "/setup" : "/");
+    } catch (err) {
+      const e = err as ApiException;
+      toast.error(e.error?.message ?? "Đăng nhập thất bại");
+    }
+  });
+
+  const onRegister = regForm.handleSubmit(async (values) => {
+    if (values.password !== values.confirmPassword) {
+      regForm.setError("confirmPassword", { message: "Mật khẩu không khớp" });
+      return;
+    }
+    try {
+      await register.mutateAsync({
+        displayName: values.displayName.trim(),
+        phone: values.phone.trim(),
+        password: values.password,
+      });
+      toast.success("Đăng ký thành công, mời bạn thiết lập doanh nghiệp.");
+      router.replace("/setup");
+    } catch (err) {
+      const e = err as ApiException;
+      toast.error(e.error?.message ?? "Đăng ký thất bại");
+    }
+  });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
@@ -24,8 +98,8 @@ export default function LoginPage() {
             </div>
             <span className="text-xl font-bold">OrderGo</span>
           </div>
-          <CardTitle className="text-2xl">Chào mừng trở lại</CardTitle>
-          <CardDescription>Đăng nhập vào tài khoản của bạn để tiếp tục</CardDescription>
+          <CardTitle className="text-2xl">Chào mừng đến OrderGo</CardTitle>
+          <CardDescription>Đăng nhập hoặc tạo tài khoản mới</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
@@ -35,109 +109,98 @@ export default function LoginPage() {
             </TabsList>
 
             <TabsContent value="login" className="space-y-4">
-              <form className="space-y-4">
+              <form onSubmit={onLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="admin@ordergo.com" required />
+                  <Label htmlFor="login-phone">Số điện thoại</Label>
+                  <Input
+                    id="login-phone"
+                    type="tel"
+                    autoComplete="tel"
+                    placeholder="0901234567"
+                    {...loginForm.register("phone", { required: true })}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Mật khẩu</Label>
+                  <Label htmlFor="login-password">Mật khẩu</Label>
                   <div className="relative">
                     <Input
-                      id="password"
+                      id="login-password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Nhập mật khẩu"
-                      required
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                      {...loginForm.register("password", { required: true, minLength: 1 })}
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword((s) => !s)}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <input type="checkbox" id="remember" className="rounded border-gray-300" />
-                    <Label htmlFor="remember" className="text-sm">
-                      Ghi nhớ đăng nhập
-                    </Label>
-                  </div>
-                  <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                    Quên mật khẩu?
-                  </Link>
-                </div>
-                <Button type="submit" className="w-full" asChild>
-                  <Link href="/">Đăng nhập</Link>
+                <Button type="submit" className="w-full" disabled={login.isPending}>
+                  {login.isPending ? "Đang đăng nhập..." : "Đăng nhập"}
                 </Button>
               </form>
             </TabsContent>
 
             <TabsContent value="register" className="space-y-4">
-              <form className="space-y-4">
+              <form onSubmit={onRegister} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fullname">Họ và tên</Label>
-                  <Input id="fullname" type="text" placeholder="Nguyễn Văn A" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="register-email">Email</Label>
-                  <Input id="register-email" type="email" placeholder="email@example.com" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="register-password">Mật khẩu</Label>
-                  <div className="relative">
-                    <Input
-                      id="register-password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Tạo mật khẩu mạnh"
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
+                  <Label htmlFor="reg-name">Họ và tên</Label>
+                  <Input
+                    id="reg-name"
+                    type="text"
+                    autoComplete="name"
+                    placeholder="Nguyễn Văn A"
+                    {...regForm.register("displayName", { required: true, minLength: 2 })}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Xác nhận mật khẩu</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirm-password"
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Nhập lại mật khẩu"
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
+                  <Label htmlFor="reg-phone">Số điện thoại</Label>
+                  <Input
+                    id="reg-phone"
+                    type="tel"
+                    autoComplete="tel"
+                    placeholder="0901234567"
+                    {...regForm.register("phone", {
+                      required: true,
+                      pattern: { value: /^\+?[0-9]{9,15}$/, message: "Số điện thoại không hợp lệ" },
+                    })}
+                  />
+                  {regForm.formState.errors.phone && (
+                    <p className="text-sm text-destructive">{regForm.formState.errors.phone.message}</p>
+                  )}
                 </div>
-                <div className="flex items-center space-x-2">
-                  <input type="checkbox" id="terms" className="rounded border-gray-300" required />
-                  <Label htmlFor="terms" className="text-sm">
-                    Tôi đồng ý với{" "}
-                    <Link href="/terms" className="text-primary hover:underline">
-                      Điều khoản sử dụng
-                    </Link>
-                  </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="reg-password">Mật khẩu</Label>
+                  <Input
+                    id="reg-password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    placeholder="Tối thiểu 8 ký tự"
+                    {...regForm.register("password", { required: true, minLength: 8 })}
+                  />
                 </div>
-                <Button type="submit" className="w-full">
-                  Tạo tài khoản
+                <div className="space-y-2">
+                  <Label htmlFor="reg-confirm">Nhập lại mật khẩu</Label>
+                  <Input
+                    id="reg-confirm"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    {...regForm.register("confirmPassword", { required: true })}
+                  />
+                  {regForm.formState.errors.confirmPassword && (
+                    <p className="text-sm text-destructive">
+                      {regForm.formState.errors.confirmPassword.message}
+                    </p>
+                  )}
+                </div>
+                <Button type="submit" className="w-full" disabled={register.isPending}>
+                  {register.isPending ? "Đang đăng ký..." : "Tạo tài khoản"}
                 </Button>
               </form>
             </TabsContent>
@@ -145,5 +208,5 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

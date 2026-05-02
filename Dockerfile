@@ -1,57 +1,51 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.7
 
+# ─── Base ─────────────────────────────────────────────────
 FROM node:20-alpine AS base
-
-# Set timezone
-RUN apk add --no-cache tzdata
 ENV TZ=Asia/Ho_Chi_Minh
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-# Disable Next.js telemetry
 ENV NEXT_TELEMETRY_DISABLED=1
-
-FROM base AS build
-
-RUN apk add --no-cache \
-  python3 \
-  g++ \
-  make \
-  cairo-dev \
-  pango-dev \
-  pkgconfig
-
-RUN corepack enable && corepack install -g yarn@4.1.1
-
-ARG NEXT_PUBLIC_SENTRY_DSN
-ARG NEXT_PUBLIC_DEPLOY_TAG_OR_COMMIT_HASH
-
+RUN apk add --no-cache tzdata libc6-compat \
+ && cp /usr/share/zoneinfo/$TZ /etc/localtime \
+ && echo $TZ > /etc/timezone
 WORKDIR /opt
 
-COPY yarn.lock package.json .yarnrc.yml ./
+# ─── Install deps ─────────────────────────────────────────
+FROM base AS deps
+COPY package.json yarn.lock ./
+RUN --mount=type=cache,target=/usr/local/share/.cache/yarn \
+    yarn install --frozen-lockfile
 
-RUN yarn install --immutable
-
+# ─── Build ────────────────────────────────────────────────
+FROM base AS build
+ARG NEXT_PUBLIC_API_URL=http://localhost:4000/v1
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+COPY --from=deps /opt/node_modules ./node_modules
 COPY . .
+RUN yarn build
 
-ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
-ENV NEXT_PUBLIC_DEPLOY_TAG_OR_COMMIT_HASH=$NEXT_PUBLIC_DEPLOY_TAG_OR_COMMIT_HASH
-
-RUN --mount=type=secret,id=sentry,env=SENTRY_AUTH_TOKEN yarn build
-
-FROM base AS runtime
+# ─── Runtime (Next.js standalone) ─────────────────────────
+FROM node:20-alpine AS runtime
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV TZ=Asia/Ho_Chi_Minh
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+RUN apk add --no-cache tzdata wget \
+ && cp /usr/share/zoneinfo/$TZ /etc/localtime \
+ && echo $TZ > /etc/timezone
 
 WORKDIR /app
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
-
-EXPOSE 3000
-
-COPY --from=build --chown=nextjs:nodejs /opt/.next/standalone/ .
-
+COPY --from=build --chown=nextjs:nodejs /opt/.next/standalone ./
 COPY --from=build --chown=nextjs:nodejs /opt/public ./public
-
 COPY --from=build --chown=nextjs:nodejs /opt/.next/static ./.next/static
 
 USER nextjs
+EXPOSE 3000
 
-CMD ["node", "./server.js"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+
+CMD ["node", "server.js"]
