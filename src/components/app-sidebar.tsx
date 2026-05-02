@@ -1,28 +1,15 @@
 "use client";
 
 import type * as React from "react";
-import {
-  BarChart3,
-  Home,
-  UtensilsCrossed,
-  Users,
-  Clock,
-  Settings,
-  Moon,
-  Sun,
-  LogOut,
-  ChefHat,
-  UserCog,
-  DollarSign,
-} from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { LogOut, Moon, Sun, Store, ChevronsUpDown } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useAuth } from "@/contexts/auth-context";
-import { useLogout } from "@/hooks/api/use-auth";
-import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -38,35 +25,19 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-
-const data = {
-  navMain: [
-    { title: "Tổng quan", url: "/", icon: Home },
-    { title: "POS — Gọi món", url: "/pos", icon: UtensilsCrossed },
-    { title: "Màn bếp (KDS)", url: "/kds", icon: ChefHat },
-    { title: "Đơn hàng", url: "/orders", icon: UtensilsCrossed },
-    { title: "Menu & Món ăn", url: "/menu", icon: ChefHat },
-    { title: "Bàn ăn", url: "/tables", icon: Clock },
-    { title: "Khách hàng", url: "/customers", icon: Users },
-    { title: "Nhân viên", url: "/staff", icon: UserCog },
-    { title: "Thanh toán", url: "/payments", icon: DollarSign },
-    { title: "Báo cáo", url: "/reports", icon: BarChart3 },
-  ],
-  navSecondary: [
-    {
-      title: "Cài đặt",
-      url: "/settings",
-      icon: Settings,
-    },
-  ],
-};
+import { useAuth } from "@/contexts/auth-context";
+import { useLogout } from "@/hooks/api/use-auth";
+import { NAV_GROUPS, NAV_FOOTER, isNavActive } from "@/lib/nav-config";
+import { SidebarCollapseToggle } from "@/components/sidebar-collapse-toggle";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname();
+  const router = useRouter();
   const { setTheme, theme } = useTheme();
   const { user, memberships, activeTenantId } = useAuth();
   const logout = useLogout();
-  const router = useRouter();
   const activeMembership = memberships.find((m) => m.tenantId === activeTenantId);
+
   const handleLogout = async () => {
     await logout.mutateAsync();
     router.replace("/login");
@@ -74,58 +45,80 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" {...props}>
+      {/* ─── Brand header ─── */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="/">
+              <Link href="/">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <UtensilsCrossed className="size-4" />
+                  <Store className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">OrderGo</span>
-                  <span className="truncate text-xs">Quản lý nhà hàng</span>
+                  <span className="truncate text-xs">Quản lý vận hành</span>
                 </div>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
+      {/* ─── Nav groups ─── */}
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Menu chính</SidebarGroupLabel>
+        {NAV_GROUPS.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = isNavActive(item.url, pathname);
+                  return (
+                    <SidebarMenuItem key={item.url}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={item.title}
+                      >
+                        <Link href={item.url}>
+                          <Icon />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
+
+        {/* Footer items (Settings + Collapse toggle) — section riêng */}
+        <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
             <SidebarMenu>
-              {data.navMain.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {data.navSecondary.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {NAV_FOOTER.map((item) => {
+                const Icon = item.icon;
+                const active = isNavActive(item.url, pathname);
+                return (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
+                      <Link href={item.url}>
+                        <Icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+              <SidebarCollapseToggle />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      {/* ─── User menu footer ─── */}
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -134,35 +127,34 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenuButton
                   size="lg"
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  tooltip={user?.displayName ?? "User"}
                 >
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                    <Users className="size-4" />
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground text-sm font-semibold">
+                    {user?.displayName?.[0]?.toUpperCase() ?? "?"}
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user?.displayName ?? "User"}</span>
-                    <span className="truncate text-xs capitalize">
-                      {activeMembership?.roleCode ?? "—"}
+                    <span className="truncate font-semibold">
+                      {user?.displayName ?? "User"}
+                    </span>
+                    <span className="truncate text-xs capitalize text-muted-foreground">
+                      {activeMembership?.roleCode?.replace("_", " ") ?? "—"}
                     </span>
                   </div>
+                  <ChevronsUpDown className="ml-auto size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                side="bottom"
+                className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+                side="right"
                 align="end"
                 sideOffset={4}
               >
-                <DropdownMenuItem
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                >
-                  {theme === "dark" ? (
-                    <Sun className="size-4" />
-                  ) : (
-                    <Moon className="size-4" />
-                  )}
+                <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+                  {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
                   {theme === "dark" ? "Chế độ sáng" : "Chế độ tối"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                   <LogOut className="size-4" />
                   Đăng xuất
                 </DropdownMenuItem>

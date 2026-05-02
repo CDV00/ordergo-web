@@ -148,16 +148,42 @@ export const useCartStore = create<CartState>()(
   ),
 );
 
-// ─── Selectors (tránh re-render toàn store khi 1 phần đổi) ───────────────
-export const selectCartLines = (key: CartKey | null) => (s: CartState) =>
-  key ? s.carts[key] ?? [] : [];
+// ─── Selectors ───────────────────────────────────────────────────────────
+//
+// QUAN TRỌNG: snapshot phải reference-stable.
+// Trước đây `s.carts[key] ?? []` tạo `[]` literal MỚI mỗi lần selector chạy
+// → React `useSyncExternalStore` thấy snapshot khác → re-render vô tận →
+// "Maximum update depth exceeded" + "getSnapshot should be cached".
+// Dùng EMPTY_LINES module-level constant cho mọi case không có cart.
 
-export const selectCartCount = (key: CartKey | null) => (s: CartState) => {
-  if (!key) return 0;
-  return (s.carts[key] ?? []).reduce((acc, l) => acc + l.quantity, 0);
-};
+const EMPTY_LINES: CartLine[] = [];
 
-export const selectCartSubtotal = (key: CartKey | null) => (s: CartState) => {
-  if (!key) return 0;
-  return (s.carts[key] ?? []).reduce((acc, l) => acc + l.unitPrice * l.quantity, 0);
-};
+export const selectCartLines =
+  (key: CartKey | null) =>
+  (s: CartState): CartLine[] => {
+    if (!key) return EMPTY_LINES;
+    return s.carts[key] ?? EMPTY_LINES;
+  };
+
+// Số nguyên — primitive, reference-stability không cần lo
+export const selectCartCount =
+  (key: CartKey | null) =>
+  (s: CartState): number => {
+    if (!key) return 0;
+    const lines = s.carts[key];
+    if (!lines || lines.length === 0) return 0;
+    let total = 0;
+    for (const l of lines) total += l.quantity;
+    return total;
+  };
+
+export const selectCartSubtotal =
+  (key: CartKey | null) =>
+  (s: CartState): number => {
+    if (!key) return 0;
+    const lines = s.carts[key];
+    if (!lines || lines.length === 0) return 0;
+    let total = 0;
+    for (const l of lines) total += l.unitPrice * l.quantity;
+    return total;
+  };

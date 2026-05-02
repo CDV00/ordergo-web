@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { MenuToggle } from "@/components/menu-toggle";
 import { Separator } from "@/components/ui/separator";
 import { useOrders, useCancelOrder, useSendOrderToKitchen } from "@/hooks/api/use-orders";
 import { ApiException } from "@/lib/api-client";
@@ -59,7 +59,7 @@ export default function OrdersPage() {
   return (
     <div className="flex flex-col">
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-        <SidebarTrigger className="-ml-1" />
+        <MenuToggle />
         <Separator orientation="vertical" className="mr-2 h-4" />
         <h1 className="text-lg font-semibold">Đơn hàng</h1>
       </header>

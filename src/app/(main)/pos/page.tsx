@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { MenuToggle } from "@/components/menu-toggle";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { ArrowLeft, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { TablePicker } from "./_components/table-picker";
 import { MenuGrid } from "./_components/menu-grid";
@@ -37,6 +38,9 @@ export default function POSPage() {
 
   // Variant picker
   const [variantPicking, setVariantPicking] = useState<MenuItem | null>(null);
+
+  // Mobile cart drawer
+  const [cartOpen, setCartOpen] = useState(false);
 
   // Payment
   const [payOrder, setPayOrder] = useState<Order | null>(null);
@@ -164,25 +168,30 @@ export default function POSPage() {
     }
   }, [tableOpenOrder]);
 
-  // Header
+  // Header — mobile dùng bottom nav nên không cần SidebarTrigger
   const header = (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 bg-background">
-      <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="mr-2 h-4" />
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3 md:px-4 bg-background">
+      <MenuToggle />
+      <Separator orientation="vertical" className="mr-2 h-4 hidden md:block" />
       {activeKey && (
-        <Button variant="ghost" size="sm" onClick={handleBack}>
-          <ArrowLeft className="size-4 mr-1" />
-          Đổi bàn
+        <Button variant="ghost" size="sm" onClick={handleBack} className="px-2">
+          <ArrowLeft className="size-4 md:mr-1" />
+          <span className="hidden sm:inline">Đổi bàn</span>
         </Button>
       )}
-      <h1 className="text-lg font-semibold">POS — Gọi món</h1>
+      <h1 className="text-base md:text-lg font-semibold truncate">POS — Gọi món</h1>
     </header>
   );
 
   // ─── Render ────────────────────────────────────────────
+  // Dùng dvh (dynamic viewport) cho mobile để trừ URL bar iOS
+  // Trừ 64px (h-16) cho bottom nav trên mobile, nguyên 100dvh trên md+
+  const containerClass =
+    "flex flex-col h-[calc(100dvh-4rem)] md:h-svh overflow-hidden";
+
   if (!activeKey) {
     return (
-      <div className="flex flex-col h-screen overflow-hidden">
+      <div className={containerClass}>
         {header}
         <div className="flex-1 overflow-y-auto">
           <TablePicker onPickTable={handlePickTable} onPickTakeaway={handlePickTakeaway} />
@@ -191,27 +200,69 @@ export default function POSPage() {
     );
   }
 
+  const cartPanel = (
+    <CartPanel
+      cartKey={activeKey}
+      contextLabel={contextLabel || (activeKey === "takeaway" ? "Mang về" : "Bàn")}
+      lines={lines}
+      subtotal={subtotal}
+      count={count}
+      isSending={createOrder.isPending}
+      isPaying={false}
+      hasOpenOrder={!!tableOpenOrder}
+      onSendToKitchen={() => {
+        handleSendToKitchen();
+        setCartOpen(false);
+      }}
+      onPay={() => {
+        handleOpenPayment();
+        setCartOpen(false);
+      }}
+      onCancel={() => {
+        handleBack();
+        setCartOpen(false);
+      }}
+    />
+  );
+
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className={containerClass}>
       {header}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_440px] overflow-hidden">
+        {/* Menu — luôn hiện. Trên lg+ có cart bên cạnh */}
         <div className="overflow-hidden">
           <MenuGrid onPickItem={handlePickItem} />
         </div>
-        <CartPanel
-          cartKey={activeKey}
-          contextLabel={contextLabel || (activeKey === "takeaway" ? "Mang về" : "Bàn")}
-          lines={lines}
-          subtotal={subtotal}
-          count={count}
-          isSending={createOrder.isPending}
-          isPaying={false}
-          hasOpenOrder={!!tableOpenOrder}
-          onSendToKitchen={handleSendToKitchen}
-          onPay={handleOpenPayment}
-          onCancel={handleBack}
-        />
+
+        {/* Desktop/large tablet landscape: cart panel sticky right */}
+        <div className="hidden lg:flex flex-col overflow-hidden">{cartPanel}</div>
+
+        {/* Mobile + tablet portrait: cart trong drawer */}
+        <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+          <SheetContent
+            side="right"
+            className="lg:hidden w-full sm:max-w-md p-0 flex flex-col gap-0"
+          >
+            <SheetTitle className="sr-only">Giỏ hàng</SheetTitle>
+            {cartPanel}
+          </SheetContent>
+        </Sheet>
       </div>
+
+      {/* Floating "View cart" button — chỉ hiện <lg khi có món */}
+      {count > 0 && (
+        <button
+          type="button"
+          onClick={() => setCartOpen(true)}
+          className="lg:hidden fixed left-1/2 -translate-x-1/2 bottom-20 z-30 bg-primary text-primary-foreground rounded-full px-5 py-3 shadow-lg flex items-center gap-3 active:scale-95 transition-transform"
+        >
+          <ShoppingCart className="size-5" />
+          <span className="font-semibold tabular-nums">{count} món</span>
+          <span className="font-bold tabular-nums">
+            {new Intl.NumberFormat("vi-VN").format(subtotal)}đ
+          </span>
+        </button>
+      )}
 
       <VariantPickerDialog
         item={variantPicking}

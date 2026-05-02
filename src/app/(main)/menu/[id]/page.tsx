@@ -9,7 +9,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { MobileHeader } from "@/components/mobile-header";
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarInset } from "@/components/ui/sidebar";
+import { MenuToggle } from "@/components/menu-toggle";
 import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
@@ -24,7 +25,6 @@ import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Info } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import unusedImports from "eslint-plugin-unused-imports";
 import { menuItems } from "@/app/data";
 
 const getStatusColor = (status: string) => {
@@ -48,7 +48,7 @@ export default function MenuItemDetailPage() {
       <>
         <MobileHeader />
         <header className="hidden lg:flex h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:px-8 lg:ml-40">
-          <SidebarTrigger className="-ml-1" />
+          <MenuToggle />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
             <BreadcrumbList>
@@ -85,7 +85,7 @@ export default function MenuItemDetailPage() {
     <>
       <MobileHeader />
       <header className="hidden lg:flex h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:px-8 lg:ml-40 fixed top-0 right-0 left-0 z-50">
-        <SidebarTrigger className="-ml-1" />
+        <MenuToggle />
         <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb>
           <BreadcrumbList>

@@ -19,7 +19,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body className={inter.className}>
+      {/* suppressHydrationWarning trên body: extension trình duyệt (vd: Bitdefender
+          Anti-tracker, Grammarly) hay inject attribute (`bis_register`, `__processed_*`,
+          `data-gr-ext-*`) vào body sau SSR, gây hydration mismatch giả. */}
+      <body className={inter.className} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

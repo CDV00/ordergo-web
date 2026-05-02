@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { MenuToggle } from "@/components/menu-toggle";
 import { Separator } from "@/components/ui/separator";
 import {
   ArrowUpRight,
@@ -103,10 +103,10 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col">
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <h1 className="text-lg font-semibold">Tổng quan hôm nay</h1>
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-3 md:px-4">
+        <MenuToggle />
+        <Separator orientation="vertical" className="mr-2 h-4 hidden md:block" />
+        <h1 className="text-base md:text-lg font-semibold">Tổng quan hôm nay</h1>
         <div className="ml-auto flex gap-2">
           <Button asChild size="sm" variant="outline">
             <Link href="/kds">

@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useEffect, useMemo, useRef } from "react";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { MenuToggle } from "@/components/menu-toggle";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -254,10 +254,10 @@ export default function KdsPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-muted/30">
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 bg-background">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 h-4" />
+    <div className="flex flex-col h-[calc(100dvh-4rem)] md:h-svh overflow-hidden bg-muted/30">
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3 md:px-4 bg-background">
+        <MenuToggle />
+        <Separator orientation="vertical" className="mr-2 h-4 hidden md:block" />
         <ChefHat className="size-5" />
         <h1 className="text-lg font-semibold">Màn hình Bếp (KDS)</h1>
         <div className="ml-auto text-sm text-muted-foreground">
