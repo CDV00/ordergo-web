@@ -16,6 +16,9 @@ import {
   DollarSign,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useAuth } from "@/contexts/auth-context";
+import { useLogout } from "@/hooks/api/use-auth";
+import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,51 +41,16 @@ import {
 
 const data = {
   navMain: [
-    {
-      title: "Tổng quan",
-      url: "/",
-      icon: Home,
-    },
-    {
-      title: "Đơn hàng",
-      url: "/orders",
-      icon: UtensilsCrossed,
-    },
-    {
-      title: "Menu & Món ăn",
-      url: "/menu",
-      icon: ChefHat,
-    },
-    {
-      title: "Khách hàng",
-      url: "/customers",
-      icon: Users,
-    },
-    {
-      title: "Bàn ăn",
-      url: "/tables",
-      icon: Clock,
-    },
-    {
-      title: "Nhân viên",
-      url: "/staff",
-      icon: UserCog,
-    },
-    {
-      title: "Thanh toán", // Thêm mục Thanh toán
-      url: "/payments",
-      icon: DollarSign, // Icon cho Thanh toán
-    },
-    {
-      title: "Bếp", // Thêm mục Bếp
-      url: "/chef",
-      icon: ChefHat, // Icon cho Bếp (có thể dùng icon khác nếu muốn)
-    },
-    {
-      title: "Báo cáo",
-      url: "/reports",
-      icon: BarChart3,
-    },
+    { title: "Tổng quan", url: "/", icon: Home },
+    { title: "POS — Gọi món", url: "/pos", icon: UtensilsCrossed },
+    { title: "Màn bếp (KDS)", url: "/kds", icon: ChefHat },
+    { title: "Đơn hàng", url: "/orders", icon: UtensilsCrossed },
+    { title: "Menu & Món ăn", url: "/menu", icon: ChefHat },
+    { title: "Bàn ăn", url: "/tables", icon: Clock },
+    { title: "Khách hàng", url: "/customers", icon: Users },
+    { title: "Nhân viên", url: "/staff", icon: UserCog },
+    { title: "Thanh toán", url: "/payments", icon: DollarSign },
+    { title: "Báo cáo", url: "/reports", icon: BarChart3 },
   ],
   navSecondary: [
     {
@@ -95,6 +63,14 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { setTheme, theme } = useTheme();
+  const { user, memberships, activeTenantId } = useAuth();
+  const logout = useLogout();
+  const router = useRouter();
+  const activeMembership = memberships.find((m) => m.tenantId === activeTenantId);
+  const handleLogout = async () => {
+    await logout.mutateAsync();
+    router.replace("/login");
+  };
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -163,8 +139,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <Users className="size-4" />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">Nguyễn Văn A</span>
-                    <span className="truncate text-xs">Nhân viên phục vụ</span>
+                    <span className="truncate font-semibold">{user?.displayName ?? "User"}</span>
+                    <span className="truncate text-xs capitalize">
+                      {activeMembership?.roleCode ?? "—"}
+                    </span>
                   </div>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
@@ -184,7 +162,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   )}
                   {theme === "dark" ? "Chế độ sáng" : "Chế độ tối"}
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="size-4" />
                   Đăng xuất
                 </DropdownMenuItem>

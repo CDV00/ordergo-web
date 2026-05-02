@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -7,280 +8,215 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AppSidebar } from "@/components/app-sidebar";
-import { MobileHeader } from "@/components/mobile-header";
-import { SearchBar } from "@/components/search-bar";
-import { Notifications } from "@/components/notifications";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Users, Clock, CheckCircle, AlertCircle, Plus } from "lucide-react";
-import Link from "next/link";
-import { staff, tables } from "@/app/data";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { Plus, Trash2, Users } from "lucide-react";
+import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import {
+  useChangeTableStatus,
+  useCreateTable,
+  useDeleteTable,
+  useTables,
+} from "@/hooks/api/use-tables";
+import { ApiException } from "@/lib/api-client";
+import type { RestaurantTable, TableStatus } from "@/types/api";
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Trống":
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-    case "Đang phục vụ":
-      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-    case "Chờ món":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-    case "Vừa gọi món":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-    case "Chờ thanh toán":
-      return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
-    case "Cần dọn dẹp":
-      return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
-    default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-  }
+interface TableForm {
+  name: string;
+  section: string;
+  capacity: number;
+}
+
+const STATUS_LABELS: Record<TableStatus, string> = {
+  available: "Trống",
+  occupied: "Đang phục vụ",
+  reserved: "Đã đặt",
+  cleaning: "Cần dọn",
+  out_of_order: "Hỏng",
 };
 
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case "Trống":
-      return <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />;
-    case "Đang phục vụ":
-      return <Users className="h-3 w-3 sm:h-4 sm:w-4" />;
-    case "Chờ món":
-      return <Clock className="h-3 w-3 sm:h-4 sm:w-4" />;
-    case "Vừa gọi món":
-      return <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />;
-    case "Chờ thanh toán":
-      return <Clock className="h-3 w-3 sm:h-4 sm:w-4" />;
-    default:
-      return null;
-  }
+const STATUS_COLORS: Record<TableStatus, string> = {
+  available: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800",
+  occupied: "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800",
+  reserved: "bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800",
+  cleaning: "bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800",
+  out_of_order: "bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800",
 };
 
 export default function TablesPage() {
-  const occupiedTables = tables.filter(
-    (table) => table.status !== "Trống",
-  ).length;
-  const totalTables = tables.length;
+  const tables = useTables();
+  const create = useCreateTable();
+  const changeStatus = useChangeTableStatus();
+  const remove = useDeleteTable();
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const form = useForm<TableForm>({
+    defaultValues: { name: "", section: "Sảnh", capacity: 4 },
+  });
+
+  const onSubmit = form.handleSubmit(async (values) => {
+    try {
+      await create.mutateAsync({
+        name: values.name,
+        section: values.section,
+        capacity: values.capacity,
+      });
+      toast.success("Đã thêm bàn");
+      setDialogOpen(false);
+      form.reset();
+    } catch (err) {
+      toast.error((err as ApiException).error?.message ?? "Lỗi");
+    }
+  });
+
+  const onChangeStatus = async (id: string, status: TableStatus) => {
+    try {
+      await changeStatus.mutateAsync({ id, status });
+    } catch (err) {
+      toast.error((err as ApiException).error?.message ?? "Lỗi");
+    }
+  };
+
+  const onDelete = async (id: string, name: string) => {
+    if (!confirm(`Xoá bàn "${name}"?`)) return;
+    try {
+      await remove.mutateAsync(id);
+      toast.success("Đã xoá");
+    } catch (err) {
+      toast.error((err as ApiException).error?.message ?? "Lỗi");
+    }
+  };
+
+  const grouped = (tables.data ?? []).reduce<Record<string, RestaurantTable[]>>(
+    (acc, t) => {
+      (acc[t.section] ??= []).push(t);
+      return acc;
+    },
+    {},
+  );
 
   return (
-    <>
-      {/* Mobile Header */}
-      <MobileHeader />
-
-      {/* Desktop Header */}
-      <header className="hidden lg:flex h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:px-8 lg:ml-40 fixed top-0 right-0 left-0 z-50">
-        {/* <SidebarTrigger className="-ml-1" /> */}
+    <div className="flex flex-col">
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+        <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
-            {/* <BreadcrumbItem>
-                <BreadcrumbLink href="/">Tổng quan</BreadcrumbLink>
-              </BreadcrumbItem> */}
-            {/* <BreadcrumbSeparator /> */}
-            <BreadcrumbItem>
-              <BreadcrumbPage>Bàn ăn</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <div className="ml-auto flex items-center space-x-4">
-          <SearchBar />
-          <Notifications />
+        <h1 className="text-lg font-semibold">Bàn ăn</h1>
+        <div className="ml-auto">
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="size-4 mr-1" /> Thêm bàn
+          </Button>
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col gap-4 px-4 sm:px-6 lg:px-8 py-4  lg:ml-40 mt-16">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Quản lý bàn ăn</h1>
-            <p className="text-sm text-muted-foreground">
-              Theo dõi tình trạng bàn ăn - {occupiedTables}/{totalTables} bàn
-              đang sử dụng
-            </p>
-          </div>
-          <Button className="min-h-[44px] min-w-[44px]">
-            <Plus className="mr-2 h-4 w-4" />
-            Đặt bàn mới
-          </Button>
-        </div>
-
-        {/* Table Status Overview - Mobile Optimized */}
-        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
-          <Card className="min-h-[80px]">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium">Bàn trống</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent className="pb-2">
-              <div className="text-lg sm:text-2xl font-bold">
-                {tables.filter((t) => t.status === "Trống").length}
-              </div>
+      <main className="flex-1 p-4 md:p-6 space-y-6">
+        {tables.isLoading ? (
+          <p className="text-muted-foreground">Đang tải...</p>
+        ) : tables.data?.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              Chưa có bàn nào. Bấm &quot;Thêm bàn&quot; để bắt đầu.
             </CardContent>
           </Card>
-          <Card className="min-h-[80px]">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium">
-                Đang phục vụ
-              </CardTitle>
-              <Users className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent className="pb-2">
-              <div className="text-lg sm:text-2xl font-bold">
-                {tables.filter((t) => t.status === "Đang phục vụ").length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="min-h-[80px]">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium">Chờ món</CardTitle>
-              <Clock className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent className="pb-2">
-              <div className="text-lg sm:text-2xl font-bold">
-                {tables.filter((t) => t.status === "Chờ món").length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="min-h-[80px]">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium">
-                Chờ thanh toán
-              </CardTitle>
-              <AlertCircle className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent className="pb-2">
-              <div className="text-lg sm:text-2xl font-bold">
-                {tables.filter((t) => t.status === "Chờ thanh toán").length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tables Grid - Responsive */}
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {tables.map((table) => {
-            const assignedStaff = staff.find(
-              (s) => s.id === table.assignedStaffId,
-            );
-            return (
-              <Card
-                key={table.id}
-                className={`cursor-pointer transition-all hover:shadow-md min-h-[44px] ${
-                  table.status === "Trống"
-                    ? "border-green-200"
-                    : "border-blue-200"
-                }`}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base sm:text-lg">
-                      {table.name}
-                    </CardTitle>
-                    <Badge className={getStatusColor(table.status)}>
-                      <div className="flex items-center space-x-1">
-                        {getStatusIcon(table.status)}
-                        <span className="text-xs">{table.status}</span>
-                      </div>
-                    </Badge>
-                  </div>
-                  <CardDescription className="text-sm">
-                    Sức chứa: {table.capacity} người
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {table.status !== "Trống" ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span>Khách:</span>
-                        <span className="font-medium">
-                          {table.customers} người
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span>Nhân viên:</span>
-                        <span className="font-medium truncate max-w-[100px]">
-                          {assignedStaff
-                            ? assignedStaff.name
-                            : "Chưa phân công"}
-                        </span>
-                      </div>
-                      {table.orderTime && (
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Gọi món:</span>
-                          <span className="font-medium">{table.orderTime}</span>
-                        </div>
-                      )}
-                      {table.waitTime && (
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Thời gian:</span>
-                          <span className="font-medium">{table.waitTime}</span>
-                        </div>
-                      )}
-                      {table.total && (
-                        <div className="flex items-center justify-between text-sm font-semibold">
-                          <span>Tổng tiền:</span>
-                          <span>{table.total}</span>
-                        </div>
-                      )}
-                      {table.dishes.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-xs text-muted-foreground">
-                            Món ăn:
-                          </p>
-                          <p className="text-sm truncate">
-                            {table.dishes.join(", ")}
-                          </p>
-                        </div>
-                      )}
-                      <div className="flex flex-col sm:flex-row gap-2 mt-3">
+        ) : (
+          Object.entries(grouped).map(([section, list]) => (
+            <section key={section} className="space-y-3">
+              <h2 className="text-base font-semibold">{section}</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {list.map((t) => (
+                  <Card key={t.id} className={`${STATUS_COLORS[t.status]} border-2`}>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center justify-between">
+                        <span>{t.name}</span>
                         <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 bg-transparent min-h-[44px] min-w-[44px]"
-                          asChild
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6"
+                          onClick={() => onDelete(t.id, t.name)}
                         >
-                          <Link href={`/tables/${table.id}`}>Chi tiết</Link>
+                          <Trash2 className="size-3 text-destructive" />
                         </Button>
-                        {table.status === "Chờ thanh toán" && (
-                          <Button
-                            size="sm"
-                            className="flex-1 min-h-[44px] min-w-[44px]"
-                          >
-                            Thanh toán
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-4">
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Bàn đang trống
-                      </p>
-                      <Button
-                        size="sm"
-                        className="w-full min-h-[44px] min-w-[44px]"
+                      </CardTitle>
+                      <CardDescription className="flex items-center gap-1 text-xs">
+                        <Users className="size-3" /> {t.capacity} chỗ
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Select
+                        value={t.status}
+                        onValueChange={(v) => onChangeStatus(t.id, v as TableStatus)}
                       >
-                        Đặt bàn
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
-    </>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(Object.keys(STATUS_LABELS) as TableStatus[]).map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {STATUS_LABELS[s]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          ))
+        )}
+      </main>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Thêm bàn mới</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="t-section">Khu vực</Label>
+              <Input id="t-section" {...form.register("section", { required: true })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="t-name">Tên bàn *</Label>
+              <Input id="t-name" placeholder="Bàn 1" {...form.register("name", { required: true })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="t-cap">Số chỗ</Label>
+              <Input
+                id="t-cap"
+                type="number"
+                min="1"
+                {...form.register("capacity", { required: true, valueAsNumber: true, min: 1 })}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                Huỷ
+              </Button>
+              <Button type="submit" disabled={create.isPending}>
+                Thêm bàn
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
