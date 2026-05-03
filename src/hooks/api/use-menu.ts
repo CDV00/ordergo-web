@@ -11,8 +11,7 @@ export function useMenuCategories(venueId?: string | null) {
   return useQuery({
     queryKey: ["menu-categories", v],
     enabled: isAuthenticated,
-    queryFn: () =>
-      apiGet<MenuCategory[]>(`/menu-categories${v ? `?venueId=${v}` : ""}`),
+    queryFn: () => apiGet<MenuCategory[]>(`/menu-categories${v ? `?venueId=${v}` : ""}`),
   });
 }
 
@@ -38,8 +37,15 @@ export function useCreateMenuCategory() {
 export function useUpdateMenuCategory(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Partial<{ name: string; description: string; imageUrl: string; displayOrder: number; isActive: boolean }>) =>
-      apiPatch<MenuCategory>(`/menu-categories/${id}`, body),
+    mutationFn: (
+      body: Partial<{
+        name: string;
+        description: string;
+        imageUrl: string;
+        displayOrder: number;
+        isActive: boolean;
+      }>,
+    ) => apiPatch<MenuCategory>(`/menu-categories/${id}`, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["menu-categories"] }),
   });
 }
@@ -88,10 +94,12 @@ export interface MenuItemInput {
   imageUrl?: string;
   displayOrder?: number;
   variants?: Array<Omit<Variant, "id"> & { id?: string }>;
-  toppingGroups?: Array<Omit<ToppingGroup, "id" | "options"> & {
-    id?: string;
-    options: Array<Omit<ToppingGroup["options"][number], "id"> & { id?: string }>;
-  }>;
+  toppingGroups?: Array<
+    Omit<ToppingGroup, "id" | "options"> & {
+      id?: string;
+      options: Array<Omit<ToppingGroup["options"][number], "id"> & { id?: string }>;
+    }
+  >;
   tags?: string[];
 }
 
@@ -117,7 +125,15 @@ export function useUpdateMenuItem(id: string) {
 export function useToggleMenuItemAvailability() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, isAvailable, reason }: { id: string; isAvailable: boolean; reason?: string }) =>
+    mutationFn: ({
+      id,
+      isAvailable,
+      reason,
+    }: {
+      id: string;
+      isAvailable: boolean;
+      reason?: string;
+    }) =>
       apiPatch<MenuItem>(`/menu-items/${id}/availability`, {
         isAvailable,
         unavailableReason: reason,

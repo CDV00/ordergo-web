@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPatch, apiPost } from "@/lib/api-client";
 import { useAuth } from "@/contexts/auth-context";
 import type { BusinessType, Membership, Venue } from "@/types/api";
@@ -79,8 +75,9 @@ export function useCreateVenue() {
 export function useUpdateVenue(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Partial<{ name: string; addressLine1: string; city: string; phone: string }>) =>
-      apiPatch<Venue>(`/venues/${id}`, body),
+    mutationFn: (
+      body: Partial<{ name: string; addressLine1: string; city: string; phone: string }>,
+    ) => apiPatch<Venue>(`/venues/${id}`, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["venues"] }),
   });
 }

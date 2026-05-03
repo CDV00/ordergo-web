@@ -20,8 +20,7 @@ export function useTodaySummary(venueId?: string | null) {
   return useQuery({
     queryKey: ["reports", "today", v],
     enabled: isAuthenticated,
-    queryFn: () =>
-      apiGet<DailySalesSummary>(`/reports/today${v ? `?venueId=${v}` : ""}`),
+    queryFn: () => apiGet<DailySalesSummary>(`/reports/today${v ? `?venueId=${v}` : ""}`),
     refetchInterval: 30_000,
   });
 }

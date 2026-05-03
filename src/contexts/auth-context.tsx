@@ -10,11 +10,12 @@ import {
   useState,
 } from "react";
 import { authStorage } from "@/lib/auth-storage";
-import type { Membership, PublicUser } from "@/types/api";
+import type { Membership, PublicUser, TenantSummary } from "@/types/api";
 
 interface AuthState {
   user: PublicUser | null;
   memberships: Membership[];
+  tenants: TenantSummary[];
   activeTenantId: string | null;
   activeVenueId: string | null;
   permissions: string[];
@@ -30,6 +31,7 @@ interface AuthContextValue extends AuthState {
     membership: { tenantId: string | null; venueId: string | null; permissions: string[] };
   }) => void;
   setMemberships: (m: Membership[]) => void;
+  setTenants: (t: TenantSummary[]) => void;
   setUser: (u: PublicUser | null) => void;
   switchTenant: (tenantId: string) => void;
   switchVenue: (venueId: string | null) => void;
@@ -42,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
     memberships: [],
+    tenants: [],
     activeTenantId: null,
     activeVenueId: null,
     permissions: [],
@@ -85,6 +88,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, memberships }));
   }, []);
 
+  const setTenants = useCallback((tenants: TenantSummary[]) => {
+    setState((s) => ({ ...s, tenants }));
+  }, []);
+
   const setUser = useCallback((user: PublicUser | null) => {
     setState((s) => ({ ...s, user }));
   }, []);
@@ -112,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({
       user: null,
       memberships: [],
+      tenants: [],
       activeTenantId: null,
       activeVenueId: null,
       permissions: [],
@@ -125,12 +133,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...state,
       applyAuth,
       setMemberships,
+      setTenants,
       setUser,
       switchTenant,
       switchVenue,
       logout,
     }),
-    [state, applyAuth, setMemberships, setUser, switchTenant, switchVenue, logout],
+    [state, applyAuth, setMemberships, setTenants, setUser, switchTenant, switchVenue, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

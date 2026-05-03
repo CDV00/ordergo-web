@@ -17,8 +17,8 @@ export function DesktopSidebar() {
     <aside
       data-state={collapsed ? "collapsed" : "expanded"}
       className={cn(
-        "hidden xl:flex flex-col shrink-0 overflow-hidden",
-        "bg-sidebar text-sidebar-foreground border-r border-sidebar-border",
+        "hidden shrink-0 flex-col overflow-hidden xl:flex",
+        "bg-sidebar text-sidebar-foreground border-sidebar-border border-r",
         "transition-[width] duration-300 ease-in-out",
         collapsed ? "w-16" : "w-60",
       )}
@@ -26,11 +26,11 @@ export function DesktopSidebar() {
     >
       <SidebarBrand collapsed={collapsed} />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden">
         <NavList collapsed={collapsed} />
       </div>
 
-      <div className="border-t border-sidebar-border p-2 shrink-0">
+      <div className="border-sidebar-border shrink-0 border-t p-2">
         <SidebarUserMenu collapsed={collapsed} />
       </div>
     </aside>

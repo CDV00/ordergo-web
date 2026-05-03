@@ -1,13 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MobileHeader } from "@/components/mobile-header";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { MenuToggle } from "@/components/menu-toggle";
@@ -47,7 +41,7 @@ export default function MenuItemDetailPage() {
     return (
       <>
         <MobileHeader />
-        <header className="hidden lg:flex h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:px-8 lg:ml-40">
+        <header className="hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
           <MenuToggle />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
@@ -67,12 +61,8 @@ export default function MenuItemDetailPage() {
           </Breadcrumb>
         </header>
         <div className="flex flex-1 flex-col items-center justify-center p-4 lg:ml-40">
-          <h1 className="text-2xl font-bold text-red-500">
-            Lỗi: Không tìm thấy món ăn
-          </h1>
-          <p className="text-muted-foreground">
-            Món ăn với mã "{itemId}" không tồn tại.
-          </p>
+          <h1 className="text-2xl font-bold text-red-500">Lỗi: Không tìm thấy món ăn</h1>
+          <p className="text-muted-foreground">Món ăn với mã "{itemId}" không tồn tại.</p>
           <Button asChild className="mt-4">
             <Link href="/menu">Quay lại danh sách món ăn</Link>
           </Button>
@@ -84,7 +74,7 @@ export default function MenuItemDetailPage() {
   return (
     <>
       <MobileHeader />
-      <header className="hidden lg:flex h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:px-8 lg:ml-40 fixed top-0 right-0 left-0 z-50">
+      <header className="fixed top-0 right-0 left-0 z-50 hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
         <MenuToggle />
         <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb>
@@ -106,19 +96,14 @@ export default function MenuItemDetailPage() {
           {/* SearchBar and Notifications can be added here if needed */}
         </div>
       </header>
-      <div className="flex flex-1 flex-col gap-4 px-4 sm:px-6 lg:px-8 py-4 lg:ml-40 mt-16">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mt-16 flex flex-1 flex-col gap-4 px-4 py-4 sm:px-6 lg:ml-40 lg:px-8">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold">
-              Chi tiết món ăn: {item.name}
-            </h1>
-            <p className="text-sm text-muted-foreground">Mã món: {item.id}</p>
+            <h1 className="text-xl font-bold sm:text-2xl">Chi tiết món ăn: {item.name}</h1>
+            <p className="text-muted-foreground text-sm">Mã món: {item.id}</p>
           </div>
           <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              className="min-h-[44px] min-w-[44px] bg-transparent"
-            >
+            <Button variant="outline" className="min-h-[44px] min-w-[44px] bg-transparent">
               <Edit className="mr-2 h-4 w-4" />
               Chỉnh sửa
             </Button>
@@ -131,19 +116,17 @@ export default function MenuItemDetailPage() {
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card className="md:col-span-1">
-            <CardContent className="p-4 flex flex-col items-center">
+            <CardContent className="flex flex-col items-center p-4">
               <Image
                 src={item.image || "/placeholder.svg"}
                 alt={item.name}
                 width={200}
                 height={200}
-                className="rounded-md object-cover aspect-square mb-4"
+                className="mb-4 aspect-square rounded-md object-cover"
               />
-              <h3 className="font-bold text-2xl mb-2">{item.name}</h3>
-              <p className="text-muted-foreground text-lg mb-3">{item.price}</p>
-              <Badge className={getStatusColor(item.status)}>
-                {item.status}
-              </Badge>
+              <h3 className="mb-2 text-2xl font-bold">{item.name}</h3>
+              <p className="text-muted-foreground mb-3 text-lg">{item.price}</p>
+              <Badge className={getStatusColor(item.status)}>{item.status}</Badge>
             </CardContent>
           </Card>
 
@@ -154,15 +137,15 @@ export default function MenuItemDetailPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Mô tả:</p>
+                <p className="text-muted-foreground mb-1 text-sm">Mô tả:</p>
                 <p className="text-base">{item.description}</p>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Danh mục:</span>
+                <span className="text-muted-foreground text-sm">Danh mục:</span>
                 <span className="font-medium">{item.category}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Mã món:</span>
+                <span className="text-muted-foreground text-sm">Mã món:</span>
                 <span className="font-medium">{item.id}</span>
               </div>
             </CardContent>
@@ -171,17 +154,13 @@ export default function MenuItemDetailPage() {
           <Card className="md:col-span-2 lg:col-span-3">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Thành phần & Dị ứng</CardTitle>
-              <CardDescription>
-                Thông tin về nguyên liệu và các chất gây dị ứng
-              </CardDescription>
+              <CardDescription>Thông tin về nguyên liệu và các chất gây dị ứng</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Thành phần chính:
-                </p>
+                <p className="text-muted-foreground mb-2 text-sm">Thành phần chính:</p>
                 {item.ingredients && item.ingredients.length > 0 ? (
-                  <ul className="list-disc pl-5 space-y-1">
+                  <ul className="list-disc space-y-1 pl-5">
                     {item.ingredients.map((ingredient, index) => (
                       <li key={index} className="text-sm">
                         {ingredient}
@@ -189,26 +168,22 @@ export default function MenuItemDetailPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Không có thông tin thành phần.
-                  </p>
+                  <p className="text-muted-foreground text-sm">Không có thông tin thành phần.</p>
                 )}
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Chất gây dị ứng:
-                </p>
+                <p className="text-muted-foreground mb-2 text-sm">Chất gây dị ứng:</p>
                 {item.allergens && item.allergens.length > 0 ? (
-                  <ul className="list-disc pl-5 space-y-1">
+                  <ul className="list-disc space-y-1 pl-5">
                     {item.allergens.map((allergen, index) => (
                       <li key={index} className="text-sm text-red-500">
-                        <Info className="inline-block h-4 w-4 mr-1" />
+                        <Info className="mr-1 inline-block h-4 w-4" />
                         {allergen}
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Không có chất gây dị ứng được liệt kê.
                   </p>
                 )}

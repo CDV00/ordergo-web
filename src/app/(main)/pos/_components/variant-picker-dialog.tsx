@@ -90,7 +90,7 @@ export function VariantPickerDialog({ item, open, onClose, onConfirm }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{item.name}</DialogTitle>
         </DialogHeader>
@@ -106,12 +106,13 @@ export function VariantPickerDialog({ item, open, onClose, onConfirm }: Props) {
                     key={v.id}
                     type="button"
                     onClick={() => setVariantId(v.id)}
-                    className={`px-3 py-2 rounded-lg border-2 text-sm transition-colors text-left
-                      ${variantId === v.id ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"}`}
+                    className={`rounded-lg border-2 px-3 py-2 text-left text-sm transition-colors ${variantId === v.id ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"}`}
                   >
                     <div className="font-medium">{v.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {v.priceModifier.amount > 0 ? `+${formatVnd(v.priceModifier.amount)}` : "Mặc định"}
+                    <div className="text-muted-foreground text-xs">
+                      {v.priceModifier.amount > 0
+                        ? `+${formatVnd(v.priceModifier.amount)}`
+                        : "Mặc định"}
                     </div>
                   </button>
                 ))}
@@ -124,7 +125,7 @@ export function VariantPickerDialog({ item, open, onClose, onConfirm }: Props) {
             <div key={g.id} className="space-y-2">
               <Label>
                 {g.name}
-                <span className="text-xs text-muted-foreground ml-2">
+                <span className="text-muted-foreground ml-2 text-xs">
                   (chọn tối đa {g.maxSelect})
                 </span>
               </Label>
@@ -137,12 +138,10 @@ export function VariantPickerDialog({ item, open, onClose, onConfirm }: Props) {
                       type="button"
                       disabled={!o.isAvailable}
                       onClick={() => toggleTopping(o.id, g)}
-                      className={`px-3 py-2 rounded-lg border-2 text-sm transition-colors text-left
-                        ${selected ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"}
-                        ${!o.isAvailable ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className={`rounded-lg border-2 px-3 py-2 text-left text-sm transition-colors ${selected ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"} ${!o.isAvailable ? "cursor-not-allowed opacity-50" : ""}`}
                     >
                       <div className="font-medium">{o.name}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         +{formatVnd(o.priceModifier.amount)}
                       </div>
                     </button>
@@ -169,9 +168,14 @@ export function VariantPickerDialog({ item, open, onClose, onConfirm }: Props) {
                 min="1"
                 value={quantity}
                 onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                className="text-center w-20"
+                className="w-20 text-center"
               />
-              <Button type="button" size="icon" variant="outline" onClick={() => setQuantity((q) => q + 1)}>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={() => setQuantity((q) => q + 1)}
+              >
                 +
               </Button>
             </div>

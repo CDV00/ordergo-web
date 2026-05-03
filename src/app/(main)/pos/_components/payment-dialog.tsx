@@ -13,7 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Banknote, QrCode, Smartphone } from "lucide-react";
 import { toast } from "sonner";
-import { useCreatePayment, usePaymentsForOrder, type PaymentMethod } from "@/hooks/api/use-payments";
+import {
+  useCreatePayment,
+  usePaymentsForOrder,
+  type PaymentMethod,
+} from "@/hooks/api/use-payments";
 import { ApiException } from "@/lib/api-client";
 import type { Order } from "@/types/api";
 
@@ -75,9 +79,7 @@ export function PaymentDialog({ order, open, onClose, onPaid }: Props) {
         method,
         amount: willPay,
       });
-      toast.success(
-        change > 0 ? `Đã thu, trả lại khách ${formatVnd(change)}` : "Đã thu tiền",
-      );
+      toast.success(change > 0 ? `Đã thu, trả lại khách ${formatVnd(change)}` : "Đã thu tiền");
       onPaid?.();
       onClose();
     } catch (err) {
@@ -94,7 +96,7 @@ export function PaymentDialog({ order, open, onClose, onPaid }: Props) {
 
         <div className="space-y-4">
           {/* Tổng tiền */}
-          <div className="bg-muted rounded-lg p-4 space-y-1.5">
+          <div className="bg-muted space-y-1.5 rounded-lg p-4">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Tổng đơn</span>
               <span className="tabular-nums">{formatVnd(totalDue)}</span>
@@ -102,12 +104,10 @@ export function PaymentDialog({ order, open, onClose, onPaid }: Props) {
             {paidBefore > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Đã thu</span>
-                <span className="tabular-nums text-emerald-600">
-                  −{formatVnd(paidBefore)}
-                </span>
+                <span className="text-emerald-600 tabular-nums">−{formatVnd(paidBefore)}</span>
               </div>
             )}
-            <div className="flex justify-between font-bold text-lg pt-1.5 border-t">
+            <div className="flex justify-between border-t pt-1.5 text-lg font-bold">
               <span>Còn lại</span>
               <span className="tabular-nums">{formatVnd(remaining)}</span>
             </div>
@@ -124,8 +124,7 @@ export function PaymentDialog({ order, open, onClose, onPaid }: Props) {
                     key={opt.value}
                     type="button"
                     onClick={() => setMethod(opt.value)}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-colors
-                      ${method === opt.value ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"}`}
+                    className={`flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 transition-colors ${method === opt.value ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"}`}
                   >
                     <Icon className="size-5" />
                     <span className="text-xs font-medium">{opt.label}</span>
@@ -150,7 +149,7 @@ export function PaymentDialog({ order, open, onClose, onPaid }: Props) {
                 <button
                   type="button"
                   onClick={() => setTendered(remaining)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-muted/70"
+                  className="bg-muted hover:bg-muted/70 rounded-full px-3 py-1.5 text-xs"
                 >
                   Đủ ({formatVnd(remaining)})
                 </button>
@@ -159,16 +158,16 @@ export function PaymentDialog({ order, open, onClose, onPaid }: Props) {
                     key={a}
                     type="button"
                     onClick={() => setTendered(a)}
-                    className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-muted/70"
+                    className="bg-muted hover:bg-muted/70 rounded-full px-3 py-1.5 text-xs"
                   >
                     {formatVnd(a)}
                   </button>
                 ))}
               </div>
               {change > 0 && (
-                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 flex justify-between">
+                <div className="flex justify-between rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/40">
                   <span className="font-medium">Trả lại khách</span>
-                  <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                  <span className="text-lg font-bold text-emerald-700 tabular-nums dark:text-emerald-400">
                     {formatVnd(change)}
                   </span>
                 </div>
@@ -178,14 +177,14 @@ export function PaymentDialog({ order, open, onClose, onPaid }: Props) {
 
           {/* QR / Momo */}
           {(method === "vietqr" || method === "momo") && (
-            <div className="bg-muted rounded-lg p-6 text-center space-y-2">
-              <div className="size-32 mx-auto bg-white border-2 rounded-lg flex items-center justify-center">
-                <QrCode className="size-20 text-muted-foreground" />
+            <div className="bg-muted space-y-2 rounded-lg p-6 text-center">
+              <div className="mx-auto flex size-32 items-center justify-center rounded-lg border-2 bg-white">
+                <QrCode className="text-muted-foreground size-20" />
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 Khách scan QR để chuyển <strong>{formatVnd(remaining)}</strong>
               </div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-muted-foreground text-xs">
                 (MVP: chưa tích hợp cổng thật — bấm xác nhận khi thấy tiền vào)
               </div>
             </div>

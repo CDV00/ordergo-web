@@ -7,13 +7,7 @@ export const menuItems = [
     status: "Còn hàng",
     image: "/pho-bo.png",
     description: "Phở bò truyền thống với thịt bò tái mềm và nước dùng đậm đà.",
-    ingredients: [
-      "Thịt bò",
-      "Bánh phở",
-      "Nước dùng xương",
-      "Hành lá",
-      "Ngò gai",
-    ],
+    ingredients: ["Thịt bò", "Bánh phở", "Nước dùng xương", "Hành lá", "Ngò gai"],
     allergens: ["Gluten"],
   },
   {
@@ -23,8 +17,7 @@ export const menuItems = [
     price: "₫70,000",
     status: "Còn hàng",
     image: "/bun-cha.png",
-    description:
-      "Bún chả Hà Nội chuẩn vị với chả nướng thơm lừng và nước chấm chua ngọt.",
+    description: "Bún chả Hà Nội chuẩn vị với chả nướng thơm lừng và nước chấm chua ngọt.",
     ingredients: ["Thịt heo", "Bún", "Rau sống", "Nước chấm", "Đu đủ xanh"],
     allergens: ["Đậu phộng"],
   },
@@ -35,8 +28,7 @@ export const menuItems = [
     price: "₫45,000",
     status: "Còn hàng",
     image: "/goi-cuon.png",
-    description:
-      "Gỏi cuốn tươi ngon với tôm, thịt và rau sống, chấm nước mắm pha.",
+    description: "Gỏi cuốn tươi ngon với tôm, thịt và rau sống, chấm nước mắm pha.",
     ingredients: ["Tôm", "Thịt heo", "Bún", "Rau sống", "Bánh tráng"],
     allergens: ["Hải sản"],
   },

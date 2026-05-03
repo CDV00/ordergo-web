@@ -30,12 +30,8 @@ export function useLogin() {
 export function useRegister() {
   const { applyAuth } = useAuth();
   return useMutation({
-    mutationFn: (body: {
-      phone: string;
-      password: string;
-      displayName: string;
-      email?: string;
-    }) => apiPost<AuthResult>("/auth/register", body),
+    mutationFn: (body: { phone: string; password: string; displayName: string; email?: string }) =>
+      apiPost<AuthResult>("/auth/register", body),
     onSuccess: (res) => {
       applyAuth({
         user: res.user,
@@ -52,7 +48,7 @@ export function useRegister() {
 }
 
 export function useMe() {
-  const { isAuthenticated, isReady, setUser, setMemberships } = useAuth();
+  const { isAuthenticated, isReady, setUser, setMemberships, setTenants } = useAuth();
   return useQuery({
     queryKey: ["me"],
     enabled: isReady && isAuthenticated,
@@ -60,6 +56,7 @@ export function useMe() {
       const res = await apiGet<MeResult>("/me");
       setUser(res.user);
       setMemberships(res.memberships);
+      setTenants(res.tenants);
       return res;
     },
   });

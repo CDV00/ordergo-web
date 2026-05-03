@@ -57,8 +57,7 @@ export default function POSPage() {
     return (
       orders.data.find(
         (o) =>
-          o.tableId === activeKey &&
-          ["sent", "in_progress", "ready", "served"].includes(o.status),
+          o.tableId === activeKey && ["sent", "in_progress", "ready", "served"].includes(o.status),
       ) ?? null
     );
   }, [activeKey, orders.data]);
@@ -96,30 +95,33 @@ export default function POSPage() {
     setContextLabel("");
   }, [setActiveKey]);
 
-  const handlePickItem = useCallback((item: MenuItem) => {
-    if (!item.isAvailable) return;
-    // Nếu có variants/toppings → mở dialog. Nếu không → add direct.
-    const hasOptions = item.variants.length > 0 || item.toppingGroups.length > 0;
-    if (hasOptions) {
-      setVariantPicking(item);
-      return;
-    }
-    if (!useCartStore.getState().activeKey) return;
-    const key = useCartStore.getState().activeKey!;
-    addLine(key, {
-      menuItemId: item.id,
-      variantId: null,
-      toppingOptionIds: [],
-      quantity: 1,
-      note: null,
-      name: item.name,
-      imageUrl: item.imageUrl,
-      unitPrice: item.basePrice.amount,
-      basePrice: item.basePrice.amount,
-      variantName: null,
-      toppingNames: [],
-    });
-  }, [addLine]);
+  const handlePickItem = useCallback(
+    (item: MenuItem) => {
+      if (!item.isAvailable) return;
+      // Nếu có variants/toppings → mở dialog. Nếu không → add direct.
+      const hasOptions = item.variants.length > 0 || item.toppingGroups.length > 0;
+      if (hasOptions) {
+        setVariantPicking(item);
+        return;
+      }
+      if (!useCartStore.getState().activeKey) return;
+      const key = useCartStore.getState().activeKey!;
+      addLine(key, {
+        menuItemId: item.id,
+        variantId: null,
+        toppingOptionIds: [],
+        quantity: 1,
+        note: null,
+        name: item.name,
+        imageUrl: item.imageUrl,
+        unitPrice: item.basePrice.amount,
+        basePrice: item.basePrice.amount,
+        variantName: null,
+        toppingNames: [],
+      });
+    },
+    [addLine],
+  );
 
   const handleConfirmVariant: React.ComponentProps<typeof VariantPickerDialog>["onConfirm"] =
     useCallback(
@@ -170,24 +172,23 @@ export default function POSPage() {
 
   // Header — mobile dùng bottom nav nên không cần SidebarTrigger
   const header = (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3 md:px-4 bg-background">
+    <header className="bg-background flex h-14 shrink-0 items-center gap-2 border-b px-3 md:px-4">
       <MenuToggle />
-      <Separator orientation="vertical" className="mr-2 h-4 hidden md:block" />
+      <Separator orientation="vertical" className="mr-2 hidden h-4 md:block" />
       {activeKey && (
         <Button variant="ghost" size="sm" onClick={handleBack} className="px-2">
           <ArrowLeft className="size-4 md:mr-1" />
           <span className="hidden sm:inline">Đổi bàn</span>
         </Button>
       )}
-      <h1 className="text-base md:text-lg font-semibold truncate">POS — Gọi món</h1>
+      <h1 className="truncate text-base font-semibold md:text-lg">POS — Gọi món</h1>
     </header>
   );
 
   // ─── Render ────────────────────────────────────────────
   // Dùng dvh (dynamic viewport) cho mobile để trừ URL bar iOS
   // Trừ 64px (h-16) cho bottom nav trên mobile, nguyên 100dvh trên md+
-  const containerClass =
-    "flex flex-col h-[calc(100dvh-4rem)] md:h-svh overflow-hidden";
+  const containerClass = "flex flex-col h-[calc(100dvh-4rem)] md:h-svh overflow-hidden";
 
   if (!activeKey) {
     return (
@@ -228,20 +229,20 @@ export default function POSPage() {
   return (
     <div className={containerClass}>
       {header}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_440px] overflow-hidden">
+      <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_440px]">
         {/* Menu — luôn hiện. Trên lg+ có cart bên cạnh */}
         <div className="overflow-hidden">
           <MenuGrid onPickItem={handlePickItem} />
         </div>
 
         {/* Desktop/large tablet landscape: cart panel sticky right */}
-        <div className="hidden lg:flex flex-col overflow-hidden">{cartPanel}</div>
+        <div className="hidden flex-col overflow-hidden lg:flex">{cartPanel}</div>
 
         {/* Mobile + tablet portrait: cart trong drawer */}
         <Sheet open={cartOpen} onOpenChange={setCartOpen}>
           <SheetContent
             side="right"
-            className="lg:hidden w-full sm:max-w-md p-0 flex flex-col gap-0"
+            className="flex w-full flex-col gap-0 p-0 sm:max-w-md lg:hidden"
           >
             <SheetTitle className="sr-only">Giỏ hàng</SheetTitle>
             {cartPanel}
@@ -254,7 +255,7 @@ export default function POSPage() {
         <button
           type="button"
           onClick={() => setCartOpen(true)}
-          className="lg:hidden fixed left-1/2 -translate-x-1/2 bottom-20 z-30 bg-primary text-primary-foreground rounded-full px-5 py-3 shadow-lg flex items-center gap-3 active:scale-95 transition-transform"
+          className="bg-primary text-primary-foreground fixed bottom-20 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full px-5 py-3 shadow-lg transition-transform active:scale-95 lg:hidden"
         >
           <ShoppingCart className="size-5" />
           <span className="font-semibold tabular-nums">{count} món</span>

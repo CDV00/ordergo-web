@@ -7,11 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Clock, ChefHat } from "lucide-react";
 import { toast } from "sonner";
-import {
-  useKdsOrders,
-  useSetLineKitchenStatus,
-  type KitchenStatus,
-} from "@/hooks/api/use-orders";
+import { useKdsOrders, useSetLineKitchenStatus, type KitchenStatus } from "@/hooks/api/use-orders";
 import { ApiException } from "@/lib/api-client";
 import type { Order, OrderLine } from "@/types/api";
 
@@ -85,14 +81,14 @@ function KdsCard({
 
   return (
     <article
-      className={`rounded-lg border-2 bg-card shadow-sm overflow-hidden ${stale ? "ring-2 ring-rose-400" : ""}`}
+      className={`bg-card overflow-hidden rounded-lg border-2 shadow-sm ${stale ? "ring-2 ring-rose-400" : ""}`}
     >
-      <header className="px-3 py-2 border-b flex items-center justify-between">
+      <header className="flex items-center justify-between border-b px-3 py-2">
         <div>
-          <div className="font-bold text-base">
+          <div className="text-base font-bold">
             {item.tableName ?? (item.orderType === "takeaway" ? "Mang về" : item.orderType)}
           </div>
-          <div className="text-xs text-muted-foreground">{item.orderNumber}</div>
+          <div className="text-muted-foreground text-xs">{item.orderNumber}</div>
         </div>
         <div
           className={`flex items-center gap-1 text-sm font-semibold tabular-nums ${
@@ -104,20 +100,20 @@ function KdsCard({
         </div>
       </header>
 
-      <div className="px-3 py-2.5 space-y-1.5">
+      <div className="space-y-1.5 px-3 py-2.5">
         <div className="flex justify-between gap-2">
-          <div className="font-semibold leading-tight">
-            <span className="text-lg tabular-nums mr-2">{item.line.quantity}×</span>
+          <div className="leading-tight font-semibold">
+            <span className="mr-2 text-lg tabular-nums">{item.line.quantity}×</span>
             {item.line.productSnapshot.name}
           </div>
         </div>
         {item.line.modifiers.length > 0 && (
-          <div className="text-xs text-muted-foreground">
+          <div className="text-muted-foreground text-xs">
             + {item.line.modifiers.map((m) => m.optionName).join(", ")}
           </div>
         )}
         {item.line.note && (
-          <div className="text-sm font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-1 rounded">
+          <div className="rounded bg-amber-50 px-2 py-1 text-sm font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
             ⚠ {item.line.note}
           </div>
         )}
@@ -128,7 +124,7 @@ function KdsCard({
           size="lg"
           onClick={onAdvance}
           disabled={isPending}
-          className="w-full rounded-none font-semibold text-base h-12"
+          className="h-12 w-full rounded-none text-base font-semibold"
         >
           {nextLabel}
         </Button>
@@ -159,16 +155,16 @@ function Column({
   pendingIds: Set<string>;
 }) {
   return (
-    <div className={`flex flex-col h-full rounded-xl border-2 ${border} ${bg} overflow-hidden`}>
-      <header className="px-4 py-3 border-b border-inherit flex items-center justify-between sticky top-0">
-        <h2 className="font-bold text-lg">{title}</h2>
+    <div className={`flex h-full flex-col rounded-xl border-2 ${border} ${bg} overflow-hidden`}>
+      <header className="sticky top-0 flex items-center justify-between border-b border-inherit px-4 py-3">
+        <h2 className="text-lg font-bold">{title}</h2>
         <span className="bg-foreground/10 text-foreground rounded-full px-2.5 py-0.5 text-sm font-bold tabular-nums">
           {items.length}
         </span>
       </header>
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div className="flex-1 space-y-3 overflow-y-auto p-3">
         {items.length === 0 ? (
-          <div className="text-center text-muted-foreground/70 py-8 text-sm">— Trống —</div>
+          <div className="text-muted-foreground/70 py-8 text-center text-sm">— Trống —</div>
         ) : (
           items.map((it) => {
             const lineKey = `${it.orderId}:${it.line.id}`;
@@ -212,9 +208,7 @@ export default function KdsPage() {
         });
       }
     }
-    return items.sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-    );
+    return items.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [orders.data]);
 
   const byStatus = useMemo(() => {
@@ -254,41 +248,37 @@ export default function KdsPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-4rem)] md:h-svh overflow-hidden bg-muted/30">
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3 md:px-4 bg-background">
+    <div className="bg-muted/30 flex h-[calc(100dvh-4rem)] flex-col overflow-hidden md:h-svh">
+      <header className="bg-background flex h-14 shrink-0 items-center gap-2 border-b px-3 md:px-4">
         <MenuToggle />
-        <Separator orientation="vertical" className="mr-2 h-4 hidden md:block" />
+        <Separator orientation="vertical" className="mr-2 hidden h-4 md:block" />
         <ChefHat className="size-5" />
         <h1 className="text-lg font-semibold">Màn hình Bếp (KDS)</h1>
-        <div className="ml-auto text-sm text-muted-foreground">
-          Tự động làm mới mỗi 2 giây
-        </div>
+        <div className="text-muted-foreground ml-auto text-sm">Tự động làm mới mỗi 2 giây</div>
       </header>
 
-      <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3 p-3 overflow-hidden">
-        {orders.isLoading ? (
-          COLUMNS.map((c) => (
-            <div key={c.key} className="flex flex-col gap-3">
-              <Skeleton className="h-12 rounded-xl" />
-              <Skeleton className="h-32 rounded-xl" />
-              <Skeleton className="h-32 rounded-xl" />
-            </div>
-          ))
-        ) : (
-          COLUMNS.map((col) => (
-            <Column
-              key={col.key}
-              title={col.title}
-              bg={col.bg}
-              border={col.border}
-              items={byStatus[col.key]}
-              next={col.next}
-              nextLabel={col.nextLabel}
-              onAdvance={handleAdvance}
-              pendingIds={pendingIds}
-            />
-          ))
-        )}
+      <main className="grid flex-1 grid-cols-1 gap-3 overflow-hidden p-3 md:grid-cols-3">
+        {orders.isLoading
+          ? COLUMNS.map((c) => (
+              <div key={c.key} className="flex flex-col gap-3">
+                <Skeleton className="h-12 rounded-xl" />
+                <Skeleton className="h-32 rounded-xl" />
+                <Skeleton className="h-32 rounded-xl" />
+              </div>
+            ))
+          : COLUMNS.map((col) => (
+              <Column
+                key={col.key}
+                title={col.title}
+                bg={col.bg}
+                border={col.border}
+                items={byStatus[col.key]}
+                next={col.next}
+                nextLabel={col.nextLabel}
+                onAdvance={handleAdvance}
+                pendingIds={pendingIds}
+              />
+            ))}
       </main>
 
       {/* Beep cho order mới — silent placeholder, dùng tone tự gen nếu cần */}

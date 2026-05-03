@@ -32,10 +32,22 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Vận hành",
     items: [
-      { title: "POS — Gọi món", url: "/pos", icon: UtensilsCrossed, hotPath: true, permission: "order.create" },
+      {
+        title: "POS — Gọi món",
+        url: "/pos",
+        icon: UtensilsCrossed,
+        hotPath: true,
+        permission: "order.create",
+      },
       { title: "Bàn ăn", url: "/tables", icon: Clock, hotPath: true },
       { title: "Đơn hàng", url: "/orders", icon: Receipt, hotPath: true },
-      { title: "Màn bếp", url: "/kds", icon: ChefHat, hotPath: true, permission: "order.update_kitchen_status" },
+      {
+        title: "Màn bếp",
+        url: "/kds",
+        icon: ChefHat,
+        hotPath: true,
+        permission: "order.update_kitchen_status",
+      },
     ],
   },
   {
@@ -56,17 +68,12 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-export const NAV_FOOTER: NavItem[] = [
-  { title: "Cài đặt", url: "/settings", icon: Settings },
-];
+export const NAV_FOOTER: NavItem[] = [{ title: "Cài đặt", url: "/settings", icon: Settings }];
 
 /** Ô bottom nav mobile — luôn 4 items, item thứ 5 là "Khác" mở sheet */
 export const MOBILE_NAV: NavItem[] = NAV_GROUPS[0].items.slice(0, 4);
 
-export const ALL_NAV_ITEMS: NavItem[] = [
-  ...NAV_GROUPS.flatMap((g) => g.items),
-  ...NAV_FOOTER,
-];
+export const ALL_NAV_ITEMS: NavItem[] = [...NAV_GROUPS.flatMap((g) => g.items), ...NAV_FOOTER];
 
 /**
  * Match url với pathname.

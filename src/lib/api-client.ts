@@ -69,9 +69,7 @@ async function tryRefresh(): Promise<string | null> {
 api.interceptors.response.use(
   (res) => res,
   async (err: AxiosError<{ error: ApiError }>) => {
-    const original = err.config as
-      | (AxiosRequestConfig & { _retry?: boolean })
-      | undefined;
+    const original = err.config as (AxiosRequestConfig & { _retry?: boolean }) | undefined;
 
     if (err.response?.status === 401 && original && !original._retry) {
       original._retry = true;
@@ -102,15 +100,27 @@ export async function apiGet<T>(url: string, config?: AxiosRequestConfig): Promi
   const res = await api.get<{ data: T }>(url, config);
   return res.data.data;
 }
-export async function apiPost<T, B = unknown>(url: string, body?: B, config?: AxiosRequestConfig): Promise<T> {
+export async function apiPost<T, B = unknown>(
+  url: string,
+  body?: B,
+  config?: AxiosRequestConfig,
+): Promise<T> {
   const res = await api.post<{ data: T }>(url, body, config);
   return res.data.data;
 }
-export async function apiPatch<T, B = unknown>(url: string, body?: B, config?: AxiosRequestConfig): Promise<T> {
+export async function apiPatch<T, B = unknown>(
+  url: string,
+  body?: B,
+  config?: AxiosRequestConfig,
+): Promise<T> {
   const res = await api.patch<{ data: T }>(url, body, config);
   return res.data.data;
 }
-export async function apiPut<T, B = unknown>(url: string, body?: B, config?: AxiosRequestConfig): Promise<T> {
+export async function apiPut<T, B = unknown>(
+  url: string,
+  body?: B,
+  config?: AxiosRequestConfig,
+): Promise<T> {
   const res = await api.put<{ data: T }>(url, body, config);
   return res.data.data;
 }

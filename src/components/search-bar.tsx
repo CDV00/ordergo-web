@@ -5,14 +5,10 @@ import { Input } from "@/components/ui/input";
 
 export function SearchBar() {
   return (
-    <div className="relative flex-1 max-w-sm">
-      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+    <div className="relative max-w-sm flex-1">
+      <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
 
-      <Input
-        type="search"
-        placeholder="Tìm kiếm bàn, món ăn, khách hàng..."
-        className="pl-8"
-      />
+      <Input type="search" placeholder="Tìm kiếm bàn, món ăn, khách hàng..." className="pl-8" />
     </div>
   );
 }

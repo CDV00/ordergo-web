@@ -7,13 +7,28 @@ import { TabletDrawer } from "@/components/tablet-drawer";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { useAuth } from "@/contexts/auth-context";
 import { useMe } from "@/hooks/api/use-auth";
+import { useVenues } from "@/hooks/api/use-tenant";
 import { useLayoutStore } from "@/lib/layout-store";
 
 export default function MainLayout({ children }: { children: ReactNode }) {
-  const { isReady, isAuthenticated, activeTenantId } = useAuth();
+  const { isReady, isAuthenticated, activeTenantId, activeVenueId, switchVenue } = useAuth();
   const router = useRouter();
   const toggleDesktop = useLayoutStore((s) => s.toggleDesktopCollapsed);
   const toggleTablet = useLayoutStore((s) => s.toggleTabletDrawer);
+
+  // Hydrate /me + venues
+  useMe();
+  const venues = useVenues();
+
+  // Auto-pick first venue khi user là owner (membership.venueId=null vì scope tenant-wide).
+  // Tránh case form ở trang nào đó submit với venueId rỗng → BE reject.
+  useEffect(() => {
+    if (!isAuthenticated || !activeTenantId) return;
+    if (activeVenueId) return;
+    if (!venues.data || venues.data.length === 0) return;
+    const first = venues.data.find((v) => v.status === "active") ?? venues.data[0];
+    if (first) switchVenue(first.id);
+  }, [isAuthenticated, activeTenantId, activeVenueId, venues.data, switchVenue]);
 
   // Auth gate
   useEffect(() => {
@@ -24,9 +39,6 @@ export default function MainLayout({ children }: { children: ReactNode }) {
     }
     if (!activeTenantId) router.replace("/setup");
   }, [isReady, isAuthenticated, activeTenantId, router]);
-
-  // Hydrate /me
-  useMe();
 
   // Keyboard shortcut Ctrl+B / Cmd+B
   useEffect(() => {
@@ -49,7 +61,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
 
   if (!isReady) {
     return (
-      <div className="flex h-svh items-center justify-center text-muted-foreground">
+      <div className="text-muted-foreground flex h-svh items-center justify-center">
         Đang tải...
       </div>
     );
@@ -66,13 +78,11 @@ export default function MainLayout({ children }: { children: ReactNode }) {
      * - min-w-0 quan trọng: cho phép flex item shrink dưới content size
      *   (không thì content overflow đẩy sidebar lệch khi có table/preformatted)
      */
-    <div className="flex h-svh overflow-hidden bg-background">
+    <div className="bg-background flex h-svh overflow-hidden">
       <DesktopSidebar />
       <TabletDrawer />
 
-      <main className="flex-1 flex flex-col overflow-hidden min-w-0 pb-16 md:pb-0">
-        {children}
-      </main>
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden pb-16 md:pb-0">{children}</main>
 
       <MobileBottomNav />
     </div>

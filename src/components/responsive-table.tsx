@@ -38,14 +38,11 @@ interface ResponsiveTableProps {
   getStatusColor: (status: string) => string;
 }
 
-export function ResponsiveTable({
-  orders,
-  getStatusColor,
-}: ResponsiveTableProps) {
+export function ResponsiveTable({ orders, getStatusColor }: ResponsiveTableProps) {
   return (
     <>
       {/* Desktop Table */}
-      <div className="hidden lg:block table-responsive">
+      <div className="table-responsive hidden lg:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -68,21 +65,15 @@ export function ResponsiveTable({
                 <TableCell>
                   <div>
                     <div className="font-medium">{order.customer}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {order.phone}
-                    </div>
+                    <div className="text-muted-foreground text-sm">{order.phone}</div>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="max-w-[200px]">
-                    <p className="text-sm truncate">
-                      {order.items
-                        .map((item) => `${item.name} (x${item.quantity})`)
-                        .join(", ")}
+                    <p className="truncate text-sm">
+                      {order.items.map((item) => `${item.name} (x${item.quantity})`).join(", ")}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {order.items.length} món
-                    </p>
+                    <p className="text-muted-foreground text-xs">{order.items.length} món</p>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -93,9 +84,7 @@ export function ResponsiveTable({
                 <TableCell>
                   <div>
                     <div className="text-sm">{order.waitTime}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {order.orderTime}
-                    </div>
+                    <div className="text-muted-foreground text-xs">{order.orderTime}</div>
                   </div>
                 </TableCell>
                 <TableCell className="font-medium">{order.total}</TableCell>
@@ -114,36 +103,30 @@ export function ResponsiveTable({
       </div>
 
       {/* Mobile/Tablet Cards */}
-      <div className="lg:hidden space-y-4">
+      <div className="space-y-4 lg:hidden">
         {orders.map((order) => (
           <Card key={order.id} className="w-full">
             <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-3">
+              <div className="mb-3 flex items-start justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="font-bold text-lg">{order.table}</div>
+                  <div className="text-lg font-bold">{order.table}</div>
                   <div>
-                    <div className="font-medium text-sm">{order.customer}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {order.phone}
-                    </div>
+                    <div className="text-sm font-medium">{order.customer}</div>
+                    <div className="text-muted-foreground text-xs">{order.phone}</div>
                   </div>
                 </div>
-                <Badge className={getStatusColor(order.overallStatus)}>
-                  {order.overallStatus}
-                </Badge>
+                <Badge className={getStatusColor(order.overallStatus)}>{order.overallStatus}</Badge>
               </div>
 
-              <div className="space-y-2 mb-3">
+              <div className="mb-3 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Mã đơn:</span>
                   <span className="font-medium">{order.id}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Món ăn:</span>
-                  <span className="font-medium text-right max-w-[60%] truncate">
-                    {order.items
-                      .map((item) => `${item.name} (x${item.quantity})`)
-                      .join(", ")}
+                  <span className="max-w-[60%] truncate text-right font-medium">
+                    {order.items.map((item) => `${item.name} (x${item.quantity})`).join(", ")}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -157,10 +140,10 @@ export function ResponsiveTable({
               </div>
 
               <div className="flex items-center justify-between">
-                <div className="font-bold text-lg">{order.total}</div>
+                <div className="text-lg font-bold">{order.total}</div>
                 <Button size="sm" className="touch-friendly">
                   <Link href={`/orders/${order.id}`}>
-                    <Eye className="h-4 w-4 mr-2" />
+                    <Eye className="mr-2 h-4 w-4" />
                   </Link>
                   Chi tiết
                 </Button>

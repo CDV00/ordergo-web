@@ -36,23 +36,23 @@ export function SidebarUserMenu({ collapsed }: Props) {
     <button
       type="button"
       className={cn(
-        "w-full flex items-center gap-3 hover:bg-sidebar-accent rounded-md transition-colors h-12 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "hover:bg-sidebar-accent focus-visible:ring-ring flex h-12 w-full items-center gap-3 rounded-md transition-colors outline-none focus-visible:ring-2",
         collapsed ? "justify-center px-0" : "px-2",
       )}
       aria-label={user?.displayName ?? "User menu"}
     >
-      <div className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm shrink-0">
+      <div className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
         {initial}
       </div>
       {!collapsed && (
         <>
-          <div className="flex-1 min-w-0 text-left">
-            <div className="font-semibold text-sm truncate">{user?.displayName ?? "User"}</div>
-            <div className="text-xs text-muted-foreground truncate capitalize">
+          <div className="min-w-0 flex-1 text-left">
+            <div className="truncate text-sm font-semibold">{user?.displayName ?? "User"}</div>
+            <div className="text-muted-foreground truncate text-xs capitalize">
               {m?.roleCode?.replace("_", " ") ?? "—"}
             </div>
           </div>
-          <ChevronsUpDown className="size-4 text-muted-foreground shrink-0" />
+          <ChevronsUpDown className="text-muted-foreground size-4 shrink-0" />
         </>
       )}
     </button>
@@ -74,19 +74,18 @@ export function SidebarUserMenu({ collapsed }: Props) {
       ) : (
         <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       )}
-      <DropdownMenuContent
-        side={collapsed ? "right" : "top"}
-        align="end"
-        className="min-w-56"
-      >
-        <div className="px-2 py-1.5 text-xs text-muted-foreground">{user?.phone}</div>
+      <DropdownMenuContent side={collapsed ? "right" : "top"} align="end" className="min-w-56">
+        <div className="text-muted-foreground px-2 py-1.5 text-xs">{user?.phone}</div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
           {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
           {theme === "dark" ? "Chế độ sáng" : "Chế độ tối"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+        <DropdownMenuItem
+          onClick={handleLogout}
+          className="text-destructive focus:text-destructive"
+        >
           <LogOut className="size-4" />
           Đăng xuất
         </DropdownMenuItem>

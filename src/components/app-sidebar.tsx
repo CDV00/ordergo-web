@@ -51,7 +51,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                   <Store className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
@@ -76,11 +76,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   const active = isNavActive(item.url, pathname);
                   return (
                     <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={active}
-                        tooltip={item.title}
-                      >
+                      <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
                         <Link href={item.url}>
                           <Icon />
                           <span>{item.title}</span>
@@ -129,14 +125,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                   tooltip={user?.displayName ?? "User"}
                 >
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground text-sm font-semibold">
+                  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg text-sm font-semibold">
                     {user?.displayName?.[0]?.toUpperCase() ?? "?"}
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">
-                      {user?.displayName ?? "User"}
-                    </span>
-                    <span className="truncate text-xs capitalize text-muted-foreground">
+                    <span className="truncate font-semibold">{user?.displayName ?? "User"}</span>
+                    <span className="text-muted-foreground truncate text-xs capitalize">
                       {activeMembership?.roleCode?.replace("_", " ") ?? "—"}
                     </span>
                   </div>

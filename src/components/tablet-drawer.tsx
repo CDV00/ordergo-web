@@ -19,14 +19,14 @@ export function TabletDrawer() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="left"
-        className="w-72 p-0 flex flex-col gap-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border"
+        className="bg-sidebar text-sidebar-foreground border-sidebar-border flex w-72 flex-col gap-0 border-r p-0"
       >
         <SheetTitle className="sr-only">Menu chính</SheetTitle>
         <SidebarBrand collapsed={false} onClick={() => setOpen(false)} />
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden">
           <NavList collapsed={false} onItemClick={() => setOpen(false)} />
         </div>
-        <div className="border-t border-sidebar-border p-2 shrink-0">
+        <div className="border-sidebar-border shrink-0 border-t p-2">
           <SidebarUserMenu collapsed={false} />
         </div>
       </SheetContent>

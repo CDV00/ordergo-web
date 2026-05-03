@@ -7,13 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, EyeOff, Package } from "lucide-react";
 import { useLogin, useRegister } from "@/hooks/api/use-auth";
@@ -89,11 +83,11 @@ export default function LoginPage() {
   });
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4 dark:from-gray-900 dark:to-gray-800">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="mb-4 flex items-center justify-center space-x-2">
+            <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
               <Package className="size-4" />
             </div>
             <span className="text-xl font-bold">OrderGo</span>
@@ -134,7 +128,7 @@ export default function LoginPage() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      className="absolute top-0 right-0 h-full px-3 hover:bg-transparent"
                       onClick={() => setShowPassword((s) => !s)}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -172,7 +166,9 @@ export default function LoginPage() {
                     })}
                   />
                   {regForm.formState.errors.phone && (
-                    <p className="text-sm text-destructive">{regForm.formState.errors.phone.message}</p>
+                    <p className="text-destructive text-sm">
+                      {regForm.formState.errors.phone.message}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -194,7 +190,7 @@ export default function LoginPage() {
                     {...regForm.register("confirmPassword", { required: true })}
                   />
                   {regForm.formState.errors.confirmPassword && (
-                    <p className="text-sm text-destructive">
+                    <p className="text-destructive text-sm">
                       {regForm.formState.errors.confirmPassword.message}
                     </p>
                   )}

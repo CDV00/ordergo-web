@@ -1,14 +1,9 @@
 "use client";
 
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import {
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "@/components/ui/sidebar";
+import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 
-const isMac =
-  typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
+const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 const SHORTCUT_HINT = isMac ? "⌘B" : "Ctrl+B";
 
 /**
@@ -37,7 +32,7 @@ export function SidebarCollapseToggle() {
       >
         <Icon />
         <span className="flex-1">{label}</span>
-        <kbd className="hidden lg:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+        <kbd className="bg-muted text-muted-foreground hidden h-5 items-center gap-1 rounded border px-1.5 font-mono text-[10px] font-medium lg:inline-flex">
           {SHORTCUT_HINT}
         </kbd>
       </SidebarMenuButton>

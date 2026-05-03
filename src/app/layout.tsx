@@ -12,11 +12,7 @@ export const metadata: Metadata = {
   description: "Hệ thống quản lý vận hành nhà hàng, khách sạn, dịch vụ",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" suppressHydrationWarning>
       {/* suppressHydrationWarning trên body: extension trình duyệt (vd: Bitdefender

@@ -82,8 +82,7 @@ export function useSetLineKitchenStatus() {
       orderId: string;
       lineId: string;
       status: KitchenStatus;
-    }) =>
-      apiPatch<Order>(`/orders/${orderId}/lines/${lineId}/kitchen-status`, { status }),
+    }) => apiPatch<Order>(`/orders/${orderId}/lines/${lineId}/kitchen-status`, { status }),
     // Optimistic — KDS cần feel snappy
     onMutate: async (vars) => {
       await qc.cancelQueries({ queryKey: ["orders"] });

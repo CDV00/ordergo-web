@@ -1,13 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -105,7 +99,10 @@ export default function MenuPage() {
         // Direct fetch via separate hook would be cleaner but inline here:
         await updateCat.mutateAsync({ name: values.name, description: values.description });
       } else {
-        await createCat.mutateAsync({ name: values.name, description: values.description || undefined });
+        await createCat.mutateAsync({
+          name: values.name,
+          description: values.description || undefined,
+        });
       }
       toast.success(catEditing ? "Đã cập nhật nhóm món" : "Đã tạo nhóm món");
       setCatDialogOpen(false);
@@ -177,15 +174,15 @@ export default function MenuPage() {
         <h1 className="text-lg font-semibold">Menu &amp; Món ăn</h1>
         <div className="ml-auto flex gap-2">
           <Button variant="outline" onClick={() => openCatDialog()}>
-            <Plus className="size-4 mr-1" /> Nhóm món
+            <Plus className="mr-1 size-4" /> Nhóm món
           </Button>
           <Button onClick={() => openItemDialog()} disabled={!cats.data?.length}>
-            <Plus className="size-4 mr-1" /> Thêm món
+            <Plus className="mr-1 size-4" /> Thêm món
           </Button>
         </div>
       </header>
 
-      <main className="flex-1 p-4 md:p-6 space-y-6">
+      <main className="flex-1 space-y-6 p-4 md:p-6">
         {/* Category list */}
         <div className="flex flex-wrap gap-2">
           <Button
@@ -210,7 +207,7 @@ export default function MenuPage() {
                   <Pencil className="size-3" />
                 </Button>
                 <Button size="icon" variant="ghost" onClick={() => handleDeleteCategory(c)}>
-                  <Trash2 className="size-3 text-destructive" />
+                  <Trash2 className="text-destructive size-3" />
                 </Button>
               </div>
             );
@@ -222,31 +219,31 @@ export default function MenuPage() {
           <p className="text-muted-foreground">Đang tải...</p>
         ) : filteredItems.length === 0 ? (
           <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
+            <CardContent className="text-muted-foreground py-12 text-center">
               {cats.data?.length === 0
                 ? "Chưa có nhóm món nào. Tạo nhóm trước để bắt đầu."
                 : "Chưa có món nào trong nhóm này."}
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredItems.map((it) => (
               <Card key={it.id} className={it.isAvailable ? "" : "opacity-60"}>
-                <CardHeader className="flex flex-row gap-3 items-start space-y-0">
-                  <div className="size-16 rounded-md bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                <CardHeader className="flex flex-row items-start gap-3 space-y-0">
+                  <div className="bg-muted flex size-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-md">
                     {it.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={it.imageUrl} alt={it.name} className="object-cover w-full h-full" />
+                      <img src={it.imageUrl} alt={it.name} className="h-full w-full object-cover" />
                     ) : (
-                      <ImageOff className="size-6 text-muted-foreground" />
+                      <ImageOff className="text-muted-foreground size-6" />
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-base truncate">{it.name}</CardTitle>
-                    <CardDescription className="text-sm font-medium text-foreground">
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="truncate text-base">{it.name}</CardTitle>
+                    <CardDescription className="text-foreground text-sm font-medium">
                       {formatVnd(it.basePrice.amount)}
                     </CardDescription>
-                    {it.sku && <p className="text-xs text-muted-foreground mt-1">SKU: {it.sku}</p>}
+                    {it.sku && <p className="text-muted-foreground mt-1 text-xs">SKU: {it.sku}</p>}
                   </div>
                 </CardHeader>
                 <CardContent className="flex gap-2">
@@ -259,7 +256,7 @@ export default function MenuPage() {
                     {it.isAvailable ? "Tạm hết" : "Mở bán"}
                   </Button>
                   <Button size="icon" variant="ghost" onClick={() => handleDeleteItem(it)}>
-                    <Trash2 className="size-4 text-destructive" />
+                    <Trash2 className="text-destructive size-4" />
                   </Button>
                 </CardContent>
               </Card>
@@ -277,7 +274,10 @@ export default function MenuPage() {
           <form onSubmit={onSubmitCategory} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="cat-name">Tên nhóm *</Label>
-              <Input id="cat-name" {...catForm.register("name", { required: true, minLength: 1 })} />
+              <Input
+                id="cat-name"
+                {...catForm.register("name", { required: true, minLength: 1 })}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cat-desc">Mô tả</Label>
@@ -322,7 +322,10 @@ export default function MenuPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="item-name">Tên món *</Label>
-              <Input id="item-name" {...itemForm.register("name", { required: true, minLength: 1 })} />
+              <Input
+                id="item-name"
+                {...itemForm.register("name", { required: true, minLength: 1 })}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="item-price">Giá (VND) *</Label>

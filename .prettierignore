@@ -1,0 +1,41 @@
+# Build output
+.next
+out
+build
+dist
+
+# Dependencies
+node_modules
+
+# Generated
+next-env.d.ts
+.swc
+*.tsbuildinfo
+
+# Lockfiles
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+
+# Public assets generated
+public/sw.js
+public/workbox-*.js
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db

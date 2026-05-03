@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MenuToggle } from "@/components/menu-toggle";
@@ -20,7 +14,10 @@ function formatVnd(amount: number) {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
 }
 
-const STATUS_LABELS: Record<OrderStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+const STATUS_LABELS: Record<
+  OrderStatus,
+  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+> = {
   draft: { label: "Nháp", variant: "outline" },
   sent: { label: "Đã gửi bếp", variant: "secondary" },
   in_progress: { label: "Đang làm", variant: "default" },
@@ -64,17 +61,17 @@ export default function OrdersPage() {
         <h1 className="text-lg font-semibold">Đơn hàng</h1>
       </header>
 
-      <main className="flex-1 p-4 md:p-6 space-y-4">
+      <main className="flex-1 space-y-4 p-4 md:p-6">
         {orders.isLoading ? (
           <p className="text-muted-foreground">Đang tải...</p>
         ) : orders.data?.length === 0 ? (
           <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
+            <CardContent className="text-muted-foreground py-12 text-center">
               Chưa có đơn hàng nào.
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {orders.data?.map((o) => (
               <Card key={o.id}>
                 <CardHeader>
@@ -97,11 +94,13 @@ export default function OrdersPage() {
                           {l.quantity}× {l.productSnapshot.name}
                           {l.note ? <em className="text-muted-foreground"> ({l.note})</em> : null}
                         </span>
-                        <span className="text-muted-foreground">{formatVnd(l.lineTotal.amount)}</span>
+                        <span className="text-muted-foreground">
+                          {formatVnd(l.lineTotal.amount)}
+                        </span>
                       </li>
                     ))}
                   </ul>
-                  <div className="flex justify-between font-semibold border-t pt-2">
+                  <div className="flex justify-between border-t pt-2 font-semibold">
                     <span>Tổng</span>
                     <span>{formatVnd(o.pricing.total.amount)}</span>
                   </div>

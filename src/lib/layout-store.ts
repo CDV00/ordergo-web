@@ -23,11 +23,9 @@ export const useLayoutStore = create<LayoutStore>()(
       tabletDrawerOpen: false,
 
       setDesktopCollapsed: (v) => set({ desktopCollapsed: v }),
-      toggleDesktopCollapsed: () =>
-        set((s) => ({ desktopCollapsed: !s.desktopCollapsed })),
+      toggleDesktopCollapsed: () => set((s) => ({ desktopCollapsed: !s.desktopCollapsed })),
       setTabletDrawerOpen: (v) => set({ tabletDrawerOpen: v }),
-      toggleTabletDrawer: () =>
-        set((s) => ({ tabletDrawerOpen: !s.tabletDrawerOpen })),
+      toggleTabletDrawer: () => set((s) => ({ tabletDrawerOpen: !s.tabletDrawerOpen })),
       closeAllOverlays: () => set({ tabletDrawerOpen: false }),
     }),
     {

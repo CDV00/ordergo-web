@@ -34,9 +34,17 @@ export interface AuthResult {
   needsSetup: boolean;
 }
 
+export interface TenantSummary {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+}
+
 export interface MeResult {
   user: PublicUser;
   memberships: Membership[];
+  tenants: TenantSummary[];
 }
 
 // ─── Tenant & Venue ───
@@ -57,9 +65,15 @@ export interface Tenant {
 }
 
 export type BusinessType =
-  | "restaurant" | "cafe" | "bar"
-  | "hotel" | "homestay"
-  | "spa" | "gym" | "education" | "coworking";
+  | "restaurant"
+  | "cafe"
+  | "bar"
+  | "hotel"
+  | "homestay"
+  | "spa"
+  | "gym"
+  | "education"
+  | "coworking";
 
 export interface Venue {
   id: string;
@@ -145,8 +159,7 @@ export interface MenuItem {
 }
 
 // ─── Tables ───
-export type TableStatus =
-  | "available" | "occupied" | "reserved" | "cleaning" | "out_of_order";
+export type TableStatus = "available" | "occupied" | "reserved" | "cleaning" | "out_of_order";
 
 export interface RestaurantTable {
   id: string;
@@ -162,8 +175,14 @@ export interface RestaurantTable {
 
 // ─── Orders ───
 export type OrderStatus =
-  | "draft" | "sent" | "in_progress" | "ready" | "served"
-  | "paid" | "refunded" | "cancelled";
+  | "draft"
+  | "sent"
+  | "in_progress"
+  | "ready"
+  | "served"
+  | "paid"
+  | "refunded"
+  | "cancelled";
 
 export interface OrderLine {
   id: string;

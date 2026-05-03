@@ -1,13 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -61,8 +55,7 @@ export default function StaffPage() {
 
   const filteredStaff = staff.filter((member) => {
     const matchesRole = roleFilter === "all" || member.role === roleFilter;
-    const matchesStatus =
-      statusFilter === "all" || member.status === statusFilter;
+    const matchesStatus = statusFilter === "all" || member.status === statusFilter;
     const matchesSearch =
       member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,7 +66,7 @@ export default function StaffPage() {
 
   return (
     <>
-      <header className="hidden lg:flex h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:px-8 lg:ml-40 fixed top-0 right-0 left-0 z-50">
+      <header className="fixed top-0 right-0 left-0 z-50 hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
         <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb>
           <BreadcrumbList>
@@ -82,28 +75,26 @@ export default function StaffPage() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        <div className="ml-auto flex items-center space-x-4 ">
+        <div className="ml-auto flex items-center space-x-4">
           <Input
             placeholder="Tìm kiếm nhân viên..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 min-h-[44px] min-w-[44px]"
+            className="min-h-[44px] min-w-[44px] flex-1"
           />
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] min-h-[44px] min-w-[44px]">
+            <SelectTrigger className="min-h-[44px] w-full min-w-[44px] sm:w-[180px]">
               <SelectValue placeholder="Lọc theo chức vụ" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tất cả chức vụ</SelectItem>
-              <SelectItem value="Nhân viên phục vụ">
-                Nhân viên phục vụ
-              </SelectItem>
+              <SelectItem value="Nhân viên phục vụ">Nhân viên phục vụ</SelectItem>
               <SelectItem value="Đầu bếp">Đầu bếp</SelectItem>
               <SelectItem value="Quản lý">Quản lý</SelectItem>
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] min-h-[44px] min-w-[44px]">
+            <SelectTrigger className="min-h-[44px] w-full min-w-[44px] sm:w-[180px]">
               <SelectValue placeholder="Lọc theo trạng thái" />
             </SelectTrigger>
             <SelectContent>
@@ -115,11 +106,11 @@ export default function StaffPage() {
           </Select>
         </div>
       </header>
-      <div className="flex flex-1 flex-col gap-4 px-4 sm:px-6 lg:px-8 py-4 lg:ml-40 mt-16">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mt-16 flex flex-1 flex-col gap-4 px-4 py-4 sm:px-6 lg:ml-40 lg:px-8">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Quản lý nhân viên</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-xl font-bold sm:text-2xl">Quản lý nhân viên</h1>
+            <p className="text-muted-foreground text-sm">
               Tổng cộng {filteredStaff.length} nhân viên
             </p>
           </div>
@@ -131,9 +122,7 @@ export default function StaffPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg sm:text-xl">
-              Danh sách nhân viên
-            </CardTitle>
+            <CardTitle className="text-lg sm:text-xl">Danh sách nhân viên</CardTitle>
             <CardDescription className="text-sm">
               Thông tin chi tiết về đội ngũ nhân viên
             </CardDescription>
@@ -156,37 +145,33 @@ export default function StaffPage() {
                     <TableRow key={member.id}>
                       <TableCell>
                         <div className="flex items-center space-x-3">
-                          <User className="h-8 w-8 text-muted-foreground" />
+                          <User className="text-muted-foreground h-8 w-8" />
                           <div>
                             <div className="font-medium">{member.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {member.id}
-                            </div>
+                            <div className="text-muted-foreground text-sm">{member.id}</div>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <Briefcase className="h-4 w-4 text-muted-foreground" />
+                          <Briefcase className="text-muted-foreground h-4 w-4" />
                           <span>{member.role}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
                           <div className="flex items-center space-x-2">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <Phone className="text-muted-foreground h-4 w-4" />
                             <span>{member.phone}</span>
                           </div>
-                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                          <div className="text-muted-foreground flex items-center space-x-2 text-sm">
                             <Mail className="h-4 w-4" />
                             <span>{member.email}</span>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={getStatusColor(member.status)}>
-                          {member.status}
-                        </Badge>
+                        <Badge className={getStatusColor(member.status)}>{member.status}</Badge>
                       </TableCell>
                       <TableCell>
                         {member.assignedTables.length > 0 ? (
@@ -198,9 +183,7 @@ export default function StaffPage() {
                             ))}
                           </div>
                         ) : (
-                          <span className="text-muted-foreground text-sm">
-                            Chưa phân công
-                          </span>
+                          <span className="text-muted-foreground text-sm">Chưa phân công</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -219,10 +202,7 @@ export default function StaffPage() {
                   ))}
                   {filteredStaff.length === 0 && (
                     <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center text-muted-foreground py-8"
-                      >
+                      <TableCell colSpan={6} className="text-muted-foreground py-8 text-center">
                         Không tìm thấy nhân viên nào phù hợp.
                       </TableCell>
                     </TableRow>

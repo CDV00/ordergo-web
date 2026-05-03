@@ -1,13 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +21,8 @@ import {
 } from "@/components/ui/select";
 import { MenuToggle } from "@/components/menu-toggle";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, Users } from "lucide-react";
+import { Plus, Printer, Trash2, Users } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import {
@@ -36,6 +31,7 @@ import {
   useDeleteTable,
   useTables,
 } from "@/hooks/api/use-tables";
+import { useAuth } from "@/contexts/auth-context";
 import { ApiException } from "@/lib/api-client";
 import type { RestaurantTable, TableStatus } from "@/types/api";
 
@@ -62,6 +58,7 @@ const STATUS_COLORS: Record<TableStatus, string> = {
 };
 
 export default function TablesPage() {
+  const { activeVenueId } = useAuth();
   const tables = useTables();
   const create = useCreateTable();
   const changeStatus = useChangeTableStatus();
@@ -73,8 +70,13 @@ export default function TablesPage() {
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
+    if (!activeVenueId) {
+      toast.error("Chưa chọn cơ sở. Tải lại trang để thử lại.");
+      return;
+    }
     try {
       await create.mutateAsync({
+        venueId: activeVenueId,
         name: values.name,
         section: values.section,
         capacity: values.capacity,
@@ -105,13 +107,10 @@ export default function TablesPage() {
     }
   };
 
-  const grouped = (tables.data ?? []).reduce<Record<string, RestaurantTable[]>>(
-    (acc, t) => {
-      (acc[t.section] ??= []).push(t);
-      return acc;
-    },
-    {},
-  );
+  const grouped = (tables.data ?? []).reduce<Record<string, RestaurantTable[]>>((acc, t) => {
+    (acc[t.section] ??= []).push(t);
+    return acc;
+  }, {});
 
   return (
     <div className="flex flex-col">
@@ -119,19 +118,24 @@ export default function TablesPage() {
         <MenuToggle />
         <Separator orientation="vertical" className="mr-2 h-4" />
         <h1 className="text-lg font-semibold">Bàn ăn</h1>
-        <div className="ml-auto">
+        <div className="ml-auto flex gap-2">
+          <Button asChild variant="outline">
+            <Link href="/tables/qr">
+              <Printer className="mr-1 size-4" /> In QR
+            </Link>
+          </Button>
           <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="size-4 mr-1" /> Thêm bàn
+            <Plus className="mr-1 size-4" /> Thêm bàn
           </Button>
         </div>
       </header>
 
-      <main className="flex-1 p-4 md:p-6 space-y-6">
+      <main className="flex-1 space-y-6 p-4 md:p-6">
         {tables.isLoading ? (
           <p className="text-muted-foreground">Đang tải...</p>
         ) : tables.data?.length === 0 ? (
           <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
+            <CardContent className="text-muted-foreground py-12 text-center">
               Chưa có bàn nào. Bấm &quot;Thêm bàn&quot; để bắt đầu.
             </CardContent>
           </Card>
@@ -139,11 +143,11 @@ export default function TablesPage() {
           Object.entries(grouped).map(([section, list]) => (
             <section key={section} className="space-y-3">
               <h2 className="text-base font-semibold">{section}</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                 {list.map((t) => (
                   <Card key={t.id} className={`${STATUS_COLORS[t.status]} border-2`}>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base flex items-center justify-between">
+                      <CardTitle className="flex items-center justify-between text-base">
                         <span>{t.name}</span>
                         <Button
                           size="icon"
@@ -151,7 +155,7 @@ export default function TablesPage() {
                           className="h-6 w-6"
                           onClick={() => onDelete(t.id, t.name)}
                         >
-                          <Trash2 className="size-3 text-destructive" />
+                          <Trash2 className="text-destructive size-3" />
                         </Button>
                       </CardTitle>
                       <CardDescription className="flex items-center gap-1 text-xs">
@@ -195,7 +199,11 @@ export default function TablesPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="t-name">Tên bàn *</Label>
-              <Input id="t-name" placeholder="Bàn 1" {...form.register("name", { required: true })} />
+              <Input
+                id="t-name"
+                placeholder="Bàn 1"
+                {...form.register("name", { required: true })}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="t-cap">Số chỗ</Label>
@@ -203,7 +211,11 @@ export default function TablesPage() {
                 id="t-cap"
                 type="number"
                 min="1"
-                {...form.register("capacity", { required: true, valueAsNumber: true, min: 1 })}
+                {...form.register("capacity", {
+                  required: true,
+                  valueAsNumber: true,
+                  min: 1,
+                })}
               />
             </div>
             <DialogFooter>

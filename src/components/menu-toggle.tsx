@@ -34,7 +34,7 @@ export function MenuToggle({ className }: Props) {
         aria-label={tabletOpen ? "Đóng menu" : "Mở menu"}
         aria-expanded={tabletOpen}
         title="Mở menu"
-        className={cn("hidden md:inline-flex xl:hidden -ml-2", className)}
+        className={cn("-ml-2 hidden md:inline-flex xl:hidden", className)}
       >
         <Menu className="size-5" />
       </Button>
@@ -48,7 +48,7 @@ export function MenuToggle({ className }: Props) {
         aria-label={desktopCollapsed ? "Mở rộng menu" : "Thu gọn menu"}
         aria-expanded={!desktopCollapsed}
         title={desktopCollapsed ? "Mở rộng menu (Ctrl+B)" : "Thu gọn menu (Ctrl+B)"}
-        className={cn("hidden xl:inline-flex -ml-2", className)}
+        className={cn("-ml-2 hidden xl:inline-flex", className)}
       >
         {desktopCollapsed ? (
           <PanelLeftOpen className="size-5" />

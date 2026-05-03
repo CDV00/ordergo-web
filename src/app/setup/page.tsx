@@ -7,13 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -99,11 +93,11 @@ export default function SetupPage() {
   if (!isReady || !isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4 dark:from-gray-900 dark:to-gray-800">
       <Card className="w-full max-w-2xl">
         <CardHeader className="space-y-1 text-center">
-          <div className="flex items-center justify-center space-x-2 mb-2">
-            <div className="flex aspect-square size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="mb-2 flex items-center justify-center space-x-2">
+            <div className="bg-primary text-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg">
               <Store className="size-5" />
             </div>
           </div>
@@ -115,7 +109,7 @@ export default function SetupPage() {
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-6">
             <section className="space-y-4">
-              <h3 className="text-sm font-semibold uppercase text-muted-foreground">
+              <h3 className="text-muted-foreground text-sm font-semibold uppercase">
                 Thông tin doanh nghiệp
               </h3>
               <div className="grid gap-4 md:grid-cols-2">
@@ -129,17 +123,13 @@ export default function SetupPage() {
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="taxCode">Mã số thuế (tuỳ chọn)</Label>
-                  <Input
-                    id="taxCode"
-                    placeholder="0123456789"
-                    {...form.register("taxCode")}
-                  />
+                  <Input id="taxCode" placeholder="0123456789" {...form.register("taxCode")} />
                 </div>
               </div>
             </section>
 
             <section className="space-y-4">
-              <h3 className="text-sm font-semibold uppercase text-muted-foreground">
+              <h3 className="text-muted-foreground text-sm font-semibold uppercase">
                 Cơ sở đầu tiên
               </h3>
               <div className="grid gap-4 md:grid-cols-2">

@@ -23,7 +23,7 @@ function NavLink({ item, collapsed, onClick }: NavLinkProps) {
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex items-center gap-3 rounded-md transition-colors h-10 text-sm",
+        "group flex h-10 items-center gap-3 rounded-md text-sm transition-colors",
         collapsed ? "justify-center px-0" : "px-3",
         active
           ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
@@ -61,14 +61,14 @@ export function NavList({ collapsed, onItemClick }: NavListProps) {
     <TooltipProvider delayDuration={150} skipDelayDuration={0}>
       <nav
         aria-label="Điều hướng chính"
-        className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-3 space-y-4"
+        className="flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-2 py-3"
       >
         {NAV_GROUPS.map((group) => (
           <section key={group.label} className="space-y-1">
             {/* Label chỉ hiện khi expanded */}
             <h3
               className={cn(
-                "px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
+                "text-muted-foreground px-3 text-[11px] font-semibold tracking-wider uppercase",
                 collapsed && "sr-only",
               )}
             >
@@ -86,7 +86,7 @@ export function NavList({ collapsed, onItemClick }: NavListProps) {
       </nav>
 
       {/* Footer items (Settings) — phân tách bằng border */}
-      <div className="border-t border-sidebar-border px-2 py-2 space-y-0.5 shrink-0">
+      <div className="border-sidebar-border shrink-0 space-y-0.5 border-t px-2 py-2">
         {NAV_FOOTER.map((item) => (
           <NavLink key={item.url} item={item} collapsed={collapsed} onClick={onItemClick} />
         ))}

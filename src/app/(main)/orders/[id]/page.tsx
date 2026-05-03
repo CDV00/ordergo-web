@@ -1,13 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MobileHeader } from "@/components/mobile-header";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -21,14 +15,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Edit,
-  Trash2,
-  Clock,
-  UtensilsCrossed,
-  User,
-  Phone,
-} from "lucide-react";
+import { Edit, Trash2, Clock, UtensilsCrossed, User, Phone } from "lucide-react";
 import Link from "next/link";
 import { getStatusColor } from "@/utils/getStatusColor";
 import { orders } from "@/app/data";
@@ -57,7 +44,7 @@ export default function OrderDetailPage() {
     return (
       <SidebarInset>
         <MobileHeader />
-        <header className="hidden lg:flex h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:px-8  lg:ml-40">
+        <header className="hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
             <BreadcrumbList>
@@ -72,12 +59,8 @@ export default function OrderDetailPage() {
           </Breadcrumb>
         </header>
         <div className="flex flex-1 flex-col items-center justify-center p-4 lg:ml-40">
-          <h1 className="text-2xl font-bold text-red-500">
-            Lỗi: Không tìm thấy đơn hàng
-          </h1>
-          <p className="text-muted-foreground">
-            Đơn hàng với mã "{orderId}" không tồn tại.
-          </p>
+          <h1 className="text-2xl font-bold text-red-500">Lỗi: Không tìm thấy đơn hàng</h1>
+          <p className="text-muted-foreground">Đơn hàng với mã "{orderId}" không tồn tại.</p>
           <Button asChild className="mt-4">
             <Link href="/orders">Quay lại danh sách đơn hàng</Link>
           </Button>
@@ -89,7 +72,7 @@ export default function OrderDetailPage() {
   return (
     <SidebarInset>
       <MobileHeader />
-      <header className="hidden lg:flex h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:px-8 lg:ml-40 fixed top-0 right-0 left-0 z-50">
+      <header className="fixed top-0 right-0 left-0 z-50 hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
         <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb>
           <BreadcrumbList>
@@ -106,21 +89,16 @@ export default function OrderDetailPage() {
           {/* SearchBar and Notifications can be added here if needed */}
         </div>
       </header>
-      <div className="flex flex-1 flex-col gap-4 px-4 sm:px-6 lg:px-8 py-4 lg:ml-40 mt-16">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mt-16 flex flex-1 flex-col gap-4 px-4 py-4 sm:px-6 lg:ml-40 lg:px-8">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold">
-              Chi tiết đơn hàng: {order.id}
-            </h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-xl font-bold sm:text-2xl">Chi tiết đơn hàng: {order.id}</h1>
+            <p className="text-muted-foreground text-sm">
               Bàn: {order.table} - Khách hàng: {order.customer}
             </p>
           </div>
           <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              className="min-h-[44px] min-w-[44px] bg-transparent"
-            >
+            <Button variant="outline" className="min-h-[44px] min-w-[44px] bg-transparent">
               <Edit className="mr-2 h-4 w-4" />
               Chỉnh sửa
             </Button>
@@ -131,7 +109,7 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 flex-1">
+        <div className="grid flex-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card className="md:col-span-1">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Thông tin chung</CardTitle>
@@ -139,61 +117,45 @@ export default function OrderDetailPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Mã đơn:</span>
+                <span className="text-muted-foreground text-sm">Mã đơn:</span>
                 <span className="font-medium">{order.id}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Bàn:</span>
+                <span className="text-muted-foreground text-sm">Bàn:</span>
                 <span className="font-medium">{order.table}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Khách hàng:
-                </span>
-                <span className="font-medium flex items-center gap-1">
+                <span className="text-muted-foreground text-sm">Khách hàng:</span>
+                <span className="flex items-center gap-1 font-medium">
                   <User className="h-4 w-4" /> {order.customer}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Điện thoại:
-                </span>
-                <span className="font-medium flex items-center gap-1">
+                <span className="text-muted-foreground text-sm">Điện thoại:</span>
+                <span className="flex items-center gap-1 font-medium">
                   <Phone className="h-4 w-4" /> {order.phone}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Trạng thái:
-                </span>
-                <Badge className={getStatusColor(order.overallStatus)}>
-                  {order.overallStatus}
-                </Badge>
+                <span className="text-muted-foreground text-sm">Trạng thái:</span>
+                <Badge className={getStatusColor(order.overallStatus)}>{order.overallStatus}</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Thời gian đặt:
-                </span>
-                <span className="font-medium flex items-center gap-1">
+                <span className="text-muted-foreground text-sm">Thời gian đặt:</span>
+                <span className="flex items-center gap-1 font-medium">
                   <Clock className="h-4 w-4" /> {order.orderTime}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Thời gian chờ:
-                </span>
+                <span className="text-muted-foreground text-sm">Thời gian chờ:</span>
                 <span className="font-medium">{order.waitTime}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Nhân viên phục vụ:
-                </span>
+                <span className="text-muted-foreground text-sm">Nhân viên phục vụ:</span>
                 <span className="font-medium">{order.server}</span>
               </div>
-              <div className="flex items-center justify-between font-semibold text-lg pt-2 border-t mt-3">
-                <span className="text-sm text-muted-foreground">
-                  Tổng tiền:
-                </span>
+              <div className="mt-3 flex items-center justify-between border-t pt-2 text-lg font-semibold">
+                <span className="text-muted-foreground text-sm">Tổng tiền:</span>
                 <span>{order.total}</span>
               </div>
             </CardContent>
@@ -213,31 +175,29 @@ export default function OrderDetailPage() {
                       className="flex items-center justify-between border-b pb-2 last:border-b-0 last:pb-0"
                     >
                       <div className="flex items-center space-x-2">
-                        <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
+                        <UtensilsCrossed className="text-muted-foreground h-4 w-4" />
                         <span className="text-sm font-medium">
                           {item.name} (x{item.quantity})
                         </span>
                       </div>
-                      <Badge className={getOrderItemStatusColor(item.status)}>
-                        {item.status}
-                      </Badge>
+                      <Badge className={getOrderItemStatusColor(item.status)}>{item.status}</Badge>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <div className="text-center text-muted-foreground py-4">
+                <div className="text-muted-foreground py-4 text-center">
                   Đơn hàng này chưa có món ăn nào.
                 </div>
               )}
-              <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                <Button size="sm" className="flex-1 min-h-[44px] min-w-[44px]">
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <Button size="sm" className="min-h-[44px] min-w-[44px] flex-1">
                   Thêm món
                 </Button>
                 {order.overallStatus === "Chờ thanh toán" && (
                   <Button
                     size="sm"
                     variant="outline"
-                    className="flex-1 min-h-[44px] min-w-[44px] bg-transparent"
+                    className="min-h-[44px] min-w-[44px] flex-1 bg-transparent"
                   >
                     Thanh toán
                   </Button>
