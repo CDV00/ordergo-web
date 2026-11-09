@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,8 @@ export function ReportToolbar({
   onCustom,
   range,
   rangeError,
+  venueId,
+  venueSelect,
 }: {
   preset: RangePreset;
   onPreset: (p: RangePreset) => void;
@@ -26,8 +29,12 @@ export function ReportToolbar({
   /** Khoảng đang áp dụng; null khi tuỳ chọn chưa hợp lệ. */
   range: ReportRangeParams | null;
   rangeError: string | null;
+  /** Cơ sở đang xem ("all" = toàn chuỗi); bỏ trống = cơ sở đang chọn. */
+  venueId?: string | null;
+  /** Bộ chọn cơ sở (chỉ người toàn chuỗi). */
+  venueSelect?: ReactNode;
 }) {
-  const exportCsv = useExportSalesReport();
+  const exportCsv = useExportSalesReport(venueId);
 
   const onExport = () => {
     if (!range) return;
@@ -70,19 +77,22 @@ export function ReportToolbar({
             </button>
           ))}
         </div>
-        <Button
-          variant="outline"
-          className="min-h-[44px]"
-          onClick={onExport}
-          disabled={!range || exportCsv.isPending}
-        >
-          {exportCsv.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="h-4 w-4" />
-          )}
-          Xuất CSV
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {venueSelect}
+          <Button
+            variant="outline"
+            className="min-h-[44px]"
+            onClick={onExport}
+            disabled={!range || exportCsv.isPending}
+          >
+            {exportCsv.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            Xuất CSV
+          </Button>
+        </div>
       </div>
 
       {preset === "custom" && (

@@ -1,7 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useSalesReport, type ReportRangeParams } from "@/hooks/api/use-reports";
+import { ALL_VENUES, useSalesReport, type ReportRangeParams } from "@/hooks/api/use-reports";
+import { useAccessibleVenues } from "@/hooks/api/use-tenant";
+import { useAuth } from "@/contexts/auth-context";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ApiException } from "@/lib/api-client";
 import { todayYmd } from "@/lib/format";
 import { KpiTiles } from "./_components/kpi-tiles";
@@ -18,6 +27,7 @@ import { ReportToolbar } from "./_components/report-toolbar";
 import { StaffTable, TopItemsTable } from "./_components/report-tables";
 import { ReportsShell, StateMessage } from "./_components/reports-shell";
 import { DailyRevenueCard, HourlyCard } from "./_components/sales-charts";
+import { VenueBreakdownCard } from "./_components/venue-breakdown-card";
 
 /** Kiểm tra khoảng tuỳ chọn ở client (server vẫn kiểm lại). */
 function validateCustom(r: ReportRangeParams): string | null {
@@ -41,7 +51,17 @@ export default function ReportsPage() {
     return customError ? null : custom;
   }, [preset, custom, customError]);
 
-  const report = useSalesReport(range ?? { from: "", to: "" });
+  // Người toàn chuỗi chọn được cơ sở khác hoặc "Tất cả cơ sở"; null = theo cơ sở đang chọn.
+  const { activeVenueId } = useAuth();
+  const { venues, tenantWide } = useAccessibleVenues();
+  const [venueSel, setVenueSel] = useState<string | null>(null);
+  const viewVenueId = tenantWide ? (venueSel ?? activeVenueId) : activeVenueId;
+  const isAll = viewVenueId === ALL_VENUES;
+  const venueLabel = isAll
+    ? "Tất cả cơ sở"
+    : (venues.find((v) => v.id === viewVenueId)?.name ?? null);
+
+  const report = useSalesReport(range ?? { from: "", to: "" }, viewVenueId);
   const loading = !!range && report.isLoading;
   const err = report.error;
   const forbidden = err instanceof ApiException && err.status === 403;
@@ -57,6 +77,7 @@ export default function ReportsPage() {
       <div>
         <h2 className="text-xl font-bold sm:text-2xl">Báo cáo bán hàng</h2>
         <p className="text-muted-foreground text-sm">
+          {venueLabel && tenantWide ? `${venueLabel} · ` : ""}
           {range
             ? range.from === range.to
               ? `Ngày ${fullDate(range.from)}`
@@ -72,6 +93,24 @@ export default function ReportsPage() {
         onCustom={setCustom}
         range={range}
         rangeError={customError}
+        venueId={viewVenueId}
+        venueSelect={
+          tenantWide && venues.length > 0 ? (
+            <Select value={viewVenueId ?? ""} onValueChange={(v) => v && setVenueSel(v)}>
+              <SelectTrigger className="min-h-[44px] w-[200px]" aria-label="Cơ sở">
+                <SelectValue placeholder="Chọn cơ sở" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_VENUES}>Tất cả cơ sở</SelectItem>
+                {venues.map((v) => (
+                  <SelectItem key={v.id} value={v.id}>
+                    {v.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null
+        }
       />
 
       {forbidden ? (
@@ -88,6 +127,7 @@ export default function ReportsPage() {
       ) : (
         <>
           <KpiTiles report={report.data} loading={loading} />
+          {isAll && <VenueBreakdownCard report={report.data} loading={loading} />}
           <div className="grid gap-4 xl:grid-cols-3">
             <DailyRevenueCard report={report.data} loading={loading} className="xl:col-span-2" />
             <PaymentMethodsCard report={report.data} loading={loading} />

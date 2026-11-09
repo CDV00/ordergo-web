@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useVenues } from "@/hooks/api/use-tenant";
+import { useAccessibleVenues, useVenues } from "@/hooks/api/use-tenant";
 import {
   ASSIGNABLE_ROLES,
   ROLE_LABEL,
@@ -119,10 +119,23 @@ function StaffRow({ m, venueName }: { m: StaffMember; venueName: string }) {
   );
 }
 
+/** Lọc danh sách: tất cả / chỉ người toàn chuỗi / 1 cơ sở. */
+const FILTER_ALL = "__all__";
+const FILTER_TENANT = "__tenant__";
+
 export default function StaffPage() {
   const staff = useStaff();
   const venues = useVenues();
+  const { tenantWide } = useAccessibleVenues();
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [venueFilter, setVenueFilter] = useState(FILTER_ALL);
+  const showFilter = tenantWide && (venues.data?.length ?? 0) > 1;
+  const rows = useMemo(() => {
+    const all = staff.data ?? [];
+    if (!showFilter || venueFilter === FILTER_ALL) return all;
+    if (venueFilter === FILTER_TENANT) return all.filter((m) => m.venueId === null);
+    return all.filter((m) => m.venueId === venueFilter);
+  }, [staff.data, showFilter, venueFilter]);
   const venueName = useMemo(() => {
     const map = new Map((venues.data ?? []).map((v) => [v.id, v.name]));
     return (id: string | null) => (id ? (map.get(id) ?? "Cơ sở khác") : "Toàn bộ cơ sở");
@@ -141,10 +154,29 @@ export default function StaffPage() {
       </header>
 
       <div className="mx-auto w-full max-w-4xl space-y-4 p-4 md:p-6">
-        <p className="text-muted-foreground text-sm">
-          {staff.data ? `${activeCount} người đang hoạt động. ` : ""}
-          Khoá tài khoản có hiệu lực ngay; đổi vai trò áp dụng từ thao tác tiếp theo của nhân viên.
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-muted-foreground text-sm">
+            {staff.data ? `${activeCount} người đang hoạt động. ` : ""}
+            Khoá tài khoản có hiệu lực ngay; đổi vai trò áp dụng từ thao tác tiếp theo của nhân
+            viên.
+          </p>
+          {showFilter && (
+            <Select value={venueFilter} onValueChange={(v) => v && setVenueFilter(v)}>
+              <SelectTrigger className="w-full shrink-0 sm:w-56" aria-label="Lọc theo cơ sở">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={FILTER_ALL}>Tất cả cơ sở</SelectItem>
+                <SelectItem value={FILTER_TENANT}>Toàn chuỗi (chủ / quản trị)</SelectItem>
+                {(venues.data ?? []).map((v) => (
+                  <SelectItem key={v.id} value={v.id}>
+                    {v.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
         <Card>
           <CardContent className="p-0">
             {staff.isLoading ? (
@@ -160,12 +192,13 @@ export default function StaffPage() {
                   : ((staff.error as unknown as ApiException).error?.message ??
                     "Không tải được danh sách.")}
               </div>
-            ) : staff.data?.length === 0 ? (
+            ) : rows.length === 0 ? (
               <div className="text-muted-foreground flex flex-col items-center gap-2 p-10 text-sm">
-                <Users className="size-8 opacity-50" /> Chưa có nhân viên nào.
+                <Users className="size-8 opacity-50" />{" "}
+                {staff.data?.length ? "Không có nhân viên ở cơ sở này." : "Chưa có nhân viên nào."}
               </div>
             ) : (
-              staff.data?.map((m) => (
+              rows.map((m) => (
                 <StaffRow key={m.membershipId} m={m} venueName={venueName(m.venueId)} />
               ))
             )}

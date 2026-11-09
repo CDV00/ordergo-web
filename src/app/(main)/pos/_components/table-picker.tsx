@@ -4,7 +4,10 @@ import { memo, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Package, Users } from "lucide-react";
+import { CloudOff, Package, Users } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { useOutboxStore } from "@/lib/offline/outbox";
+import { pendingCartKeys } from "@/lib/offline/outbox-core";
 import { useTables } from "@/hooks/api/use-tables";
 import { useOrders } from "@/hooks/api/use-orders";
 import { formatVnd, minutesSince } from "@/lib/format";
@@ -37,6 +40,12 @@ interface Props {
 function TablePickerInner({ onPickTable, onPickTakeaway }: Props) {
   const { data, isLoading, error } = useTables();
   const openOrders = useOrders({ status: "open" });
+  const { activeTenantId } = useAuth();
+  const outbox = useOutboxStore((s) => s.items);
+  const pendingTables = useMemo(
+    () => (activeTenantId ? pendingCartKeys(outbox, activeTenantId) : new Set<string>()),
+    [outbox, activeTenantId],
+  );
 
   /** Tổng tiền + thời điểm vào của các đơn đang mở theo bàn */
   const openByTable = useMemo(() => {
@@ -70,7 +79,8 @@ function TablePickerInner({ onPickTable, onPickTakeaway }: Props) {
     );
   }
 
-  if (error) {
+  // Mất mạng mà vẫn có cache → vẫn hiện sơ đồ bàn
+  if (error && !data) {
     return <div className="text-destructive p-4">Không tải được danh sách bàn.</div>;
   }
 
@@ -105,6 +115,11 @@ function TablePickerInner({ onPickTable, onPickTakeaway }: Props) {
                   <Users className="size-3" /> {t.capacity}
                 </div>
                 <div className="mt-1.5 text-xs font-medium">{STATUS_LABELS[t.status]}</div>
+                {pendingTables.has(t.id) && (
+                  <div className="mt-1 flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+                    <CloudOff className="size-3" /> Chờ gửi
+                  </div>
+                )}
                 {openByTable.has(t.id) && (
                   <div className="mt-1 flex items-baseline justify-between gap-1 text-xs">
                     <span className="font-semibold tabular-nums">

@@ -151,3 +151,32 @@ export function useDeleteMenuItem() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["menu-items"] }),
   });
 }
+
+export interface CopyMenuResult {
+  categories: number;
+  items: number;
+  /** Số món cũ của cơ sở đích đã bị xoá (khi `replace`). */
+  replacedItems: number;
+}
+
+/**
+ * Sao chép menu từ cơ sở `fromVenueId` sang cơ sở `venueId`.
+ * Đích đã có menu → lỗi 409 `MENU_NOT_EMPTY`; gửi lại với `replace: true` để thay thế.
+ */
+export function useCopyMenu() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      venueId,
+      ...body
+    }: {
+      venueId: string;
+      fromVenueId: string;
+      replace?: boolean;
+    }) => apiPost<CopyMenuResult>(`/venues/${venueId}/copy-menu`, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["menu-categories"] });
+      qc.invalidateQueries({ queryKey: ["menu-items"] });
+    },
+  });
+}

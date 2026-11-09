@@ -32,21 +32,23 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (access && config.headers) {
     config.headers.Authorization = `Bearer ${access}`;
   }
+  // Hàng đợi offline gửi lại với tenant/cơ sở lúc tạo đơn → không ghi đè header đã đặt sẵn.
   const tenantId = authStorage.getActiveTenantId();
-  if (tenantId && config.headers) {
+  if (tenantId && config.headers && !config.headers["X-Tenant-Id"]) {
     config.headers["X-Tenant-Id"] = tenantId;
   }
   const venueId = authStorage.getActiveVenueId();
-  if (venueId && config.headers) {
+  if (venueId && config.headers && !config.headers["X-Venue-Id"]) {
     config.headers["X-Venue-Id"] = venueId;
   }
   return config;
 });
 
 // ─── Response: unwrap {data}, refresh on 401, normalize error ───
-let refreshPromise: Promise<string | null> | null = null;
+/** `"network"` = không gọi được server (mất mạng) — KHÔNG được đăng xuất vì lý do này. */
+let refreshPromise: Promise<string | null | "network"> | null = null;
 
-async function tryRefresh(): Promise<string | null> {
+async function tryRefresh(): Promise<string | null | "network"> {
   const refreshToken = authStorage.getRefresh();
   if (!refreshToken) return null;
   try {
@@ -61,8 +63,8 @@ async function tryRefresh(): Promise<string | null> {
       return tokens.accessToken;
     }
     return null;
-  } catch {
-    return null;
+  } catch (e) {
+    return (e as AxiosError).response ? null : "network";
   }
 }
 
@@ -76,6 +78,12 @@ api.interceptors.response.use(
       if (!refreshPromise) refreshPromise = tryRefresh();
       const newAccess = await refreshPromise;
       refreshPromise = null;
+      if (newAccess === "network") {
+        throw new ApiException(
+          { code: "NETWORK_ERROR", message: "Mất kết nối, vui lòng thử lại." },
+          0,
+        );
+      }
       if (newAccess && original.headers) {
         original.headers.Authorization = `Bearer ${newAccess}`;
         return api(original);
@@ -94,6 +102,11 @@ api.interceptors.response.use(
     throw new ApiException(apiErr, err.response?.status ?? 0);
   },
 );
+
+/** Lỗi không tới được server (mất mạng, timeout, CORS/DNS) — khác lỗi 4xx/5xx có phản hồi. */
+export function isNetworkError(err: unknown): boolean {
+  return err instanceof ApiException && err.status === 0;
+}
 
 // Helper trả ra `data` field của response
 export async function apiGet<T>(url: string, config?: AxiosRequestConfig): Promise<T> {

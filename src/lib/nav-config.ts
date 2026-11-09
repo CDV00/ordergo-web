@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Building2,
   ChefHat,
   Clock,
   DollarSign,
@@ -22,6 +23,8 @@ export interface NavItem {
   hotPath?: boolean;
   /** Quyền cần có để thấy mục này (ẩn/hiện qua useVisibleNav — API vẫn tự chặn). */
   permission?: string;
+  /** Chỉ người có membership toàn chuỗi (chủ quán / quản trị) — quản lý 1 cơ sở cũng có `venue.manage`. */
+  tenantWide?: boolean;
 }
 
 export interface NavGroup {
@@ -57,6 +60,13 @@ export const NAV_GROUPS: NavGroup[] = [
       { title: "Menu & Món", url: "/menu", icon: Store, permission: "menu.manage" },
       { title: "Khách hàng", url: "/customers", icon: Users, permission: "order.pay" },
       { title: "Nhân viên", url: "/staff", icon: UserCog, permission: "staff.invite" },
+      {
+        title: "Chi nhánh",
+        url: "/venues",
+        icon: Building2,
+        permission: "venue.manage",
+        tenantWide: true,
+      },
     ],
   },
   {

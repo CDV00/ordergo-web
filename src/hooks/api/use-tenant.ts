@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPatch, apiPost } from "@/lib/api-client";
 import { useAuth } from "@/contexts/auth-context";
@@ -101,6 +102,32 @@ export function useUpdateVenue(id: string) {
       qc.invalidateQueries({ queryKey: ["payment-qr"] });
     },
   });
+}
+
+/**
+ * Cơ sở user được vào ở tenant đang chọn: membership toàn tenant (owner/quản trị/kế toán) → mọi cơ sở
+ * chưa lưu trữ; còn lại → các cơ sở có membership gắn riêng. `tenantWide` dùng để mở báo cáo
+ * toàn chuỗi / trang Chi nhánh (UI chỉ ẩn hiện — API vẫn tự kiểm).
+ */
+export function useAccessibleVenues() {
+  const { memberships, activeTenantId, activeVenueId } = useAuth();
+  const venues = useVenues();
+  return useMemo(() => {
+    const mine = memberships.filter((m) => m.tenantId === activeTenantId && m.status === "active");
+    const tenantWide = mine.some((m) => m.venueId === null);
+    const bound = new Set(mine.map((m) => m.venueId).filter(Boolean));
+    const all = venues.data ?? [];
+    const list = tenantWide
+      ? all.filter((v) => v.status !== "archived" || v.id === activeVenueId)
+      : all.filter((v) => bound.has(v.id));
+    return {
+      venues: list,
+      allVenues: all,
+      tenantWide,
+      activeVenue: all.find((v) => v.id === activeVenueId) ?? null,
+      isLoading: venues.isLoading,
+    };
+  }, [memberships, activeTenantId, activeVenueId, venues.data, venues.isLoading]);
 }
 
 /** Cơ sở đang hoạt động (theo activeVenueId). */

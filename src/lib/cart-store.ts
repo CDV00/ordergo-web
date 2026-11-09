@@ -23,9 +23,21 @@ export interface CartLine {
 
 export type CartKey = string; // tableId | 'takeaway'
 
+interface VenueCarts {
+  carts: Record<CartKey, CartLine[]>;
+  activeKey: CartKey | null;
+}
+
 interface CartState {
   carts: Record<CartKey, CartLine[]>;
   activeKey: CartKey | null;
+  /** Cơ sở sở hữu `carts`/`activeKey` hiện tại (null = chưa gắn, dữ liệu cũ trước khi có đa cơ sở). */
+  venueId: string | null;
+  /** Giỏ đang dở của các cơ sở khác — khôi phục khi chuyển về (key 'takeaway' trùng giữa các cơ sở). */
+  stash: Record<string, VenueCarts>;
+
+  /** Đổi cơ sở: cất giỏ của cơ sở cũ, lấy giỏ của cơ sở mới (gọi lại nhiều lần không sao). */
+  syncVenue: (venueId: string | null) => void;
 
   setActive: (key: CartKey | null) => void;
   addLine: (key: CartKey, line: Omit<CartLine, "clientLineId">) => void;
@@ -56,6 +68,22 @@ export const useCartStore = create<CartState>()(
     (set) => ({
       carts: {},
       activeKey: null,
+      venueId: null,
+      stash: {},
+
+      syncVenue: (venueId) =>
+        set((s) => {
+          if (!venueId || s.venueId === venueId) return s;
+          // Giỏ chưa gắn cơ sở (lần đầu) → coi như của cơ sở đang chọn
+          if (s.venueId === null) return { venueId };
+          const stash = { ...s.stash };
+          const hasLines = Object.values(s.carts).some((l) => l.length > 0);
+          if (hasLines) stash[s.venueId] = { carts: s.carts, activeKey: s.activeKey };
+          else delete stash[s.venueId];
+          const next = stash[venueId] ?? { carts: {}, activeKey: null };
+          delete stash[venueId];
+          return { venueId, stash, carts: next.carts, activeKey: next.activeKey };
+        }),
 
       setActive: (key) => set({ activeKey: key }),
 
@@ -142,8 +170,23 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "ordergo.cart",
-      version: 1,
-      partialize: (s) => ({ carts: s.carts, activeKey: s.activeKey }),
+      version: 2,
+      partialize: (s) => ({
+        carts: s.carts,
+        activeKey: s.activeKey,
+        venueId: s.venueId,
+        stash: s.stash,
+      }),
+      // v1 chưa có cơ sở → giữ giỏ, gắn cơ sở ở lần syncVenue đầu tiên
+      migrate: (persisted) => {
+        const p = (persisted ?? {}) as Partial<CartState>;
+        return {
+          carts: p.carts ?? {},
+          activeKey: p.activeKey ?? null,
+          venueId: p.venueId ?? null,
+          stash: p.stash ?? {},
+        };
+      },
     },
   ),
 );
