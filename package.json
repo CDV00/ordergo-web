@@ -2,6 +2,7 @@
   "name": "ordergo-web",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "yarn@4.18.1",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
