@@ -1,5 +1,6 @@
 "use client";
 
+import { usePublicRealtime } from "@/hooks/use-public-realtime";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { pubGet, pubPost } from "@/lib/public-api-client";
 import type { MenuCategory, MenuItem, Order } from "@/types/api";
@@ -83,11 +84,13 @@ export function useCreatePublicOrder(sessionId: string | null) {
 }
 
 export function usePublicSessionOrders(sessionId: string | null) {
+  const live = usePublicRealtime(sessionId);
   return useQuery({
     queryKey: ["public-orders", sessionId],
     enabled: !!sessionId,
     queryFn: () => pubGet<Order[]>(`/public/sessions/${sessionId}/orders`),
-    refetchInterval: 4_000, // realtime track polling
+    // Có realtime thì chỉ poll dự phòng; mất kết nối → 4s như trước
+    refetchInterval: live ? 60_000 : 4_000,
   });
 }
 

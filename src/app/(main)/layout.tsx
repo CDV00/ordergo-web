@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useMe } from "@/hooks/api/use-auth";
 import { useVenues } from "@/hooks/api/use-tenant";
 import { useLayoutStore } from "@/lib/layout-store";
+import { RealtimeProvider } from "@/providers/realtime-provider";
 
 export default function MainLayout({ children }: { children: ReactNode }) {
   const { isReady, isAuthenticated, activeTenantId, activeVenueId, switchVenue } = useAuth();
@@ -78,15 +79,17 @@ export default function MainLayout({ children }: { children: ReactNode }) {
      * - min-w-0 quan trọng: cho phép flex item shrink dưới content size
      *   (không thì content overflow đẩy sidebar lệch khi có table/preformatted)
      */
-    <div className="bg-background flex h-svh overflow-hidden">
-      <DesktopSidebar />
-      <TabletDrawer />
+    <RealtimeProvider>
+      <div className="bg-background flex h-svh overflow-hidden">
+        <DesktopSidebar />
+        <TabletDrawer />
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto pb-16 md:pb-0">
-        {children}
-      </main>
+        <main className="flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto pb-16 md:pb-0">
+          {children}
+        </main>
 
-      <MobileBottomNav />
-    </div>
+        <MobileBottomNav />
+      </div>
+    </RealtimeProvider>
   );
 }

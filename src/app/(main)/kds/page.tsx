@@ -1,14 +1,17 @@
 "use client";
 
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { MenuToggle } from "@/components/menu-toggle";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Clock, ChefHat } from "lucide-react";
+import { Clock, ChefHat, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { useKdsOrders, useSetLineKitchenStatus, type KitchenStatus } from "@/hooks/api/use-orders";
 import { ApiException } from "@/lib/api-client";
+import { playChime, soundUnlocked, unlockSound } from "@/lib/sound";
+import { useRealtime } from "@/providers/realtime-provider";
+import { cn } from "@/lib/utils";
 import type { Order, OrderLine } from "@/types/api";
 
 interface KdsItem {
@@ -54,8 +57,11 @@ const COLUMNS: Array<{
   },
 ];
 
-function elapsed(from: string): string {
-  const ms = Date.now() - new Date(from).getTime();
+const WARN_MIN = 10;
+const LATE_MIN = 15;
+
+function elapsed(from: string, now: number): string {
+  const ms = now - new Date(from).getTime();
   const m = Math.floor(ms / 60_000);
   if (m < 1) return "<1ph";
   if (m < 60) return `${m}ph`;
@@ -65,23 +71,32 @@ function elapsed(from: string): string {
 
 function KdsCard({
   item,
+  now,
   next,
   nextLabel,
   isPending,
   onAdvance,
 }: {
   item: KdsItem;
+  now: number;
   next: KitchenStatus | null;
   nextLabel: string | null;
   isPending: boolean;
   onAdvance: () => void;
 }) {
-  const ageMin = (Date.now() - new Date(item.createdAt).getTime()) / 60_000;
-  const stale = ageMin > 15;
+  const ageMin = (now - new Date(item.createdAt).getTime()) / 60_000;
+  // Món đã xong chờ mang ra thì không tính là "chậm" của bếp
+  const waiting = item.line.kitchenStatus !== "ready";
+  const late = waiting && ageMin > LATE_MIN;
+  const warn = waiting && !late && ageMin > WARN_MIN;
 
   return (
     <article
-      className={`bg-card overflow-hidden rounded-lg border-2 shadow-sm ${stale ? "ring-2 ring-rose-400" : ""}`}
+      className={cn(
+        "bg-card overflow-hidden rounded-lg border-2 shadow-sm",
+        late && "border-rose-400 ring-2 ring-rose-400",
+        warn && "border-amber-400",
+      )}
     >
       <header className="flex items-center justify-between border-b px-3 py-2">
         <div>
@@ -91,12 +106,17 @@ function KdsCard({
           <div className="text-muted-foreground text-xs">{item.orderNumber}</div>
         </div>
         <div
-          className={`flex items-center gap-1 text-sm font-semibold tabular-nums ${
-            stale ? "text-rose-600" : "text-muted-foreground"
-          }`}
+          className={cn(
+            "flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-semibold tabular-nums",
+            late
+              ? "bg-rose-600 text-white"
+              : warn
+                ? "bg-amber-400 text-amber-950"
+                : "text-muted-foreground",
+          )}
         >
           <Clock className="size-3.5" />
-          {elapsed(item.createdAt)}
+          {elapsed(item.createdAt, now)}
         </div>
       </header>
 
@@ -140,6 +160,7 @@ function Column({
   bg,
   border,
   items,
+  now,
   next,
   nextLabel,
   onAdvance,
@@ -149,6 +170,7 @@ function Column({
   bg: string;
   border: string;
   items: KdsItem[];
+  now: number;
   next: KitchenStatus | null;
   nextLabel: string | null;
   onAdvance: (it: KdsItem) => void;
@@ -172,6 +194,7 @@ function Column({
               <MemoKdsCard
                 key={lineKey}
                 item={it}
+                now={now}
                 next={next}
                 nextLabel={nextLabel}
                 isPending={pendingIds.has(lineKey)}
@@ -188,8 +211,16 @@ function Column({
 export default function KdsPage() {
   const orders = useKdsOrders();
   const setStatus = useSetLineKitchenStatus();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastNewCount = useRef<number>(0);
+  const { connected } = useRealtime();
+  const [soundOn, setSoundOn] = useState(false);
+  // Đồng hồ chờ tự nhảy kể cả khi không có dữ liệu mới
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 15_000);
+    return () => clearInterval(t);
+  }, []);
+  useEffect(() => setSoundOn(soundUnlocked()), []);
 
   // Flatten all lines from all orders
   const allItems = useMemo<KdsItem[]>(() => {
@@ -228,9 +259,7 @@ export default function KdsPage() {
   // Beep khi có order mới (queued tăng)
   useEffect(() => {
     const newCount = byStatus.queued.length;
-    if (newCount > lastNewCount.current && lastNewCount.current > 0) {
-      audioRef.current?.play().catch(() => {});
-    }
+    if (newCount > lastNewCount.current && lastNewCount.current > 0) playChime();
     lastNewCount.current = newCount;
   }, [byStatus.queued.length]);
 
@@ -256,7 +285,38 @@ export default function KdsPage() {
         <Separator orientation="vertical" className="mr-2 hidden h-4 md:block" />
         <ChefHat className="size-5" />
         <h1 className="text-lg font-semibold">Màn hình Bếp (KDS)</h1>
-        <div className="text-muted-foreground ml-auto text-sm">Tự động làm mới mỗi 2 giây</div>
+        <div className="ml-auto flex items-center gap-3">
+          <span
+            className={cn(
+              "flex items-center gap-1.5 text-sm",
+              connected ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground",
+            )}
+          >
+            <span
+              className={cn(
+                "size-2 rounded-full",
+                connected ? "animate-pulse bg-emerald-500" : "bg-muted-foreground",
+              )}
+            />
+            {connected ? "Trực tiếp" : "Đang kết nối lại…"}
+          </span>
+          <Button
+            variant={soundOn ? "outline" : "default"}
+            size="sm"
+            onClick={async () => {
+              const ok = await unlockSound();
+              setSoundOn(ok);
+              if (ok) playChime();
+            }}
+          >
+            {soundOn ? (
+              <Volume2 className="mr-1.5 size-4" />
+            ) : (
+              <VolumeX className="mr-1.5 size-4" />
+            )}
+            {soundOn ? "Âm báo bật" : "Bật âm báo"}
+          </Button>
+        </div>
       </header>
 
       <main className="grid flex-1 grid-cols-1 gap-3 overflow-hidden p-3 md:grid-cols-3">
@@ -275,6 +335,7 @@ export default function KdsPage() {
                 bg={col.bg}
                 border={col.border}
                 items={byStatus[col.key]}
+                now={now}
                 next={col.next}
                 nextLabel={col.nextLabel}
                 onAdvance={handleAdvance}
@@ -282,14 +343,6 @@ export default function KdsPage() {
               />
             ))}
       </main>
-
-      {/* Beep cho order mới — silent placeholder, dùng tone tự gen nếu cần */}
-      <audio ref={audioRef} preload="auto">
-        <source
-          src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ"
-          type="audio/wav"
-        />
-      </audio>
     </div>
   );
 }

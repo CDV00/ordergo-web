@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MenuToggle } from "@/components/menu-toggle";
 import { Separator } from "@/components/ui/separator";
 import {
+  ArrowDownRight,
   ArrowUpRight,
   CheckCircle2,
   Clock,
@@ -15,22 +16,62 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import Link from "next/link";
-import { useTodaySummary } from "@/hooks/api/use-reports";
+import { useDailySummary, useTodaySummary, type DailySalesSummary } from "@/hooks/api/use-reports";
 
 function formatVnd(n: number) {
   return new Intl.NumberFormat("vi-VN").format(n) + "đ";
+}
+
+function yesterdayYmd(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Tổng doanh thu / số đơn từ 0h tới hết giờ hiện tại — để so cùng mốc với hôm qua. */
+function upToHour(s: DailySalesSummary | undefined, hour: number) {
+  const rows = (s?.byHour ?? []).filter((h) => h.hour <= hour);
+  return {
+    revenue: rows.reduce((a, h) => a + h.revenue, 0),
+    orders: rows.reduce((a, h) => a + h.orderCount, 0),
+  };
+}
+
+/** % thay đổi so với hôm qua; null khi hôm qua = 0 (không có mốc so sánh). */
+function pctChange(today: number, yesterday: number): number | null {
+  if (yesterday <= 0) return null;
+  return Math.round(((today - yesterday) / yesterday) * 100);
+}
+
+function Delta({ pct }: { pct: number | null }) {
+  if (pct === null) return null;
+  const up = pct >= 0;
+  const Icon = up ? ArrowUpRight : ArrowDownRight;
+  return (
+    <p className="text-muted-foreground mt-1 flex items-center gap-1 text-xs">
+      <Icon
+        className={`size-3.5 ${up ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}
+        aria-hidden
+      />
+      <span>
+        {up ? "Tăng" : "Giảm"} {Math.abs(pct)}% so với cùng giờ hôm qua
+      </span>
+    </p>
+  );
 }
 
 function StatCard({
   title,
   value,
   hint,
+  delta,
   icon: Icon,
   loading,
 }: {
   title: string;
   value: string;
   hint?: string;
+  delta?: number | null;
   icon: typeof DollarSign;
   loading?: boolean;
 }) {
@@ -47,6 +88,7 @@ function StatCard({
           <div className="text-2xl font-bold tabular-nums">{value}</div>
         )}
         {hint && <p className="text-muted-foreground mt-1 text-xs">{hint}</p>}
+        {delta !== undefined && !loading && <Delta pct={delta} />}
       </CardContent>
     </Card>
   );
@@ -95,6 +137,10 @@ function HourlyChart({
 
 export default function DashboardPage() {
   const { data, isLoading, error, refetch } = useTodaySummary();
+  const yesterday = useDailySummary(yesterdayYmd());
+  const nowHour = new Date().getHours();
+  const todayCum = upToHour(data, nowHour);
+  const yCum = upToHour(yesterday.data, nowHour);
 
   return (
     <div className="flex flex-col">
@@ -132,7 +178,8 @@ export default function DashboardPage() {
               <StatCard
                 title="Doanh thu (đã thu)"
                 value={data ? formatVnd(data.revenue.net) : "—"}
-                hint={data ? `Gross: ${formatVnd(data.revenue.gross)}` : undefined}
+                hint={data ? `Tổng giá trị đơn: ${formatVnd(data.revenue.gross)}` : undefined}
+                delta={yesterday.data ? pctChange(todayCum.revenue, yCum.revenue) : undefined}
                 icon={DollarSign}
                 loading={isLoading}
               />
@@ -142,6 +189,7 @@ export default function DashboardPage() {
                 hint={
                   data?.orders.cancelledCount ? `${data.orders.cancelledCount} đã huỷ` : undefined
                 }
+                delta={yesterday.data ? pctChange(todayCum.orders, yCum.orders) : undefined}
                 icon={UtensilsCrossed}
                 loading={isLoading}
               />
@@ -152,7 +200,7 @@ export default function DashboardPage() {
                 loading={isLoading}
               />
               <StatCard
-                title="Còn nợ"
+                title="Chưa thu"
                 value={data ? formatVnd(data.byPaymentStatus.pending) : "—"}
                 icon={Clock}
                 loading={isLoading}
