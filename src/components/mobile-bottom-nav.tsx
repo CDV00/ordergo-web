@@ -12,6 +12,7 @@ import { ALL_NAV_ITEMS, isNavActive } from "@/lib/nav-config";
 import { useVisibleNav } from "@/hooks/use-permissions";
 import { useAuth } from "@/contexts/auth-context";
 import { useLogout } from "@/hooks/api/use-auth";
+import { VenueSwitcher } from "./venue-switcher";
 
 /** Pure-CSS bottom nav: hide trên md+, sticky bottom, safe-area inset cho iOS */
 export function MobileBottomNav() {
@@ -109,6 +110,11 @@ function MoreSheet({ onClose, pathname }: { onClose: () => void; pathname: strin
             {activeMembership?.roleCode?.replace("_", " ") ?? "—"}
           </div>
         </div>
+      </div>
+
+      {/* Cơ sở đang làm việc (đổi được nếu vào nhiều cơ sở) */}
+      <div className="border-b py-2">
+        <VenueSwitcher onSwitched={onClose} />
       </div>
 
       {/* All nav grouped */}

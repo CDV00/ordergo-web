@@ -5,6 +5,7 @@ import { useLayoutStore } from "@/lib/layout-store";
 import { SidebarBrand } from "./sidebar-brand";
 import { NavList } from "./nav-list";
 import { SidebarUserMenu } from "./sidebar-user-menu";
+import { VenueSwitcher } from "./venue-switcher";
 
 /**
  * Tablet drawer — overlay (Radix Sheet), không chiếm chỗ trong layout flex.
@@ -23,6 +24,9 @@ export function TabletDrawer() {
       >
         <SheetTitle className="sr-only">Menu chính</SheetTitle>
         <SidebarBrand collapsed={false} onClick={() => setOpen(false)} />
+        <div className="border-sidebar-border shrink-0 border-b p-2">
+          <VenueSwitcher onSwitched={() => setOpen(false)} />
+        </div>
         <div className="flex flex-1 flex-col overflow-hidden">
           <NavList collapsed={false} onItemClick={() => setOpen(false)} />
         </div>

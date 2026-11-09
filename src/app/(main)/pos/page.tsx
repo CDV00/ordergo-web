@@ -22,15 +22,17 @@ import {
   type CartKey,
   type CartLine,
 } from "@/lib/cart-store";
-import {
-  useAddOrderLines,
-  useCreateOrder,
-  useOrders,
-  useSendOrderToKitchen,
-  type OrderLineInput,
-} from "@/hooks/api/use-orders";
+import { useQueryClient } from "@tanstack/react-query";
+import { useOrders, type OrderLineInput } from "@/hooks/api/use-orders";
 import { useTables } from "@/hooks/api/use-tables";
+import { useAuth } from "@/contexts/auth-context";
 import { ApiException } from "@/lib/api-client";
+import { newUuid } from "@/lib/offline/idb";
+import { useOutboxStore } from "@/lib/offline/outbox";
+import { planSubmission, type OutboxDisplayLine } from "@/lib/offline/outbox-core";
+import { submitSteps } from "@/lib/offline/submit";
+import { usePendingLines } from "@/lib/offline/use-online";
+import { useOffline } from "@/providers/offline/offline-provider";
 import { formatVnd } from "@/lib/format";
 import { OPEN_ORDER_STATUSES, type MenuItem, type OrderLine } from "@/types/api";
 
@@ -40,6 +42,15 @@ const toLineInput = (l: CartLine): OrderLineInput => ({
   toppingOptionIds: l.toppingOptionIds,
   quantity: l.quantity,
   note: l.note ?? undefined,
+});
+
+const toDisplayLine = (l: CartLine): OutboxDisplayLine => ({
+  name: l.name,
+  quantity: l.quantity,
+  unitPrice: l.unitPrice,
+  variantName: l.variantName,
+  toppingNames: l.toppingNames,
+  note: l.note,
 });
 
 export default function POSPage() {
@@ -61,13 +72,16 @@ export default function POSPage() {
   const [takeawayOrderId, setTakeawayOrderId] = useState<string | null>(null);
 
   // ─── Data ─────────────────────────────────────────────
-  const createOrder = useCreateOrder();
-  const addLines = useAddOrderLines();
-  const sendToKitchen = useSendOrderToKitchen();
+  const qc = useQueryClient();
+  const { activeTenantId, activeVenueId } = useAuth();
+  const { syncNow } = useOffline();
+  const [isSending, setIsSending] = useState(false);
   const orders = useOrders({ status: "open" });
   const tables = useTables();
 
   const isTakeaway = activeKey === "takeaway";
+  /** Món đã xếp hàng offline cho bàn này (mang về: mỗi lần là 1 đơn riêng → không hiện ở giỏ). */
+  const pendingLines = usePendingLines(activeTenantId, isTakeaway ? null : activeKey);
 
   /** Đơn đang mở của bàn/mang về đang chọn — gọi thêm món sẽ nối vào đơn này */
   const openOrder = useMemo(() => {
@@ -139,60 +153,74 @@ export default function POSPage() {
       [addLine],
     );
 
-  const isSending = createOrder.isPending || addLines.isPending || sendToKitchen.isPending;
-
   /**
    * Gửi bếp:
    *  - bàn/mang về chưa có đơn → tạo đơn + gửi bếp
    *  - đã có đơn → nối món vào đơn + gửi bếp phần mới (và cả món chưa gửi còn sót)
+   * Mỗi bước mang Idempotency-Key riêng. Mất mạng (offline hoặc lỗi mạng) → lưu vào hàng đợi
+   * offline, giỏ được xoá và món hiện ở mục "Chờ gửi (offline)" của bàn.
    */
   const handleSendToKitchen = useCallback(async () => {
-    if (!activeKey) return;
+    if (!activeKey || !activeTenantId) return;
+    if (!openOrder && lines.length === 0) return;
+    const { steps, joinsQueue } = planSubmission({
+      newId: newUuid,
+      now: Date.now(),
+      tenantId: activeTenantId,
+      venueId: activeVenueId,
+      cartKey: activeKey,
+      label: contextLabel,
+      isTakeaway,
+      openOrderId: openOrder?.id ?? null,
+      lines: lines.map(toLineInput),
+      display: lines.map(toDisplayLine),
+      queue: useOutboxStore.getState().items,
+    });
+    setIsSending(true);
     try {
-      let orderId: string;
-      let orderNumber: string;
-      if (openOrder) {
-        if (lines.length > 0) {
-          await addLines.mutateAsync({ orderId: openOrder.id, lines: lines.map(toLineInput) });
-        }
-        orderId = openOrder.id;
-        orderNumber = openOrder.orderNumber;
-      } else {
-        if (lines.length === 0) return;
-        const created = await createOrder.mutateAsync({
-          orderType: isTakeaway ? "takeaway" : "dine_in",
-          tableId: isTakeaway ? undefined : activeKey,
-          lines: lines.map(toLineInput),
-        });
-        orderId = created.id;
-        orderNumber = created.orderNumber;
-      }
-      await sendToKitchen.mutateAsync(orderId);
+      const outcome = await submitSteps(steps, joinsQueue);
       clearCart(activeKey);
+      if (outcome.kind === "queued") {
+        if (navigator.onLine) {
+          toast.info(`Đã xếp ${count} món sau các món đang chờ gửi — ${contextLabel}`);
+          syncNow();
+        } else {
+          toast.warning(`Mất kết nối — đã lưu ${count} món chờ gửi (${contextLabel})`, {
+            description: "Sẽ tự gửi bếp khi có mạng lại.",
+          });
+        }
+        return;
+      }
+      void qc.invalidateQueries({ queryKey: ["orders"] });
+      void qc.invalidateQueries({ queryKey: ["tables"] });
+      const { order } = outcome;
       toast.success(
         openOrder
           ? `Đã gửi thêm ${count} món — ${contextLabel}`
-          : `Đã gửi bếp ${orderNumber} — ${contextLabel}`,
+          : `Đã gửi bếp ${order.orderNumber} — ${contextLabel}`,
       );
       if (isTakeaway) {
         // Mang về: thường thu tiền ngay
-        setTakeawayOrderId(orderId);
-        setPayOrderId(orderId);
+        setTakeawayOrderId(order.id);
+        setPayOrderId(order.id);
       }
     } catch (err) {
       toast.error((err as ApiException).error?.message ?? "Gửi bếp thất bại");
+    } finally {
+      setIsSending(false);
     }
   }, [
     activeKey,
+    activeTenantId,
+    activeVenueId,
     openOrder,
     lines,
     isTakeaway,
     count,
     contextLabel,
-    addLines,
-    createOrder,
-    sendToKitchen,
     clearCart,
+    qc,
+    syncNow,
   ]);
 
   const header = (
@@ -212,7 +240,8 @@ export default function POSPage() {
     </header>
   );
 
-  const containerClass = "flex flex-col h-[calc(100dvh-4rem)] md:h-svh overflow-hidden";
+  // flex-1 trong <main> (flex-col) thay vì h-svh: chừa chỗ cho thanh "Mất kết nối" khi có.
+  const containerClass = "flex min-h-0 flex-1 flex-col overflow-hidden";
 
   const dialogs = (
     <>
@@ -251,6 +280,7 @@ export default function POSPage() {
       subtotal={subtotal}
       count={count}
       openOrder={openOrder}
+      pendingLines={pendingLines}
       isSending={isSending}
       onSendToKitchen={() => {
         void handleSendToKitchen();
@@ -268,7 +298,8 @@ export default function POSPage() {
     />
   );
 
-  const floatingTotal = (openOrder?.pricing.total.amount ?? 0) + subtotal;
+  const pendingTotal = pendingLines.reduce((acc, l) => acc + l.unitPrice * l.quantity, 0);
+  const floatingTotal = (openOrder?.pricing.total.amount ?? 0) + pendingTotal + subtotal;
 
   return (
     <div className={containerClass}>
@@ -290,7 +321,7 @@ export default function POSPage() {
       </div>
 
       {/* Nút xem giỏ — chỉ < lg, khi có món mới hoặc đơn đang mở */}
-      {(count > 0 || openOrder) && (
+      {(count > 0 || openOrder || pendingLines.length > 0) && (
         <button
           type="button"
           onClick={() => setCartOpen(true)}

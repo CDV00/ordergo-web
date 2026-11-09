@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   ArrowDownRight,
   ArrowUpRight,
+  Building2,
   CheckCircle2,
   Clock,
   DollarSign,
@@ -18,7 +19,13 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import Link from "next/link";
-import { useDailySummary, useTodaySummary, type DailySalesSummary } from "@/hooks/api/use-reports";
+import {
+  ALL_VENUES,
+  useDailySummary,
+  useTodaySummary,
+  type DailySalesSummary,
+} from "@/hooks/api/use-reports";
+import { useAccessibleVenues } from "@/hooks/api/use-tenant";
 
 function formatVnd(n: number) {
   return new Intl.NumberFormat("vi-VN").format(n) + "đ";
@@ -137,6 +144,70 @@ function HourlyChart({
   );
 }
 
+/** "Chi nhánh hôm nay": doanh thu đã thu + số đơn của từng cơ sở (người toàn chuỗi, ≥2 cơ sở). */
+function VenuesTodayCard({ activeVenueId }: { activeVenueId: string | null }) {
+  const { data, isLoading, error } = useTodaySummary(ALL_VENUES);
+  const rows = data?.byVenue ?? [];
+  const max = Math.max(1, ...rows.map((r) => r.revenue));
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+        <div>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Building2 className="size-4" /> Chi nhánh hôm nay
+          </CardTitle>
+          <CardDescription>
+            {data
+              ? `Toàn chuỗi: ${formatVnd(data.revenue.net)} · ${data.orders.count} đơn`
+              : "Doanh thu đã thu theo từng cơ sở"}
+          </CardDescription>
+        </div>
+        <Button asChild size="sm" variant="ghost">
+          <Link href="/reports">Báo cáo</Link>
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="h-9 w-full" />
+            ))}
+          </div>
+        ) : error ? (
+          <p className="text-muted-foreground py-2 text-sm">Không tải được số liệu chi nhánh.</p>
+        ) : (
+          <ul className="space-y-2.5">
+            {rows.map((r) => (
+              <li key={r.venueId} className="space-y-1">
+                <div className="flex items-baseline justify-between gap-3 text-sm">
+                  <span className="min-w-0 truncate font-medium">
+                    {r.venueName}
+                    {r.venueId === activeVenueId && (
+                      <span className="text-muted-foreground ml-1.5 text-xs font-normal">
+                        (đang chọn)
+                      </span>
+                    )}
+                  </span>
+                  <span className="shrink-0 tabular-nums">
+                    <span className="font-semibold">{formatVnd(r.revenue)}</span>
+                    <span className="text-muted-foreground"> · {r.orders} đơn</span>
+                  </span>
+                </div>
+                <div className="bg-muted h-1.5 overflow-hidden rounded-full" aria-hidden>
+                  <div
+                    className="bg-primary h-full rounded-full"
+                    style={{ width: `${(Math.max(0, r.revenue) / max) * 100}%` }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { can } = usePermissions();
@@ -149,6 +220,8 @@ export default function DashboardPage() {
     );
   }, [canView, can, router]);
   const { data, isLoading, error, refetch } = useTodaySummary();
+  const { venues, tenantWide, activeVenue } = useAccessibleVenues();
+  const showChain = canView && tenantWide && venues.length >= 2;
   const yesterday = useDailySummary(yesterdayYmd());
   const nowHour = new Date().getHours();
   const todayCum = upToHour(data, nowHour);
@@ -218,6 +291,8 @@ export default function DashboardPage() {
                 loading={isLoading}
               />
             </div>
+
+            {showChain && <VenuesTodayCard activeVenueId={activeVenue?.id ?? null} />}
 
             {/* Hourly + Top items */}
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

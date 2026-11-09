@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/auth-context";
-import { useVenues } from "@/hooks/api/use-tenant";
+import { useAccessibleVenues } from "@/hooks/api/use-tenant";
 import {
   ASSIGNABLE_ROLES,
   ROLE_LABEL,
@@ -47,7 +47,8 @@ export function InviteStaffDialog({
 }) {
   const { activeVenueId } = useAuth();
   const { can } = usePermissions();
-  const venues = useVenues();
+  // Quản lý gắn 1 cơ sở chỉ mời vào cơ sở của mình; chủ quán chọn mọi cơ sở
+  const { venues: venueList } = useAccessibleVenues();
   const invite = useInviteStaff();
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
@@ -180,7 +181,7 @@ export function InviteStaffDialog({
                 <div className="space-y-1.5">
                   <Label>Cơ sở</Label>
                   <Select
-                    key={venues.data?.length ?? 0}
+                    key={venueList.length}
                     value={venueId}
                     onValueChange={(v) => v && setVenueId(v)}
                   >
@@ -188,7 +189,7 @@ export function InviteStaffDialog({
                       <SelectValue placeholder="Chọn cơ sở" />
                     </SelectTrigger>
                     <SelectContent>
-                      {(venues.data ?? []).map((v) => (
+                      {venueList.map((v) => (
                         <SelectItem key={v.id} value={v.id}>
                           {v.name}
                         </SelectItem>

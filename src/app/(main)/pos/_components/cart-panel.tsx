@@ -2,10 +2,11 @@
 
 import { memo } from "react";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus, Trash2, Send, CreditCard, Receipt, X } from "lucide-react";
+import { Minus, Plus, Trash2, Send, CreditCard, Receipt, X, CloudOff } from "lucide-react";
 import { useCartStore, type CartLine, type CartKey } from "@/lib/cart-store";
 import { formatVnd, KITCHEN_STATUS_CLASS, KITCHEN_STATUS_LABEL } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { OutboxDisplayLine } from "@/lib/offline/outbox-core";
 import type { Order, OrderLine } from "@/types/api";
 
 interface Props {
@@ -16,6 +17,8 @@ interface Props {
   count: number;
   /** Đơn đang mở của bàn (đã gửi bếp ít nhất 1 lần) — null nếu bàn chưa gọi món */
   openOrder: Order | null;
+  /** Món đã lưu vào hàng đợi offline của bàn này — chưa tới server */
+  pendingLines: OutboxDisplayLine[];
   isSending: boolean;
   onSendToKitchen: () => void;
   onPay: () => void;
@@ -89,6 +92,24 @@ const CartLineRow = ({ cartKey, line }: { cartKey: CartKey; line: CartLine }) =>
 
 const MemoCartLineRow = memo(CartLineRow);
 
+/** Món đã xếp hàng offline — chỉ xem, sẽ tự gửi bếp khi có mạng (sửa/bỏ ở "Đơn chờ gửi"). */
+function PendingLineRow({ line }: { line: OutboxDisplayLine }) {
+  const extras = [line.variantName, ...line.toppingNames].filter(Boolean);
+  return (
+    <div className="flex items-start gap-2 py-2 text-sm" data-testid="pending-line">
+      <span className="w-6 shrink-0 font-semibold tabular-nums">{line.quantity}×</span>
+      <div className="min-w-0 flex-1">
+        <div className="leading-tight">{line.name}</div>
+        {extras.length > 0 && (
+          <div className="text-muted-foreground text-xs">{extras.join(", ")}</div>
+        )}
+        {line.note && <div className="text-muted-foreground text-xs italic">“{line.note}”</div>}
+      </div>
+      <span className="shrink-0 tabular-nums">{formatVnd(line.unitPrice * line.quantity)}</span>
+    </div>
+  );
+}
+
 /** Món đã nằm trong đơn (đã gửi bếp hoặc gọi thêm chưa gửi) */
 function OrderLineRow({ line, onRemove }: { line: OrderLine; onRemove: () => void }) {
   const cancelled = line.kitchenStatus === "cancelled";
@@ -142,6 +163,7 @@ const CartPanelInner = ({
   subtotal,
   count,
   openOrder,
+  pendingLines,
   isSending,
   onSendToKitchen,
   onPay,
@@ -149,6 +171,8 @@ const CartPanelInner = ({
   onCancel,
 }: Props) => {
   const isEmpty = lines.length === 0;
+  const pendingTotal = pendingLines.reduce((acc, l) => acc + l.unitPrice * l.quantity, 0);
+  const hasPending = pendingLines.length > 0;
   const orderTotal = openOrder?.pricing.total.amount ?? 0;
   const hasUnsentInOrder =
     openOrder?.lines.some((l) => !l.sentToKitchenAt && l.kitchenStatus !== "cancelled") ?? false;
@@ -193,9 +217,27 @@ const CartPanelInner = ({
           </section>
         )}
 
+        {/* Đã lưu lúc mất mạng, chưa tới server */}
+        {hasPending && (
+          <section className="border-b py-2" data-testid="pending-section">
+            <div className="flex items-center justify-between pt-1 text-xs font-medium tracking-wide text-amber-700 uppercase dark:text-amber-400">
+              <span className="flex items-center gap-1">
+                <CloudOff className="size-3.5" /> Chờ gửi (offline)
+              </span>
+              <span className="tabular-nums">{formatVnd(pendingTotal)}</span>
+            </div>
+            <div className="divide-y">
+              {pendingLines.map((l, i) => (
+                <PendingLineRow key={i} line={l} />
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Giỏ gọi thêm */}
         {isEmpty ? (
-          !openOrder && (
+          !openOrder &&
+          !hasPending && (
             <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2 py-12 text-center">
               <Receipt className="size-12 opacity-40" />
               <div className="text-sm">Chưa có món nào</div>
@@ -204,7 +246,7 @@ const CartPanelInner = ({
           )
         ) : (
           <section>
-            {openOrder && (
+            {(openOrder || hasPending) && (
               <div className="text-primary pt-3 text-xs font-medium tracking-wide uppercase">
                 Gọi thêm
               </div>
@@ -226,7 +268,9 @@ const CartPanelInner = ({
         )}
         <div className="flex items-center justify-between">
           <div className="text-muted-foreground text-sm">Tổng cộng</div>
-          <div className="text-2xl font-bold tabular-nums">{formatVnd(orderTotal + subtotal)}</div>
+          <div className="text-2xl font-bold tabular-nums">
+            {formatVnd(orderTotal + pendingTotal + subtotal)}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -237,15 +281,21 @@ const CartPanelInner = ({
             className="font-semibold"
           >
             <Send className="mr-1.5 size-4" />
-            {isSending ? "Đang gửi..." : openOrder ? "Gửi thêm" : "Gửi bếp"}
+            {isSending ? "Đang gửi..." : openOrder || hasPending ? "Gửi thêm" : "Gửi bếp"}
           </Button>
           <Button
             size="lg"
             variant={openOrder ? "default" : "outline"}
-            disabled={!openOrder || !isEmpty}
+            disabled={!openOrder || !isEmpty || hasPending}
             onClick={onPay}
             className="font-semibold"
-            title={!isEmpty ? "Gửi bếp các món đang chọn trước khi thanh toán" : undefined}
+            title={
+              hasPending
+                ? "Còn món chờ gửi (offline) — thanh toán sau khi đã gửi được"
+                : !isEmpty
+                  ? "Gửi bếp các món đang chọn trước khi thanh toán"
+                  : undefined
+            }
           >
             <CreditCard className="mr-1.5 size-4" />
             Thanh toán

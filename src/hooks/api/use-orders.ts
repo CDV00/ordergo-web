@@ -42,7 +42,12 @@ export function useOrder(id: string) {
   });
 }
 
+/** Header `Idempotency-Key` (API lưu 48h) — gửi lại cùng key không tạo trùng. */
+const idem = (key?: string) => (key ? { headers: { "Idempotency-Key": key } } : undefined);
+
 export interface CreateOrderInput {
+  /** Không gửi trong body — đi qua header. POS offline dùng lib/offline/outbox thay hook này. */
+  idempotencyKey?: string;
   orderType: "dine_in" | "takeaway" | "delivery" | "online" | "room_service";
   tableId?: string;
   customerId?: string;
@@ -59,8 +64,8 @@ export function useCreateOrder() {
   const qc = useQueryClient();
   const { activeVenueId } = useAuth();
   return useMutation({
-    mutationFn: (body: CreateOrderInput) =>
-      apiPost<Order>("/orders", { venueId: activeVenueId, ...body }),
+    mutationFn: ({ idempotencyKey, ...body }: CreateOrderInput) =>
+      apiPost<Order>("/orders", { venueId: activeVenueId, ...body }, idem(idempotencyKey)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
       qc.invalidateQueries({ queryKey: ["tables"] });
@@ -71,7 +76,10 @@ export function useCreateOrder() {
 export function useSendOrderToKitchen() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => apiPost<Order>(`/orders/${id}/send-to-kitchen`),
+    mutationFn: (arg: string | { id: string; idempotencyKey?: string }) => {
+      const { id, idempotencyKey } = typeof arg === "string" ? { id: arg } : arg;
+      return apiPost<Order>(`/orders/${id}/send-to-kitchen`, undefined, idem(idempotencyKey));
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   });
 }
@@ -82,8 +90,15 @@ export type OrderLineInput = CreateOrderInput["lines"][number];
 export function useAddOrderLines() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId, lines }: { orderId: string; lines: OrderLineInput[] }) =>
-      apiPost<Order>(`/orders/${orderId}/lines`, { lines }),
+    mutationFn: ({
+      orderId,
+      lines,
+      idempotencyKey,
+    }: {
+      orderId: string;
+      lines: OrderLineInput[];
+      idempotencyKey?: string;
+    }) => apiPost<Order>(`/orders/${orderId}/lines`, { lines }, idem(idempotencyKey)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   });
 }

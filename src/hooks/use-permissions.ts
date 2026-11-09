@@ -11,27 +11,35 @@ import { hasPermission } from "@/lib/permissions";
  */
 export function usePermissions() {
   const { memberships, permissions, activeTenantId, activeVenueId } = useAuth();
-  const effective = useMemo(() => {
+  const { effective, tenantWide } = useMemo(() => {
     const mine = memberships.filter(
       (m) =>
         m.tenantId === activeTenantId &&
         m.status === "active" &&
         (m.venueId === null || m.venueId === activeVenueId),
     );
-    return mine.length > 0 ? [...new Set(mine.flatMap((m) => m.permissions))] : permissions;
+    return {
+      effective: mine.length > 0 ? [...new Set(mine.flatMap((m) => m.permissions))] : permissions,
+      /** Có membership toàn chuỗi (venueId=null) ở tenant đang chọn. */
+      tenantWide: mine.some((m) => m.venueId === null),
+    };
   }, [memberships, permissions, activeTenantId, activeVenueId]);
 
   return useMemo(
-    () => ({ permissions: effective, can: (p?: string | null) => hasPermission(effective, p) }),
-    [effective],
+    () => ({
+      permissions: effective,
+      tenantWide,
+      can: (p?: string | null) => hasPermission(effective, p),
+    }),
+    [effective, tenantWide],
   );
 }
 
 /** Menu đã lọc theo quyền (nhóm rỗng bị bỏ). */
 export function useVisibleNav(): { groups: NavGroup[]; footer: NavItem[]; mobile: NavItem[] } {
-  const { can } = usePermissions();
+  const { can, tenantWide } = usePermissions();
   return useMemo(() => {
-    const allow = (i: NavItem) => can(i.permission);
+    const allow = (i: NavItem) => can(i.permission) && (!i.tenantWide || tenantWide);
     return {
       groups: NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter(allow) })).filter(
         (g) => g.items.length > 0,
@@ -39,5 +47,5 @@ export function useVisibleNav(): { groups: NavGroup[]; footer: NavItem[]; mobile
       footer: NAV_FOOTER.filter(allow),
       mobile: MOBILE_NAV.filter(allow),
     };
-  }, [can]);
+  }, [can, tenantWide]);
 }

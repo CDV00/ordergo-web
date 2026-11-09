@@ -20,6 +20,7 @@ import {
   type PaymentMethod,
 } from "@/hooks/api/use-payments";
 import { useOrder } from "@/hooks/api/use-orders";
+import { useOnline } from "@/lib/offline/use-online";
 import { ApiException } from "@/lib/api-client";
 import { formatVnd } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,8 @@ export function PaymentDialog({ orderId, open, onClose }: Props) {
   const qr = usePaymentQr(orderId, open && method === "vietqr");
   const [tendered, setTendered] = useState(0);
   const [done, setDone] = useState<{ change: number } | null>(null);
+  // Thanh toán chỉ online: không xếp hàng tiền — tránh thu 2 lần / lệch ca.
+  const online = useOnline();
 
   const totalDue = order.data?.pricing.total.amount ?? 0;
   const paidBefore = useMemo(
@@ -138,7 +141,16 @@ export function PaymentDialog({ orderId, open, onClose }: Props) {
             </div>
           </div>
         ) : !o ? (
-          <div className="text-muted-foreground py-10 text-center text-sm">Đang tải đơn...</div>
+          online ? (
+            <div className="text-muted-foreground py-10 text-center text-sm">Đang tải đơn...</div>
+          ) : (
+            <p
+              role="alert"
+              className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+            >
+              Mất kết nối — chưa thể thanh toán. Thanh toán cần có mạng; vui lòng đợi kết nối lại.
+            </p>
+          )
         ) : (
           <>
             <div className="space-y-4">
@@ -260,6 +272,16 @@ export function PaymentDialog({ orderId, open, onClose }: Props) {
               )}
             </div>
 
+            {!online && (
+              <p
+                role="alert"
+                className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+              >
+                Mất kết nối — chưa thể thanh toán. Thanh toán cần có mạng; vui lòng đợi kết nối lại
+                rồi xác nhận.
+              </p>
+            )}
+
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => openReceipt(orderId, false)}>
                 <Printer className="mr-1.5 size-4" /> Tạm tính
@@ -267,7 +289,10 @@ export function PaymentDialog({ orderId, open, onClose }: Props) {
               <Button
                 onClick={handlePay}
                 disabled={
-                  createPayment.isPending || willPay <= 0 || (method === "vietqr" && !qr.data)
+                  !online ||
+                  createPayment.isPending ||
+                  willPay <= 0 ||
+                  (method === "vietqr" && !qr.data)
                 }
               >
                 {createPayment.isPending ? "Đang xử lý..." : `Xác nhận ${formatVnd(willPay)}`}
