@@ -1,5 +1,5 @@
 import type React from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -10,6 +10,16 @@ const inter = Inter({ subsets: ["latin", "vietnamese"] });
 export const metadata: Metadata = {
   title: "OrderGo - Quản lý đơn hàng thông minh",
   description: "Hệ thống quản lý vận hành nhà hàng, khách sạn, dịch vụ",
+  // PWA: cài lên tablet/điện thoại, mở toàn màn hình (manifest ở app/manifest.ts)
+  appleWebApp: { capable: true, title: "OrderGo", statusBarStyle: "default" },
+  icons: { apple: "/pwa-icon/192" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0f172a",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

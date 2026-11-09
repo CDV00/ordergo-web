@@ -2,7 +2,15 @@
 // Middleware này chỉ check public path; auth thật check client-side ở layout (main).
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/setup", "/m/", "/_next", "/favicon.ico", "/manifest.json"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/setup",
+  "/m/",
+  "/_next",
+  "/favicon.ico",
+  "/manifest.webmanifest",
+  "/pwa-icon/",
+];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

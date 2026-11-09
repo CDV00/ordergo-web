@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/lib/api-client";
 import { useAuth } from "@/contexts/auth-context";
+import { useLiveInterval } from "@/providers/realtime-provider";
 
 export interface DailySalesSummary {
   date: string;
@@ -16,12 +17,13 @@ export interface DailySalesSummary {
 
 export function useTodaySummary(venueId?: string | null) {
   const { isAuthenticated, activeVenueId } = useAuth();
+  const interval = useLiveInterval(30_000);
   const v = venueId ?? activeVenueId;
   return useQuery({
     queryKey: ["reports", "today", v],
     enabled: isAuthenticated,
     queryFn: () => apiGet<DailySalesSummary>(`/reports/today${v ? `?venueId=${v}` : ""}`),
-    refetchInterval: 30_000,
+    refetchInterval: interval,
   });
 }
 

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api-client";
 import { useAuth } from "@/contexts/auth-context";
+import { useLiveInterval } from "@/providers/realtime-provider";
 import type { KitchenStatus, Order, OrderStatus } from "@/types/api";
 
 export type { KitchenStatus };
@@ -14,6 +15,7 @@ export function useOrders(filter?: {
   tableId?: string | null;
 }) {
   const { isAuthenticated, activeVenueId } = useAuth();
+  const interval = useLiveInterval(5_000);
   const v = filter?.venueId ?? activeVenueId;
   const params = new URLSearchParams();
   if (v) params.set("venueId", v);
@@ -24,18 +26,19 @@ export function useOrders(filter?: {
     queryKey: ["orders", v, filter?.status, filter?.tableId],
     enabled: isAuthenticated,
     queryFn: () => apiGet<Order[]>(`/orders${qs ? `?${qs}` : ""}`),
-    refetchInterval: 5_000,
+    refetchInterval: interval,
   });
 }
 
 export function useOrder(id: string) {
   const { isAuthenticated } = useAuth();
+  const interval = useLiveInterval(5_000);
   return useQuery({
     queryKey: ["orders", id],
     enabled: isAuthenticated && !!id,
     queryFn: () => apiGet<Order>(`/orders/${id}`),
-    // Trạng thái bếp đổi liên tục — tới khi có realtime (Phase 2) thì poll
-    refetchInterval: 5_000,
+    // Realtime invalidate khi có thay đổi; poll dày chỉ khi mất kết nối
+    refetchInterval: interval,
   });
 }
 
@@ -208,6 +211,7 @@ export function useSetLineKitchenStatus() {
 /** Orders cho KDS — chỉ status đang ở bếp */
 export function useKdsOrders() {
   const { isAuthenticated, activeVenueId } = useAuth();
+  const interval = useLiveInterval(2_000);
   return useQuery({
     queryKey: ["orders", "kds", activeVenueId],
     enabled: isAuthenticated && !!activeVenueId,
@@ -221,7 +225,7 @@ export function useKdsOrders() {
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
     },
-    refetchInterval: 2_000,
+    refetchInterval: interval,
     staleTime: 0,
   });
 }
