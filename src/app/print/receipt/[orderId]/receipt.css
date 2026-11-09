@@ -1,0 +1,165 @@
+/* Hoá đơn khổ 80mm (vùng in ~72mm) cho máy in nhiệt — luôn nền trắng chữ đen kể cả dark mode */
+
+@page {
+  size: 80mm auto;
+  margin: 0;
+}
+
+.receipt {
+  width: 72mm;
+  margin: 0 auto;
+  padding: 4mm 0 8mm;
+  background: #fff;
+  color: #000;
+  font-family: "Inter", Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.receipt .center {
+  text-align: center;
+}
+
+.receipt .logo {
+  display: block;
+  max-width: 28mm;
+  max-height: 20mm;
+  margin: 0 auto 2mm;
+  object-fit: contain;
+  filter: grayscale(1);
+}
+
+.receipt .venue-name {
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.receipt .title {
+  margin: 3mm 0 2mm;
+  padding: 1.5mm 0;
+  border-top: 1px dashed #000;
+  border-bottom: 1px dashed #000;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.receipt .meta > div,
+.receipt .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 2mm;
+}
+
+.receipt .items {
+  width: 100%;
+  margin-top: 2mm;
+  border-collapse: collapse;
+}
+
+.receipt .items th {
+  border-bottom: 1px solid #000;
+  padding-bottom: 1mm;
+  font-weight: 600;
+}
+
+.receipt .items td {
+  padding: 1mm 0;
+  vertical-align: top;
+  border-bottom: 1px dotted #999;
+}
+
+.receipt .left {
+  text-align: left;
+}
+
+.receipt .right {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.receipt .qty {
+  width: 8mm;
+  text-align: center;
+}
+
+.receipt .extra {
+  font-size: 10.5px;
+  color: #333;
+}
+
+.receipt .totals {
+  margin-top: 2mm;
+  padding-top: 1mm;
+}
+
+.receipt .row.strong {
+  margin: 1mm 0;
+  padding: 1mm 0;
+  border-top: 1px solid #000;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.receipt .qr {
+  margin-top: 3mm;
+  padding-top: 2mm;
+  border-top: 1px dashed #000;
+  font-size: 11px;
+}
+
+.receipt .qr svg {
+  display: block;
+  margin: 1.5mm auto;
+}
+
+.receipt footer {
+  margin-top: 3mm;
+  padding-top: 2mm;
+  border-top: 1px dashed #000;
+}
+
+.receipt .note {
+  font-size: 10.5px;
+  font-style: italic;
+}
+
+.receipt-toolbar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: #f4f4f5;
+}
+
+.receipt-toolbar button {
+  padding: 6px 16px;
+  border: 1px solid #d4d4d8;
+  border-radius: 6px;
+  background: #fff;
+  color: #000;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.receipt-message {
+  padding: 24px;
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  .receipt {
+    padding-top: 0;
+  }
+}

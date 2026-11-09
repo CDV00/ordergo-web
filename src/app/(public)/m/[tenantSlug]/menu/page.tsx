@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaUrl } from "@/lib/media";
 import { memo, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -32,7 +33,7 @@ function MenuItemCard({ item, onClick }: { item: MenuItem; onClick: (item: MenuI
         {item.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={item.imageUrl}
+            src={mediaUrl(item.imageUrl) ?? undefined}
             alt={item.name}
             loading="lazy"
             className="h-full w-full object-cover"

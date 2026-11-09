@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -10,213 +12,118 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Plus, DollarSign, CheckCircle, Clock, Users } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { MobileHeader } from "@/components/mobile-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import Link from "next/link";
-import { orders, tables } from "@/app/data";
+import { PAYMENT_METHOD_LABEL, usePayments, type PaymentMethod } from "@/hooks/api/use-payments";
+import { todayYmd } from "@/lib/format";
+import { PaymentList, PaymentListSkeleton } from "./_components/payment-list";
+import { errorMessage, isForbidden } from "./_components/payment-status";
+import { PaymentSummary } from "./_components/payment-summary";
+import { PaymentsShell, StateMessage } from "./_components/payments-shell";
 
-const getTableStatusColor = (status: string) => {
-  switch (status) {
-    case "Trống":
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-    case "Đang phục vụ":
-      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-    case "Chờ món":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-    case "Vừa gọi món":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-    case "Chờ thanh toán":
-      return "bg-purple-110 text-purple-800 dark:bg-purple-900 dark:text-purple-300"; // Slightly different purple for payment focus
-    case "Cần dọn dẹp":
-      return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
-    default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-  }
-};
+/** API trả tối đa 500 giao dịch mỗi lần. */
+const PAGE_LIMIT = 500;
+
+const METHODS = Object.keys(PAYMENT_METHOD_LABEL) as PaymentMethod[];
 
 export default function PaymentsPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [date, setDate] = useState(todayYmd);
+  const [method, setMethod] = useState<PaymentMethod | "all">("all");
 
-  const activeTables = useMemo(() => {
-    return tables.filter((table) => table.status !== "Trống");
-  }, [tables]);
-
-  const filteredTables = activeTables.filter((table) => {
-    const matchesSearch =
-      table.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (table.dishes &&
-        table.dishes.some((dish) => dish.toLowerCase().includes(searchTerm.toLowerCase())));
-    const matchesStatus = statusFilter === "all" || table.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  // Tổng hợp luôn tính trên mọi phương thức của ngày; danh sách thì theo bộ lọc.
+  // Khi chọn "Tất cả" hai query cùng key nên chỉ gọi API một lần.
+  const day = usePayments({ from: date, to: date });
+  const list = usePayments({
+    from: date,
+    to: date,
+    method: method === "all" ? undefined : method,
   });
 
-  const totalActiveTables = activeTables.length;
-  const tablesWaitingForPayment = activeTables.filter((t) => t.status === "Chờ thanh toán").length;
+  const forbidden = isForbidden(day.error) || isForbidden(list.error);
+  const listError = list.error ?? day.error;
 
   return (
-    <SidebarProvider>
-      <SidebarInset>
-        <MobileHeader />
-        <header className="fixed top-0 right-0 left-0 z-50 hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Thanh toán</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="ml-auto flex items-center space-x-4">
+    <PaymentsShell>
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <h2 className="text-xl font-bold sm:text-2xl">Lịch sử thanh toán</h2>
+          <p className="text-muted-foreground text-sm">Các khoản đã thu trong ngày</p>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="space-y-1">
+            <Label htmlFor="payment-date" className="text-xs">
+              Ngày
+            </Label>
             <Input
-              placeholder="Tìm kiếm bàn, món ăn..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="min-h-[44px] min-w-[44px] flex-1"
+              id="payment-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value || todayYmd())}
+              className="min-h-[44px] sm:w-[170px]"
             />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="min-h-[44px] w-full min-w-[44px] sm:w-[180px]">
-                <SelectValue placeholder="Lọc theo trạng thái bàn" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Phương thức</Label>
+            <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod | "all")}>
+              <SelectTrigger className="min-h-[44px] w-full sm:w-[190px]">
+                <SelectValue placeholder="Phương thức" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                <SelectItem value="Đang phục vụ">Đang phục vụ</SelectItem>
-                <SelectItem value="Chờ món">Chờ món</SelectItem>
-                <SelectItem value="Vừa gọi món">Vừa gọi món</SelectItem>
-                <SelectItem value="Chờ thanh toán">Chờ thanh toán</SelectItem>
-                <SelectItem value="Cần dọn dẹp">Cần dọn dẹp</SelectItem>
+                <SelectItem value="all">Tất cả</SelectItem>
+                {METHODS.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {PAYMENT_METHOD_LABEL[m]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
-        </header>
-        <div className="mt-16 flex flex-1 flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8 lg:pl-50">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <h1 className="text-xl font-bold sm:text-2xl">Quản lý thanh toán</h1>
-              <p className="text-muted-foreground text-sm">Chọn bàn để tiến hành thanh toán</p>
-            </div>
-            <Button className="min-h-[44px] min-w-[44px]">
-              <Plus className="mr-2 h-4 w-4" />
-              Tạo đơn mới
-            </Button>
-          </div>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Card className="min-h-[80px]">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-medium">Tổng số bàn đang hoạt động</CardTitle>
-                <Users className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent className="pb-2">
-                <div className="text-lg font-bold sm:text-2xl">{totalActiveTables}</div>
-              </CardContent>
-            </Card>
-            <Card className="min-h-[80px]">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-medium">Bàn chờ thanh toán</CardTitle>
-                <DollarSign className="h-4 w-4 text-purple-600" />
-              </CardHeader>
-              <CardContent className="pb-2">
-                <div className="text-lg font-bold sm:text-2xl">{tablesWaitingForPayment}</div>
-              </CardContent>
-            </Card>
-            <Card className="min-h-[80px]">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-medium">Đơn hàng đang nấu</CardTitle>
-                <Clock className="h-4 w-4 text-yellow-600" />
-              </CardHeader>
-              <CardContent className="pb-2">
-                <div className="text-lg font-bold sm:text-2xl">
-                  {orders.filter((o) => o.overallStatus === "Đang nấu").length}
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="min-h-[80px]">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-medium">Đơn hàng sẵn sàng</CardTitle>
-                <CheckCircle className="h-4 w-4 text-green-600" />
-              </CardHeader>
-              <CardContent className="pb-2">
-                <div className="text-lg font-bold sm:text-2xl">
-                  {orders.filter((o) => o.overallStatus === "Sẵn sàng").length}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+      {forbidden ? (
+        <StateMessage
+          title="Bạn không có quyền xem thanh toán"
+          description="Chỉ thu ngân, quản lý hoặc chủ quán mới xem được lịch sử thanh toán."
+        />
+      ) : (
+        <>
+          <PaymentSummary payments={day.data} loading={day.isLoading} />
 
-          <Card className="flex-1">
+          <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg sm:text-xl">Danh sách bàn đang hoạt động</CardTitle>
-              <CardDescription className="text-sm">
-                Chọn một bàn để xem chi tiết và thanh toán
+              <CardTitle className="text-lg sm:text-xl">Danh sách giao dịch</CardTitle>
+              <CardDescription>
+                {list.data
+                  ? `${list.data.length} giao dịch · mới nhất trước`
+                  : "Chọn một giao dịch để xem chi tiết"}
+                {list.data?.length === PAGE_LIMIT && " · chỉ hiển thị 500 giao dịch gần nhất"}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredTables.length === 0 ? (
-                  <div className="text-muted-foreground col-span-full py-8 text-center">
-                    Không tìm thấy bàn nào đang hoạt động hoặc phù hợp với tìm kiếm.
-                  </div>
-                ) : (
-                  filteredTables.map((table) => (
-                    <Link href={`/payments/${table.id}`} key={table.id}>
-                      <Card
-                        className={`min-h-[160px] cursor-pointer transition-all hover:shadow-md`}
-                      >
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-base sm:text-lg">{table.name}</CardTitle>
-                            <Badge className={getTableStatusColor(table.status)}>
-                              <div className="flex items-center space-x-1">
-                                <span className="text-xs">{table.status}</span>
-                              </div>
-                            </Badge>
-                          </div>
-                          <CardDescription className="text-sm">
-                            Sức chứa: {table.capacity} người
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between text-sm">
-                              <span>Khách:</span>
-                              <span className="font-medium">{table.customers} người</span>
-                            </div>
-                            {table.total && (
-                              <div className="flex items-center justify-between text-sm font-semibold">
-                                <span>Tổng tiền tạm tính:</span>
-                                <span>{table.total}</span>
-                              </div>
-                            )}
-                            {table.dishes.length > 0 && (
-                              <div className="mt-2">
-                                <p className="text-muted-foreground text-xs">Món ăn:</p>
-                                <p className="truncate text-sm">{table.dishes.join(", ")}</p>
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))
-                )}
-              </div>
+              {list.isLoading ? (
+                <PaymentListSkeleton />
+              ) : listError ? (
+                <StateMessage
+                  title="Không tải được danh sách thanh toán"
+                  description={errorMessage(listError)}
+                  action={
+                    <Button
+                      className="min-h-[44px]"
+                      onClick={() => {
+                        void day.refetch();
+                        void list.refetch();
+                      }}
+                    >
+                      Thử lại
+                    </Button>
+                  }
+                />
+              ) : (
+                <PaymentList payments={list.data ?? []} />
+              )}
             </CardContent>
           </Card>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+        </>
+      )}
+    </PaymentsShell>
   );
 }

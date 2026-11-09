@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Package, Users } from "lucide-react";
 import { useTables } from "@/hooks/api/use-tables";
+import { useOrders } from "@/hooks/api/use-orders";
+import { formatVnd, minutesSince } from "@/lib/format";
 import type { RestaurantTable, TableStatus } from "@/types/api";
 
 const STATUS_LABELS: Record<TableStatus, string> = {
@@ -13,7 +15,7 @@ const STATUS_LABELS: Record<TableStatus, string> = {
   occupied: "Đang phục vụ",
   reserved: "Đã đặt",
   cleaning: "Cần dọn",
-  out_of_order: "Hỏng",
+  out_of_order: "Tạm ngưng",
 };
 
 const STATUS_BG: Record<TableStatus, string> = {
@@ -34,6 +36,21 @@ interface Props {
 
 function TablePickerInner({ onPickTable, onPickTakeaway }: Props) {
   const { data, isLoading, error } = useTables();
+  const openOrders = useOrders({ status: "open" });
+
+  /** Tổng tiền + thời điểm vào của các đơn đang mở theo bàn */
+  const openByTable = useMemo(() => {
+    const m = new Map<string, { total: number; since: string }>();
+    for (const o of openOrders.data ?? []) {
+      if (!o.tableId) continue;
+      const cur = m.get(o.tableId);
+      m.set(o.tableId, {
+        total: (cur?.total ?? 0) + o.pricing.total.amount,
+        since: cur && cur.since < o.createdAt ? cur.since : o.createdAt,
+      });
+    }
+    return m;
+  }, [openOrders.data]);
 
   const grouped = useMemo(() => {
     if (!data) return {} as Record<string, RestaurantTable[]>;
@@ -88,6 +105,16 @@ function TablePickerInner({ onPickTable, onPickTakeaway }: Props) {
                   <Users className="size-3" /> {t.capacity}
                 </div>
                 <div className="mt-1.5 text-xs font-medium">{STATUS_LABELS[t.status]}</div>
+                {openByTable.has(t.id) && (
+                  <div className="mt-1 flex items-baseline justify-between gap-1 text-xs">
+                    <span className="font-semibold tabular-nums">
+                      {formatVnd(openByTable.get(t.id)!.total)}
+                    </span>
+                    <span className="text-muted-foreground tabular-nums">
+                      {minutesSince(openByTable.get(t.id)!.since)}′
+                    </span>
+                  </div>
+                )}
               </button>
             ))}
           </div>

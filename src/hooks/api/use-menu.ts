@@ -34,18 +34,20 @@ export function useCreateMenuCategory() {
   });
 }
 
-export function useUpdateMenuCategory(id: string) {
+/** `id` truyền lúc tạo hook hoặc trong từng lần gọi (`mutate({ id, ...body })`). */
+export function useUpdateMenuCategory(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (
-      body: Partial<{
-        name: string;
-        description: string;
-        imageUrl: string;
-        displayOrder: number;
-        isActive: boolean;
-      }>,
-    ) => apiPatch<MenuCategory>(`/menu-categories/${id}`, body),
+    mutationFn: ({
+      id: callId,
+      ...body
+    }: { id?: string } & Partial<{
+      name: string;
+      description: string;
+      imageUrl: string;
+      displayOrder: number;
+      isActive: boolean;
+    }>) => apiPatch<MenuCategory>(`/menu-categories/${callId ?? id}`, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["menu-categories"] }),
   });
 }

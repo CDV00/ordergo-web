@@ -1,197 +1,171 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MobileHeader } from "@/components/mobile-header";
-import { SidebarInset } from "@/components/ui/sidebar";
-import { MenuToggle } from "@/components/menu-toggle";
-import { Separator } from "@/components/ui/separator";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Info } from "lucide-react";
-import Image from "next/image";
+import { useEffect } from "react";
 import Link from "next/link";
-import { menuItems } from "@/app/data";
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Còn hàng":
-      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-    case "Hết hàng":
-      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-    default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-  }
-};
+import { useParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowLeft, Loader2, Save, SearchX } from "lucide-react";
+import { toast } from "sonner";
+import { ImageUpload } from "@/components/image-upload";
+import { MenuToggle } from "@/components/menu-toggle";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useMenuCategories, useMenuItem, useUpdateMenuItem } from "@/hooks/api/use-menu";
+import type { ApiException } from "@/lib/api-client";
+import { ItemInfoCard } from "./_components/item-info-card";
+import {
+  EMPTY_ITEM_FORM,
+  itemSchema,
+  toFormValues,
+  toUpdateInput,
+  type ItemFormInput,
+  type ItemFormOutput,
+} from "./_components/item-schema";
+import { ItemStatusCard } from "./_components/item-status-card";
+import { ToppingGroupsCard } from "./_components/topping-groups-card";
+import { VariantsCard } from "./_components/variants-card";
 
 export default function MenuItemDetailPage() {
-  const params = useParams();
-  const itemId = params.id as string;
-  const item = menuItems.find((i) => i.id === itemId);
+  const { id } = useParams<{ id: string }>();
+  const item = useMenuItem(id);
+  const cats = useMenuCategories();
+  const update = useUpdateMenuItem(id);
 
-  if (!item) {
-    return (
-      <>
-        <MobileHeader />
-        <header className="hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
-          <MenuToggle />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/">Tổng quan</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/menu">Menu & Món ăn</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Không tìm thấy</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </header>
-        <div className="flex flex-1 flex-col items-center justify-center p-4 lg:ml-40">
-          <h1 className="text-2xl font-bold text-red-500">Lỗi: Không tìm thấy món ăn</h1>
-          <p className="text-muted-foreground">Món ăn với mã "{itemId}" không tồn tại.</p>
-          <Button asChild className="mt-4">
-            <Link href="/menu">Quay lại danh sách món ăn</Link>
+  const form = useForm<ItemFormInput, unknown, ItemFormOutput>({
+    resolver: zodResolver(itemSchema),
+    defaultValues: EMPTY_ITEM_FORM,
+  });
+  const { isDirty } = form.formState;
+
+  // Nạp dữ liệu từ server — không ghi đè khi người dùng đang sửa dở
+  useEffect(() => {
+    if (item.data && !isDirty) form.reset(toFormValues(item.data));
+  }, [item.data, isDirty, form]);
+
+  const onSubmit = form.handleSubmit(
+    async (values) => {
+      try {
+        const saved = await update.mutateAsync(toUpdateInput(values));
+        form.reset(toFormValues(saved));
+        toast.success("Đã lưu món");
+      } catch (err) {
+        toast.error((err as ApiException).error?.message ?? "Có lỗi xảy ra");
+      }
+    },
+    () => toast.error("Vui lòng kiểm tra lại các ô báo lỗi"),
+  );
+
+  const header = (
+    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+      <MenuToggle />
+      <Separator orientation="vertical" className="mr-2 h-4" />
+      <Button asChild size="icon" variant="ghost" aria-label="Quay lại menu">
+        <Link href="/menu">
+          <ArrowLeft className="size-4" />
+        </Link>
+      </Button>
+      <h1 className="truncate text-lg font-semibold">{item.data?.name ?? "Chi tiết món"}</h1>
+      {item.data && (
+        <div className="ml-auto flex items-center gap-2">
+          {isDirty && (
+            <span className="text-muted-foreground hidden text-sm sm:inline">Chưa lưu</span>
+          )}
+          <Button type="submit" form="menu-item-form" disabled={update.isPending || !isDirty}>
+            {update.isPending ? (
+              <Loader2 className="mr-1 size-4 animate-spin" />
+            ) : (
+              <Save className="mr-1 size-4" />
+            )}
+            Lưu
           </Button>
         </div>
-      </>
+      )}
+    </header>
+  );
+
+  if (item.isLoading) {
+    return (
+      <div className="flex flex-col">
+        {header}
+        <main className="grid gap-6 p-4 md:p-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <Skeleton className="h-80 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+          <div className="space-y-6">
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-48 w-full" />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!item.data) {
+    const status = (item.error as ApiException | null)?.status;
+    return (
+      <div className="flex flex-col">
+        {header}
+        <main className="flex flex-col items-center justify-center gap-3 p-12 text-center">
+          <SearchX className="text-muted-foreground size-12" />
+          <h2 className="text-xl font-semibold">
+            {status && status !== 404 ? "Không tải được món" : "Không tìm thấy món"}
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            {status && status !== 404
+              ? ((item.error as ApiException).error?.message ?? "Có lỗi xảy ra")
+              : "Món này không tồn tại hoặc đã bị xoá."}
+          </p>
+          <Button asChild>
+            <Link href="/menu">Quay lại menu</Link>
+          </Button>
+        </main>
+      </div>
     );
   }
 
   return (
-    <>
-      <MobileHeader />
-      <header className="fixed top-0 right-0 left-0 z-50 hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
-        <MenuToggle />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/">Tổng quan</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/menu">Menu & Món ăn</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{item.name}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <div className="ml-auto flex items-center space-x-4">
-          {/* SearchBar and Notifications can be added here if needed */}
-        </div>
-      </header>
-      <div className="mt-16 flex flex-1 flex-col gap-4 px-4 py-4 sm:px-6 lg:ml-40 lg:px-8">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <h1 className="text-xl font-bold sm:text-2xl">Chi tiết món ăn: {item.name}</h1>
-            <p className="text-muted-foreground text-sm">Mã món: {item.id}</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" className="min-h-[44px] min-w-[44px] bg-transparent">
-              <Edit className="mr-2 h-4 w-4" />
-              Chỉnh sửa
-            </Button>
-            <Button variant="destructive" className="min-h-[44px] min-w-[44px]">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Xóa món
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="md:col-span-1">
-            <CardContent className="flex flex-col items-center p-4">
-              <Image
-                src={item.image || "/placeholder.svg"}
-                alt={item.name}
-                width={200}
-                height={200}
-                className="mb-4 aspect-square rounded-md object-cover"
+    <div className="flex flex-col">
+      {header}
+      <main className="grid gap-6 p-4 md:p-6 lg:grid-cols-3">
+        <form
+          id="menu-item-form"
+          onSubmit={onSubmit}
+          noValidate
+          className="space-y-6 lg:col-span-2"
+        >
+          <ItemInfoCard form={form} categories={cats.data ?? []} />
+          <VariantsCard form={form} />
+          <ToppingGroupsCard form={form} />
+        </form>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Ảnh món</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ImageUpload
+                value={form.watch("imageUrl")}
+                onChange={(url) => form.setValue("imageUrl", url, { shouldDirty: true })}
+                aspect="square"
+                label="Tải ảnh món"
               />
-              <h3 className="mb-2 text-2xl font-bold">{item.name}</h3>
-              <p className="text-muted-foreground mb-3 text-lg">{item.price}</p>
-              <Badge className={getStatusColor(item.status)}>{item.status}</Badge>
             </CardContent>
           </Card>
-
-          <Card className="md:col-span-1 lg:col-span-2">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Thông tin chi tiết</CardTitle>
-              <CardDescription>Mô tả và danh mục của món ăn</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <p className="text-muted-foreground mb-1 text-sm">Mô tả:</p>
-                <p className="text-base">{item.description}</p>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">Danh mục:</span>
-                <span className="font-medium">{item.category}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">Mã món:</span>
-                <span className="font-medium">{item.id}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="md:col-span-2 lg:col-span-3">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Thành phần & Dị ứng</CardTitle>
-              <CardDescription>Thông tin về nguyên liệu và các chất gây dị ứng</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <p className="text-muted-foreground mb-2 text-sm">Thành phần chính:</p>
-                {item.ingredients && item.ingredients.length > 0 ? (
-                  <ul className="list-disc space-y-1 pl-5">
-                    {item.ingredients.map((ingredient, index) => (
-                      <li key={index} className="text-sm">
-                        {ingredient}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-muted-foreground text-sm">Không có thông tin thành phần.</p>
-                )}
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-2 text-sm">Chất gây dị ứng:</p>
-                {item.allergens && item.allergens.length > 0 ? (
-                  <ul className="list-disc space-y-1 pl-5">
-                    {item.allergens.map((allergen, index) => (
-                      <li key={index} className="text-sm text-red-500">
-                        <Info className="mr-1 inline-block h-4 w-4" />
-                        {allergen}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-muted-foreground text-sm">
-                    Không có chất gây dị ứng được liệt kê.
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <ItemStatusCard item={item.data} />
+          <Button
+            type="submit"
+            form="menu-item-form"
+            className="w-full"
+            disabled={update.isPending || !isDirty}
+          >
+            {update.isPending ? "Đang lưu..." : "Lưu thay đổi"}
+          </Button>
         </div>
-      </div>
-    </>
+      </main>
+    </div>
   );
 }

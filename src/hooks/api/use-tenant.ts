@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPatch, apiPost } from "@/lib/api-client";
 import { useAuth } from "@/contexts/auth-context";
-import type { BusinessType, Membership, Venue } from "@/types/api";
+import type { Bank, BankAccount, BusinessType, Membership, Venue } from "@/types/api";
 import { authStorage } from "@/lib/auth-storage";
 
 export interface SetupWizardInput {
@@ -72,12 +72,52 @@ export function useCreateVenue() {
   });
 }
 
+export interface UpdateVenueInput {
+  name?: string;
+  addressLine1?: string;
+  city?: string;
+  phone?: string;
+  logoUrl?: string;
+  /** 0–0.2 */
+  serviceChargeRate?: number;
+  vatRate?: 0 | 0.05 | 0.08 | 0.1;
+  receiptFooter?: string;
+  /** null = xoá tài khoản nhận tiền */
+  bankAccount?:
+    | (Omit<BankAccount, "bankName" | "accountName"> & {
+        bankName?: string;
+        accountName: string;
+      })
+    | null;
+}
+
 export function useUpdateVenue(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (
-      body: Partial<{ name: string; addressLine1: string; city: string; phone: string }>,
-    ) => apiPatch<Venue>(`/venues/${id}`, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["venues"] }),
+    mutationFn: (body: UpdateVenueInput) => apiPatch<Venue>(`/venues/${id}`, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["venues"] });
+      qc.invalidateQueries({ queryKey: ["venue"] });
+      qc.invalidateQueries({ queryKey: ["payment-qr"] });
+    },
+  });
+}
+
+/** Cơ sở đang hoạt động (theo activeVenueId). */
+export function useCurrentVenue() {
+  const { isAuthenticated, activeVenueId } = useAuth();
+  return useQuery({
+    queryKey: ["venue", activeVenueId],
+    enabled: isAuthenticated && !!activeVenueId,
+    queryFn: () => apiGet<Venue>(`/venues/${activeVenueId}`),
+  });
+}
+
+/** Ngân hàng hỗ trợ VietQR (BIN → tên). */
+export function useBanks() {
+  return useQuery({
+    queryKey: ["banks"],
+    queryFn: () => apiGet<Bank[]>("/banks"),
+    staleTime: Infinity,
   });
 }
