@@ -59,7 +59,7 @@ const LAYOUTS: Record<LayoutKey, LayoutSpec> = {
   },
 };
 
-function buildQrUrl(origin: string, tenantSlug: string, tableId: string): string {
+const buildQrUrl = (origin: string, tenantSlug: string, tableId: string): string => {
   return `${origin}/m/${tenantSlug}/t/${tableId}`;
 }
 
@@ -70,7 +70,7 @@ interface StickerProps {
   layout: LayoutSpec;
 }
 
-function Sticker({ url, tableName, venueName, layout }: StickerProps) {
+const Sticker = ({ url, tableName, venueName, layout }: StickerProps) => {
   return (
     <div
       className="qr-sticker flex break-inside-avoid flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-white p-3 text-black"
@@ -385,7 +385,7 @@ export default function PrintQrPage() {
   );
 }
 
-function PrintArea({
+const PrintArea = ({
   tables,
   tenantSlug,
   venueName,
@@ -397,7 +397,7 @@ function PrintArea({
   venueName: string;
   layout: LayoutSpec;
   origin: string;
-}) {
+}) => {
   // Chia thành các trang theo perPage
   const pages: Array<typeof tables> = [];
   for (let i = 0; i < tables.length; i += layout.perPage) {

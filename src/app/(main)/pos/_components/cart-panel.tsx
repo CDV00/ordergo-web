@@ -19,11 +19,9 @@ interface Props {
   onCancel: () => void;
 }
 
-function formatVnd(n: number) {
-  return new Intl.NumberFormat("vi-VN").format(n) + "đ";
-}
+const formatVnd = (n: number) => new Intl.NumberFormat("vi-VN").format(n) + "đ";
 
-function CartLineRow({ cartKey, line }: { cartKey: CartKey; line: CartLine }) {
+const CartLineRow = ({ cartKey, line }: { cartKey: CartKey; line: CartLine }) => {
   const inc = useCartStore((s) => s.incrementLine);
   const dec = useCartStore((s) => s.decrementLine);
   const remove = useCartStore((s) => s.removeLine);
@@ -85,11 +83,11 @@ function CartLineRow({ cartKey, line }: { cartKey: CartKey; line: CartLine }) {
       </div>
     </div>
   );
-}
+};
 
 const MemoCartLineRow = memo(CartLineRow);
 
-function CartPanelInner({
+const CartPanelInner = ({
   cartKey,
   contextLabel,
   lines,
@@ -101,7 +99,7 @@ function CartPanelInner({
   onSendToKitchen,
   onPay,
   onCancel,
-}: Props) {
+}: Props) => {
   const isEmpty = lines.length === 0;
 
   return (
@@ -161,6 +159,6 @@ function CartPanelInner({
       </div>
     </aside>
   );
-}
+};
 
 export const CartPanel = memo(CartPanelInner);

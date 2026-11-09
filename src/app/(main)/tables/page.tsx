@@ -34,6 +34,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { ApiException } from "@/lib/api-client";
 import type { RestaurantTable, TableStatus } from "@/types/api";
+import AddTableModal from "@/app/(main)/tables/modals/add-table-modal";
 
 interface TableForm {
   name: string;
@@ -58,35 +59,12 @@ const STATUS_COLORS: Record<TableStatus, string> = {
 };
 
 export default function TablesPage() {
-  const { activeVenueId } = useAuth();
   const tables = useTables();
-  const create = useCreateTable();
   const changeStatus = useChangeTableStatus();
   const remove = useDeleteTable();
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   const form = useForm<TableForm>({
     defaultValues: { name: "", section: "Sảnh", capacity: 4 },
-  });
-
-  const onSubmit = form.handleSubmit(async (values) => {
-    if (!activeVenueId) {
-      toast.error("Chưa chọn cơ sở. Tải lại trang để thử lại.");
-      return;
-    }
-    try {
-      await create.mutateAsync({
-        venueId: activeVenueId,
-        name: values.name,
-        section: values.section,
-        capacity: values.capacity,
-      });
-      toast.success("Đã thêm bàn");
-      setDialogOpen(false);
-      form.reset();
-    } catch (err) {
-      toast.error((err as ApiException).error?.message ?? "Lỗi");
-    }
   });
 
   const onChangeStatus = async (id: string, status: TableStatus) => {
@@ -124,9 +102,7 @@ export default function TablesPage() {
               <Printer className="mr-1 size-4" /> In QR
             </Link>
           </Button>
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-1 size-4" /> Thêm bàn
-          </Button>
+          <AddTableModal />
         </div>
       </header>
 
@@ -186,49 +162,6 @@ export default function TablesPage() {
           ))
         )}
       </main>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Thêm bàn mới</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="t-section">Khu vực</Label>
-              <Input id="t-section" {...form.register("section", { required: true })} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="t-name">Tên bàn *</Label>
-              <Input
-                id="t-name"
-                placeholder="Bàn 1"
-                {...form.register("name", { required: true })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="t-cap">Số chỗ</Label>
-              <Input
-                id="t-cap"
-                type="number"
-                min="1"
-                {...form.register("capacity", {
-                  required: true,
-                  valueAsNumber: true,
-                  min: 1,
-                })}
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                Huỷ
-              </Button>
-              <Button type="submit" disabled={create.isPending}>
-                Thêm bàn
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
