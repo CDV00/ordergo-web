@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { useMemo, useState } from "react";
+import { Lock, LockOpen, UserPlus, Users } from "lucide-react";
+import { toast } from "sonner";
+import { MenuToggle } from "@/components/menu-toggle";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -10,209 +16,164 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Plus, Edit, Trash2, User, Phone, Mail, Briefcase } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { useVenues } from "@/hooks/api/use-tenant";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { MobileHeader } from "@/components/mobile-header";
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import Link from "next/link";
-import { staff } from "@/app/data";
+  ASSIGNABLE_ROLES,
+  ROLE_LABEL,
+  useSetStaffStatus,
+  useStaff,
+  useUpdateStaff,
+  type StaffMember,
+  type StaffRole,
+} from "@/hooks/api/use-staff";
+import { usePermissions } from "@/hooks/use-permissions";
+import { formatDateTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import type { ApiException } from "@/lib/api-client";
+import { InviteStaffDialog } from "./_components/invite-staff-dialog";
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Đang làm việc":
-      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-    case "Nghỉ phép":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-    case "Nghỉ việc":
-      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-    default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-  }
-};
+function StaffRow({ m, venueName }: { m: StaffMember; venueName: string }) {
+  const { can } = usePermissions();
+  const update = useUpdateStaff();
+  const setStatus = useSetStaffStatus();
+  const revoked = m.status === "revoked";
+  const roles = can("*") ? ASSIGNABLE_ROLES : ASSIGNABLE_ROLES.filter((r) => r !== "venue_manager");
 
-export default function StaffPage() {
-  const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const filteredStaff = staff.filter((member) => {
-    const matchesRole = roleFilter === "all" || member.role === roleFilter;
-    const matchesStatus = statusFilter === "all" || member.status === statusFilter;
-    const matchesSearch =
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.phone.toLowerCase().includes(searchTerm.toLowerCase());
-
-    return matchesRole && matchesStatus && matchesSearch;
-  });
+  const onError = (err: unknown) =>
+    toast.error((err as ApiException).error?.message ?? "Không cập nhật được");
 
   return (
-    <>
-      <header className="fixed top-0 right-0 left-0 z-50 hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbPage>Nhân viên</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <div className="ml-auto flex items-center space-x-4">
-          <Input
-            placeholder="Tìm kiếm nhân viên..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="min-h-[44px] min-w-[44px] flex-1"
-          />
-          <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="min-h-[44px] w-full min-w-[44px] sm:w-[180px]">
-              <SelectValue placeholder="Lọc theo chức vụ" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả chức vụ</SelectItem>
-              <SelectItem value="Nhân viên phục vụ">Nhân viên phục vụ</SelectItem>
-              <SelectItem value="Đầu bếp">Đầu bếp</SelectItem>
-              <SelectItem value="Quản lý">Quản lý</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="min-h-[44px] w-full min-w-[44px] sm:w-[180px]">
-              <SelectValue placeholder="Lọc theo trạng thái" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả trạng thái</SelectItem>
-              <SelectItem value="Đang làm việc">Đang làm việc</SelectItem>
-              <SelectItem value="Nghỉ phép">Nghỉ phép</SelectItem>
-              <SelectItem value="Nghỉ việc">Nghỉ việc</SelectItem>
-            </SelectContent>
-          </Select>
+    <div
+      className={cn(
+        "flex flex-col gap-3 border-b px-4 py-3 last:border-b-0 sm:flex-row sm:items-center",
+        revoked && "opacity-60",
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 font-medium">
+          <span className="truncate">{m.displayName}</span>
+          {m.isSelf && <Badge variant="secondary">Bạn</Badge>}
+          {revoked && <Badge variant="outline">Đã khoá</Badge>}
         </div>
-      </header>
-      <div className="mt-16 flex flex-1 flex-col gap-4 px-4 py-4 sm:px-6 lg:ml-40 lg:px-8">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <h1 className="text-xl font-bold sm:text-2xl">Quản lý nhân viên</h1>
-            <p className="text-muted-foreground text-sm">
-              Tổng cộng {filteredStaff.length} nhân viên
-            </p>
-          </div>
-          <Button className="min-h-[44px] min-w-[44px]">
-            <Plus className="mr-2 h-4 w-4" />
-            Thêm nhân viên
-          </Button>
+        <div className="text-muted-foreground text-xs">
+          <span className="tabular-nums">{m.phone ?? "—"}</span> · {venueName} · Đăng nhập gần nhất:{" "}
+          {formatDateTime(m.lastLoginAt)}
         </div>
+      </div>
 
+      <div className="flex items-center gap-2">
+        {m.canManage && !revoked ? (
+          <Select
+            value={m.roleCode}
+            onValueChange={(v) =>
+              v &&
+              v !== m.roleCode &&
+              update.mutate(
+                { id: m.membershipId, roleCode: v as StaffRole },
+                { onSuccess: () => toast.success(`Đã đổi vai trò ${m.displayName}`), onError },
+              )
+            }
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {roles.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {ROLE_LABEL[r]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Badge variant="secondary" className="w-36 justify-center">
+            {ROLE_LABEL[m.roleCode] ?? m.roleCode}
+          </Badge>
+        )}
+        {m.canManage && (
+          <Button
+            variant={revoked ? "outline" : "ghost"}
+            size="sm"
+            disabled={setStatus.isPending}
+            onClick={() => {
+              if (
+                !revoked &&
+                !window.confirm(`Khoá ${m.displayName}? Nhân viên sẽ không đăng nhập được nữa.`)
+              )
+                return;
+              setStatus.mutate(
+                { id: m.membershipId, active: revoked },
+                {
+                  onSuccess: () => toast.success(revoked ? "Đã mở khoá" : "Đã khoá tài khoản"),
+                  onError,
+                },
+              );
+            }}
+          >
+            {revoked ? <LockOpen className="mr-1 size-4" /> : <Lock className="mr-1 size-4" />}
+            {revoked ? "Mở khoá" : "Khoá"}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function StaffPage() {
+  const staff = useStaff();
+  const venues = useVenues();
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const venueName = useMemo(() => {
+    const map = new Map((venues.data ?? []).map((v) => [v.id, v.name]));
+    return (id: string | null) => (id ? (map.get(id) ?? "Cơ sở khác") : "Toàn bộ cơ sở");
+  }, [venues.data]);
+  const activeCount = staff.data?.filter((m) => m.status === "active").length ?? 0;
+
+  return (
+    <div className="flex flex-col">
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+        <MenuToggle />
+        <Separator orientation="vertical" className="mr-2 h-4" />
+        <h1 className="text-lg font-semibold">Nhân viên</h1>
+        <Button size="sm" className="ml-auto" onClick={() => setInviteOpen(true)}>
+          <UserPlus className="mr-1.5 size-4" /> Mời nhân viên
+        </Button>
+      </header>
+
+      <div className="mx-auto w-full max-w-4xl space-y-4 p-4 md:p-6">
+        <p className="text-muted-foreground text-sm">
+          {staff.data ? `${activeCount} người đang hoạt động. ` : ""}
+          Khoá tài khoản có hiệu lực ngay; đổi vai trò áp dụng từ thao tác tiếp theo của nhân viên.
+        </p>
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg sm:text-xl">Danh sách nhân viên</CardTitle>
-            <CardDescription className="text-sm">
-              Thông tin chi tiết về đội ngũ nhân viên
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nhân viên</TableHead>
-                    <TableHead>Chức vụ</TableHead>
-                    <TableHead>Liên hệ</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead>Bàn được phân công</TableHead>
-                    <TableHead>Thao tác</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredStaff.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <User className="text-muted-foreground h-8 w-8" />
-                          <div>
-                            <div className="font-medium">{member.name}</div>
-                            <div className="text-muted-foreground text-sm">{member.id}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Briefcase className="text-muted-foreground h-4 w-4" />
-                          <span>{member.role}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <div className="flex items-center space-x-2">
-                            <Phone className="text-muted-foreground h-4 w-4" />
-                            <span>{member.phone}</span>
-                          </div>
-                          <div className="text-muted-foreground flex items-center space-x-2 text-sm">
-                            <Mail className="h-4 w-4" />
-                            <span>{member.email}</span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(member.status)}>{member.status}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {member.assignedTables.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {member.assignedTables.map((tableId) => (
-                              <Badge key={tableId} variant="secondary">
-                                {tableId}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">Chưa phân công</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm">
-                            <Link href={`/staff/${member.id}`}>
-                              <Edit className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filteredStaff.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-muted-foreground py-8 text-center">
-                        Không tìm thấy nhân viên nào phù hợp.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+          <CardContent className="p-0">
+            {staff.isLoading ? (
+              <div className="space-y-3 p-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : staff.error ? (
+              <div className="text-muted-foreground p-8 text-center text-sm">
+                {(staff.error as unknown as ApiException).status === 403
+                  ? "Bạn không có quyền quản lý nhân viên."
+                  : ((staff.error as unknown as ApiException).error?.message ??
+                    "Không tải được danh sách.")}
+              </div>
+            ) : staff.data?.length === 0 ? (
+              <div className="text-muted-foreground flex flex-col items-center gap-2 p-10 text-sm">
+                <Users className="size-8 opacity-50" /> Chưa có nhân viên nào.
+              </div>
+            ) : (
+              staff.data?.map((m) => (
+                <StaffRow key={m.membershipId} m={m} venueName={venueName(m.venueId)} />
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
-    </>
+
+      <InviteStaffDialog open={inviteOpen} onOpenChange={setInviteOpen} />
+    </div>
   );
 }

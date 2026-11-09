@@ -4,6 +4,7 @@ import {
   Clock,
   DollarSign,
   Home,
+  LayoutGrid,
   type LucideIcon,
   Receipt,
   Settings,
@@ -19,7 +20,7 @@ export interface NavItem {
   icon: LucideIcon;
   /** Action chính cho server hot path — render ở mobile bottom nav */
   hotPath?: boolean;
-  /** Quyền yêu cầu (so với membership.permissions). Chưa enforce, để doc */
+  /** Quyền cần có để thấy mục này (ẩn/hiện qua useVisibleNav — API vẫn tự chặn). */
   permission?: string;
 }
 
@@ -39,7 +40,7 @@ export const NAV_GROUPS: NavGroup[] = [
         hotPath: true,
         permission: "order.create",
       },
-      { title: "Bàn ăn", url: "/tables", icon: Clock, hotPath: true },
+      { title: "Bàn ăn", url: "/tables", icon: LayoutGrid, hotPath: true },
       { title: "Đơn hàng", url: "/orders", icon: Receipt, hotPath: true },
       {
         title: "Màn bếp",
@@ -54,21 +55,24 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Quản lý",
     items: [
       { title: "Menu & Món", url: "/menu", icon: Store, permission: "menu.manage" },
-      { title: "Khách hàng", url: "/customers", icon: Users },
+      { title: "Khách hàng", url: "/customers", icon: Users, permission: "order.pay" },
       { title: "Nhân viên", url: "/staff", icon: UserCog, permission: "staff.invite" },
     ],
   },
   {
     label: "Thống kê",
     items: [
-      { title: "Tổng quan", url: "/", icon: Home },
+      { title: "Tổng quan", url: "/", icon: Home, permission: "report.view" },
       { title: "Báo cáo", url: "/reports", icon: BarChart3, permission: "report.view" },
-      { title: "Thanh toán", url: "/payments", icon: DollarSign },
+      { title: "Thanh toán", url: "/payments", icon: DollarSign, permission: "order.pay" },
+      { title: "Ca làm", url: "/shifts", icon: Clock, permission: "shift.close" },
     ],
   },
 ];
 
-export const NAV_FOOTER: NavItem[] = [{ title: "Cài đặt", url: "/settings", icon: Settings }];
+export const NAV_FOOTER: NavItem[] = [
+  { title: "Cài đặt", url: "/settings", icon: Settings, permission: "venue.manage" },
+];
 
 /** Ô bottom nav mobile — luôn 4 items, item thứ 5 là "Khác" mở sheet */
 export const MOBILE_NAV: NavItem[] = NAV_GROUPS[0].items.slice(0, 4);

@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { usePermissions } from "@/hooks/use-permissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -136,6 +138,16 @@ function HourlyChart({
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { can } = usePermissions();
+  const canView = can("report.view");
+  // Phục vụ / bếp không xem được doanh thu → đưa thẳng tới màn làm việc của họ
+  useEffect(() => {
+    if (canView) return;
+    router.replace(
+      can("order.create") ? "/pos" : can("order.update_kitchen_status") ? "/kds" : "/orders",
+    );
+  }, [canView, can, router]);
   const { data, isLoading, error, refetch } = useTodaySummary();
   const yesterday = useDailySummary(yesterdayYmd());
   const nowHour = new Date().getHours();
