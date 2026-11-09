@@ -25,7 +25,7 @@ function MenuItemCard({ item, onClick }: { item: MenuItem; onClick: (item: MenuI
       type="button"
       disabled={disabled}
       onClick={() => onClick(item)}
-      className={`bg-card flex gap-3 rounded-xl border p-3 text-left transition-transform active:scale-[0.98] ${
+      className={`bg-card flex w-full gap-3 rounded-xl border p-3 text-left transition-transform active:scale-[0.98] ${
         disabled ? "cursor-not-allowed opacity-50" : ""
       }`}
     >
