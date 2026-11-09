@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { NAV_GROUPS, NAV_FOOTER, isNavActive, type NavItem } from "@/lib/nav-config";
+import { isNavActive, type NavItem } from "@/lib/nav-config";
+import { useVisibleNav } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
 
 interface NavLinkProps {
@@ -57,13 +58,14 @@ interface NavListProps {
 }
 
 export function NavList({ collapsed, onItemClick }: NavListProps) {
+  const { groups, footer } = useVisibleNav();
   return (
     <TooltipProvider delayDuration={150} skipDelayDuration={0}>
       <nav
         aria-label="Điều hướng chính"
         className="flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-2 py-3"
       >
-        {NAV_GROUPS.map((group) => (
+        {groups.map((group) => (
           <section key={group.label} className="space-y-1">
             {/* Label chỉ hiện khi expanded */}
             <h3
@@ -87,7 +89,7 @@ export function NavList({ collapsed, onItemClick }: NavListProps) {
 
       {/* Footer items (Settings) — phân tách bằng border */}
       <div className="border-sidebar-border shrink-0 space-y-0.5 border-t px-2 py-2">
-        {NAV_FOOTER.map((item) => (
+        {footer.map((item) => (
           <NavLink key={item.url} item={item} collapsed={collapsed} onClick={onItemClick} />
         ))}
       </div>

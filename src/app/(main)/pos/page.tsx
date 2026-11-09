@@ -13,6 +13,7 @@ import { CartPanel } from "./_components/cart-panel";
 import { VariantPickerDialog } from "./_components/variant-picker-dialog";
 import { PaymentDialog } from "./_components/payment-dialog";
 import { RemoveLineDialog } from "./_components/remove-line-dialog";
+import { ShiftIndicator } from "./_components/shift-indicator";
 import {
   selectCartCount,
   selectCartLines,
@@ -207,6 +208,7 @@ export default function POSPage() {
       <h1 className="truncate text-base font-semibold md:text-lg">
         {activeKey ? contextLabel : "POS — Gọi món"}
       </h1>
+      <ShiftIndicator />
     </header>
   );
 

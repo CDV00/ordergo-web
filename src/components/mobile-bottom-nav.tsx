@@ -8,7 +8,8 @@ import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { ALL_NAV_ITEMS, isNavActive, MOBILE_NAV, NAV_FOOTER, NAV_GROUPS } from "@/lib/nav-config";
+import { ALL_NAV_ITEMS, isNavActive } from "@/lib/nav-config";
+import { useVisibleNav } from "@/hooks/use-permissions";
 import { useAuth } from "@/contexts/auth-context";
 import { useLogout } from "@/hooks/api/use-auth";
 
@@ -16,8 +17,9 @@ import { useLogout } from "@/hooks/api/use-auth";
 export function MobileBottomNav() {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { mobile } = useVisibleNav();
 
-  const moreActive = !MOBILE_NAV.some((it) => isNavActive(it.url, pathname));
+  const moreActive = !mobile.some((it) => isNavActive(it.url, pathname));
 
   return (
     <nav
@@ -26,7 +28,7 @@ export function MobileBottomNav() {
       className="bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
       <ul className="grid h-16 grid-cols-5">
-        {MOBILE_NAV.map((it) => {
+        {mobile.map((it) => {
           const active = isNavActive(it.url, pathname);
           const Icon = it.icon;
           return (
@@ -74,6 +76,7 @@ export function MobileBottomNav() {
 }
 
 function MoreSheet({ onClose, pathname }: { onClose: () => void; pathname: string }) {
+  const { groups, footer } = useVisibleNav();
   const { user, memberships, activeTenantId } = useAuth();
   const { setTheme, theme } = useTheme();
   const router = useRouter();
@@ -110,7 +113,7 @@ function MoreSheet({ onClose, pathname }: { onClose: () => void; pathname: strin
 
       {/* All nav grouped */}
       <div className="mt-4 space-y-4">
-        {NAV_GROUPS.map((group) => (
+        {groups.map((group) => (
           <section key={group.label}>
             <h3 className="text-muted-foreground mb-2 px-1 text-xs tracking-wider uppercase">
               {group.label}
@@ -143,7 +146,7 @@ function MoreSheet({ onClose, pathname }: { onClose: () => void; pathname: strin
 
         <section>
           <ul className="space-y-1">
-            {NAV_FOOTER.map((it) => {
+            {footer.map((it) => {
               const Icon = it.icon;
               const active = isNavActive(it.url, pathname);
               return (

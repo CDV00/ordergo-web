@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronsUpDown, LogOut, Moon, Sun } from "lucide-react";
+import { ChevronsUpDown, KeyRound, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import {
   DropdownMenu,
@@ -14,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useAuth } from "@/contexts/auth-context";
 import { useLogout } from "@/hooks/api/use-auth";
 import { cn } from "@/lib/utils";
+import { ChangePasswordDialog } from "@/components/change-password-dialog";
 
 interface Props {
   collapsed: boolean;
@@ -24,6 +26,7 @@ export function SidebarUserMenu({ collapsed }: Props) {
   const { setTheme, theme } = useTheme();
   const router = useRouter();
   const logout = useLogout();
+  const [pwOpen, setPwOpen] = useState(false);
   const m = memberships.find((mb) => mb.tenantId === activeTenantId);
   const initial = user?.displayName?.[0]?.toUpperCase() ?? "?";
 
@@ -81,6 +84,10 @@ export function SidebarUserMenu({ collapsed }: Props) {
           {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
           {theme === "dark" ? "Chế độ sáng" : "Chế độ tối"}
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setPwOpen(true)}>
+          <KeyRound className="size-4" />
+          Đổi mật khẩu
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleLogout}
@@ -90,6 +97,7 @@ export function SidebarUserMenu({ collapsed }: Props) {
           Đăng xuất
         </DropdownMenuItem>
       </DropdownMenuContent>
+      <ChangePasswordDialog open={pwOpen} onOpenChange={setPwOpen} />
     </DropdownMenu>
   );
 }
