@@ -24,3 +24,14 @@ export function useTodaySummary(venueId?: string | null) {
     refetchInterval: 30_000,
   });
 }
+
+/** `date` = YYYY-MM-DD theo giờ của cơ sở. */
+export function useDailySummary(date: string) {
+  const { isAuthenticated, activeVenueId } = useAuth();
+  return useQuery({
+    queryKey: ["reports", "daily", activeVenueId, date],
+    enabled: isAuthenticated && !!activeVenueId,
+    queryFn: () =>
+      apiGet<DailySalesSummary>(`/reports/daily?venueId=${activeVenueId}&date=${date}`),
+  });
+}

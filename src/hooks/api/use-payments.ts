@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/lib/api-client";
+import { useAuth } from "@/contexts/auth-context";
 
 export type PaymentMethod =
   | "cash"
@@ -18,10 +19,72 @@ export interface Payment {
   orderNumber: string;
   method: PaymentMethod;
   amount: { amount: number; currency: string };
+  /** Tiền mặt khách đưa (null với phương thức khác) */
+  tenderedAmount: number | null;
+  externalRef: string | null;
   receivedAt: string;
   receivedBy: string;
   status: "pending" | "succeeded" | "failed" | "refunded" | "partially_refunded";
   refundedAmount: { amount: number; currency: string };
+  refunds: Array<{
+    amount: { amount: number; currency: string };
+    reason: string | null;
+    refundedAt: string;
+  }>;
+  venueId: string;
+}
+
+export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
+  cash: "Tiền mặt",
+  vietqr: "Chuyển khoản QR",
+  momo: "Momo",
+  vnpay: "VNPay",
+  zalopay: "ZaloPay",
+  card: "Thẻ",
+  bank_transfer: "Chuyển khoản",
+};
+
+/** Danh sách payment theo ngày (YYYY-MM-DD, giờ của cơ sở). Mặc định hôm nay. */
+export function usePayments(filter?: { from?: string; to?: string; method?: PaymentMethod }) {
+  const { isAuthenticated, activeVenueId } = useAuth();
+  const params = new URLSearchParams();
+  if (activeVenueId) params.set("venueId", activeVenueId);
+  if (filter?.from) params.set("from", filter.from);
+  if (filter?.to) params.set("to", filter.to);
+  if (filter?.method) params.set("method", filter.method);
+  return useQuery({
+    queryKey: ["payments", "list", activeVenueId, filter?.from, filter?.to, filter?.method],
+    enabled: isAuthenticated && !!activeVenueId,
+    queryFn: () => apiGet<Payment[]>(`/payments?${params.toString()}`),
+  });
+}
+
+export function usePayment(id: string) {
+  const { isAuthenticated } = useAuth();
+  return useQuery({
+    queryKey: ["payments", "one", id],
+    enabled: isAuthenticated && !!id,
+    queryFn: () => apiGet<Payment>(`/payments/${id}`),
+  });
+}
+
+export interface PaymentQr {
+  orderId: string;
+  orderNumber: string;
+  amount: number;
+  memo: string;
+  qrPayload: string;
+  bank: { bin: string; name: string; accountNumber: string; accountName: string };
+}
+
+/** VietQR cho phần còn phải thu. Lỗi NO_BANK_ACCOUNT khi quán chưa cấu hình tài khoản. */
+export function usePaymentQr(orderId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: ["payment-qr", orderId],
+    enabled: !!orderId && enabled,
+    queryFn: () => apiGet<PaymentQr>(`/orders/${orderId}/payment-qr`),
+    retry: false,
+  });
 }
 
 export function usePaymentsForOrder(orderId: string | null) {
@@ -39,11 +102,13 @@ export function useCreatePayment() {
       orderId,
       method,
       amount,
+      tenderedAmount,
       externalRef,
     }: {
       orderId: string;
       method: PaymentMethod;
       amount: number;
+      tenderedAmount?: number;
       externalRef?: string;
     }) =>
       apiPost<{
@@ -51,10 +116,12 @@ export function useCreatePayment() {
         order: { id: string; status: string };
         paidTotal: number;
         totalDue: number;
-      }>(`/orders/${orderId}/payments`, { method, amount, externalRef }),
+      }>(`/orders/${orderId}/payments`, { method, amount, tenderedAmount, externalRef }),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["orders"] });
-      qc.invalidateQueries({ queryKey: ["payments", vars.orderId] });
+      qc.invalidateQueries({ queryKey: ["tables"] });
+      qc.invalidateQueries({ queryKey: ["payments"] });
+      qc.invalidateQueries({ queryKey: ["payment-qr", vars.orderId] });
       qc.invalidateQueries({ queryKey: ["reports"] });
     },
   });

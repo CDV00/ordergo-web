@@ -81,7 +81,8 @@ export interface Venue {
   name: string;
   code: string;
   businessType: BusinessType;
-  address: {
+  // Mongoose bỏ object rỗng khi lưu → có thể không có
+  address?: {
     line1?: string;
     ward?: string;
     district?: string;
@@ -89,7 +90,8 @@ export interface Venue {
     province?: string;
     country?: string;
   };
-  contact: { phone?: string; email?: string };
+  contact?: { phone?: string; email?: string };
+  logoUrl: string | null;
   timezone: string;
   currency: string;
   status: "active" | "inactive" | "archived";
@@ -98,7 +100,21 @@ export interface Venue {
     vatRate: number;
     autoEinvoice: boolean;
     einvoiceProvider: string | null;
+    receiptFooter?: string | null;
+    bankAccount: BankAccount | null;
   };
+}
+
+export interface BankAccount {
+  bankBin: string;
+  bankName: string | null;
+  accountNumber: string;
+  accountName: string | null;
+}
+
+export interface Bank {
+  bin: string;
+  name: string;
 }
 
 // ─── Catalog ───
@@ -190,6 +206,7 @@ export interface OrderLine {
   productId: string;
   productSnapshot: { name: string; sku: string | null; imageUrl: string | null };
   variantId: string | null;
+  variantSnapshot: { name: string; priceModifier: Money } | null;
   modifiers: Array<{
     groupId: string;
     groupName: string;
@@ -202,8 +219,29 @@ export interface OrderLine {
   lineSubtotal: Money;
   lineTotal: Money;
   note: string | null;
-  kitchenStatus: "queued" | "preparing" | "ready" | "served" | "cancelled";
+  kitchenStatus: KitchenStatus;
+  /** null = món chưa gửi bếp (vừa gọi thêm) */
+  sentToKitchenAt: string | null;
+  readyAt: string | null;
+  servedAt: string | null;
 }
+
+export type KitchenStatus = "queued" | "preparing" | "ready" | "served" | "cancelled";
+
+export interface DiscountInfo {
+  type: "percent" | "amount";
+  value: number;
+  reason: string | null;
+}
+
+/** Trạng thái đơn còn mở (chưa thu / chưa huỷ) — khớp OPEN_ORDER_STATUSES của API */
+export const OPEN_ORDER_STATUSES: OrderStatus[] = [
+  "draft",
+  "sent",
+  "in_progress",
+  "ready",
+  "served",
+];
 
 export interface Order {
   id: string;
@@ -222,7 +260,12 @@ export interface Order {
     tax: Money;
     total: Money;
   };
+  discountInfo: DiscountInfo | null;
   status: OrderStatus;
+  source: "pos" | "qr_menu" | "online" | "third_party" | "phone";
+  cancelReason: string | null;
   createdAt: string;
+  sentAt: string | null;
   paidAt: string | null;
+  cancelledAt: string | null;
 }

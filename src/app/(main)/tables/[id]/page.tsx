@@ -1,238 +1,167 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MobileHeader } from "@/components/mobile-header";
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Users, Edit, Plus } from "lucide-react";
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { staff, tables } from "@/app/data";
+import { useParams } from "next/navigation";
+import { ArrowLeft, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MenuToggle } from "@/components/menu-toggle";
+import { useOrders } from "@/hooks/api/use-orders";
+import { useTables } from "@/hooks/api/use-tables";
+import { TABLE_STATUS_LABEL } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { TABLE_STATUS_CLASS, TableInfoCard } from "./table-info-card";
+import { TableOpenOrders } from "./table-open-orders";
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Trống":
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-    case "Đang phục vụ":
-      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-    case "Chờ món":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-    case "Vừa gọi món":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-    case "Chờ thanh toán":
-      return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
-    case "Cần dọn dẹp":
-      return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
-    default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-  }
-};
+function PageShell({
+  title,
+  actions,
+  children,
+}: {
+  title: string;
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col">
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+        <MenuToggle />
+        <Separator orientation="vertical" className="mr-2 h-4" />
+        <nav className="flex min-w-0 items-center gap-2 text-lg font-semibold">
+          <Link href="/tables" className="text-muted-foreground hover:text-foreground shrink-0">
+            Bàn ăn
+          </Link>
+          <span className="text-muted-foreground">/</span>
+          <span className="truncate">{title}</span>
+        </nav>
+        {actions && <div className="ml-auto flex gap-2">{actions}</div>}
+      </header>
+      <main className="flex-1 space-y-4 p-4 md:p-6">{children}</main>
+    </div>
+  );
+}
 
-export default function TableDetailPage() {
-  const params = useParams();
-  const tableId = params.id as string;
-  const table = tables.find((t) => t.id === tableId);
-
-  if (!table) {
-    return (
-      <>
-        <MobileHeader />
-        <header className="hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
-          {/* <SidebarTrigger className="-ml-1" /> */}
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              {/* <BreadcrumbItem>
-                <BreadcrumbLink href="/">Tổng quan</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator /> */}
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/tables">Bàn ăn</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Không tìm thấy</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </header>
-        <div className="flex flex-1 flex-col items-center justify-center p-4 lg:ml-40">
-          <h1 className="text-2xl font-bold text-red-500">Lỗi: Không tìm thấy bàn</h1>
-          <p className="text-muted-foreground">Bàn với mã "{tableId}" không tồn tại.</p>
-          <Button asChild className="mt-4">
-            <Link href="/tables">Quay lại danh sách bàn</Link>
+function Message({
+  title,
+  description,
+  onRetry,
+}: {
+  title: string;
+  description: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <Card>
+      <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+        <h2 className="text-lg font-semibold">{title}</h2>
+        <p className="text-muted-foreground max-w-md text-sm">{description}</p>
+        <div className="flex gap-2">
+          {onRetry && (
+            <Button variant="outline" onClick={onRetry}>
+              Thử lại
+            </Button>
+          )}
+          <Button asChild>
+            <Link href="/tables">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Về danh sách bàn
+            </Link>
           </Button>
         </div>
-      </>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function TableDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const tables = useTables();
+  const orders = useOrders({ status: "open", tableId: id });
+  const table = tables.data?.find((t) => t.id === id);
+
+  // useTables chỉ chạy khi đã có venue — trước đó coi như đang tải
+  if (tables.isPending) {
+    return (
+      <PageShell title="Đang tải…">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-40" />
+          <Skeleton className="h-4 w-56" />
+        </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-72 lg:col-span-2" />
+        </div>
+      </PageShell>
     );
   }
 
-  const assignedStaff = staff.find((s) => s.id === table.assignedStaffId);
+  if (tables.isError) {
+    return (
+      <PageShell title="Lỗi">
+        <Message
+          title="Không tải được thông tin bàn"
+          description="Vui lòng kiểm tra kết nối và thử lại."
+          onRetry={() => tables.refetch()}
+        />
+      </PageShell>
+    );
+  }
+
+  if (!table) {
+    return (
+      <PageShell title="Không tìm thấy">
+        <Message
+          title="Không tìm thấy bàn"
+          description="Bàn không tồn tại, đã bị xoá hoặc thuộc cơ sở khác."
+        />
+      </PageShell>
+    );
+  }
+
+  const hasOpenOrders = (orders.data?.length ?? 0) > 0;
 
   return (
-    <>
-      <MobileHeader />
-      <header className="fixed top-0 right-0 left-0 z-50 hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
-        {/* <SidebarTrigger className="-ml-1" /> */}
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
-            {/* <BreadcrumbItem>
-              <BreadcrumbLink href="/">Tổng quan</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator /> */}
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/tables">Bàn ăn</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{table.name}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <div className="ml-auto flex items-center space-x-4">
-          {/* SearchBar and Notifications can be added here if needed */}
+    <PageShell
+      title={table.name}
+      actions={
+        <Button asChild className="min-h-[40px]">
+          <Link href="/pos">
+            <Plus className="mr-1 h-4 w-4" /> Gọi món
+          </Link>
+        </Button>
+      }
+    >
+      <div className="flex flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-xl font-bold sm:text-2xl">{table.name}</h1>
+          <Badge className={cn("border-transparent", TABLE_STATUS_CLASS[table.status])}>
+            {TABLE_STATUS_LABEL[table.status]}
+          </Badge>
         </div>
-      </header>
-      <div className="mt-16 flex flex-1 flex-col gap-4 px-4 py-4 sm:px-6 lg:ml-40 lg:px-8">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <h1 className="text-xl font-bold sm:text-2xl">Chi tiết {table.name}</h1>
-            <p className="text-muted-foreground text-sm">Mã bàn: {table.id}</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" className="min-h-[44px] min-w-[44px] bg-transparent">
-              <Edit className="mr-2 h-4 w-4" />
-              Chỉnh sửa
-            </Button>
-            <Button className="min-h-[44px] min-w-[44px]">
-              <Plus className="mr-2 h-4 w-4" />
-              Tạo đơn mới
-            </Button>
-          </div>
-        </div>
+        <p className="text-muted-foreground text-sm">
+          {table.section ? `Khu ${table.section} · ` : ""}
+          {table.capacity} chỗ
+        </p>
+      </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Thông tin chung</CardTitle>
-              <CardDescription>Tổng quan về bàn ăn</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">Trạng thái:</span>
-                <Badge className={getStatusColor(table.status)}>{table.status}</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">Sức chứa:</span>
-                <span className="flex items-center gap-1 font-medium">
-                  <Users className="h-4 w-4" /> {table.capacity} người
-                </span>
-              </div>
-              {table.customers !== null && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">Số khách hiện tại:</span>
-                  <span className="font-medium">{table.customers}</span>
-                </div>
-              )}
-              {table.orderTime && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">Thời gian gọi món:</span>
-                  <span className="font-medium">{table.orderTime}</span>
-                </div>
-              )}
-              {table.waitTime && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">Thời gian chờ:</span>
-                  <span className="font-medium">{table.waitTime}</span>
-                </div>
-              )}
-              {table.total && (
-                <div className="flex items-center justify-between font-semibold">
-                  <span className="text-muted-foreground text-sm">Tổng tiền tạm tính:</span>
-                  <span>{table.total}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Nhân viên phụ trách</CardTitle>
-              <CardDescription>Thông tin nhân viên được phân công</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {assignedStaff ? (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">Tên:</span>
-                    <span className="font-medium">{assignedStaff.name}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">Chức vụ:</span>
-                    <span className="font-medium">{assignedStaff.role}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">Điện thoại:</span>
-                    <span className="font-medium">{assignedStaff.phone}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">Email:</span>
-                    <span className="font-medium">{assignedStaff.email}</span>
-                  </div>
-                  <Button variant="outline" size="sm" className="mt-4 w-full bg-transparent">
-                    <Link href={`/staff/${assignedStaff.id}`}>Xem hồ sơ nhân viên</Link>
-                  </Button>
-                </>
-              ) : (
-                <div className="text-muted-foreground py-4 text-center">
-                  <p>Chưa có nhân viên được phân công.</p>
-                  <Button variant="outline" size="sm" className="mt-2 bg-transparent">
-                    Phân công ngay
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="md:col-span-2 lg:col-span-1">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Món ăn đã gọi</CardTitle>
-              <CardDescription>Danh sách các món ăn hiện tại của bàn</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {table.dishes && table.dishes.length > 0 ? (
-                <ul className="list-disc space-y-1 pl-5">
-                  {table.dishes.map((dish, index) => (
-                    <li key={index} className="text-sm">
-                      {dish}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="text-muted-foreground py-4 text-center">
-                  Chưa có món ăn nào được gọi.
-                </div>
-              )}
-              {table.status !== "Trống" && (
-                <Button size="sm" className="mt-4 w-full">
-                  Thêm món
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <TableInfoCard
+          table={table}
+          hasOpenOrders={hasOpenOrders}
+          ordersUnknown={orders.isPending || orders.isError}
+        />
+        <div className="lg:col-span-2">
+          <TableOpenOrders
+            orders={orders.data}
+            isLoading={orders.isLoading}
+            isError={orders.isError}
+            onRetry={() => orders.refetch()}
+          />
         </div>
       </div>
-    </>
+    </PageShell>
   );
 }

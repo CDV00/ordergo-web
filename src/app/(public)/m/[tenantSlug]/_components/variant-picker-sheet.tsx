@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaUrl } from "@/lib/media";
 import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { ImageOff, Minus, Plus } from "lucide-react";
@@ -93,7 +94,11 @@ export function VariantPickerSheet({ item, sessionId, open, onClose }: Props) {
         <div className="bg-muted flex aspect-[16/10] shrink-0 items-center justify-center">
           {item.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+            <img
+              src={mediaUrl(item.imageUrl) ?? undefined}
+              alt={item.name}
+              className="h-full w-full object-cover"
+            />
           ) : (
             <ImageOff className="text-muted-foreground size-12" />
           )}

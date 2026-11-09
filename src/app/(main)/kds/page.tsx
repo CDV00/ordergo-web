@@ -198,12 +198,14 @@ export default function KdsPage() {
     for (const o of orders.data) {
       for (const l of o.lines) {
         if (l.kitchenStatus === "served" || l.kitchenStatus === "cancelled") continue;
+        // Món vừa gọi thêm nhưng phục vụ chưa bấm "Gửi bếp" → chưa hiện ở bếp
+        if (!l.sentToKitchenAt) continue;
         items.push({
           orderId: o.id,
           orderNumber: o.orderNumber,
           tableName: o.tableName,
           orderType: o.orderType,
-          createdAt: o.createdAt,
+          createdAt: l.sentToKitchenAt,
           line: l,
         });
       }

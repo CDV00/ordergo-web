@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ImageUpload } from "@/components/image-upload";
 import { MenuToggle } from "@/components/menu-toggle";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Pencil, Trash2, ImageOff } from "lucide-react";
@@ -36,6 +38,7 @@ import {
   useUpdateMenuItem,
 } from "@/hooks/api/use-menu";
 import { ApiException } from "@/lib/api-client";
+import { mediaUrl } from "@/lib/media";
 import type { MenuCategory, MenuItem } from "@/types/api";
 
 function formatVnd(amount: number) {
@@ -53,13 +56,14 @@ interface ItemForm {
   description: string;
   basePrice: number;
   sku: string;
+  imageUrl: string | null;
 }
 
 export default function MenuPage() {
   const cats = useMenuCategories();
   const items = useMenuItems();
   const createCat = useCreateMenuCategory();
-  const updateCat = useUpdateMenuCategory(""); // dummy — will overwrite per call
+  const updateCat = useUpdateMenuCategory();
   const deleteCat = useDeleteMenuCategory();
   const createItem = useCreateMenuItem();
   const deleteItem = useDeleteMenuItem();
@@ -72,7 +76,14 @@ export default function MenuPage() {
 
   const catForm = useForm<CategoryForm>({ defaultValues: { name: "", description: "" } });
   const itemForm = useForm<ItemForm>({
-    defaultValues: { categoryId: "", name: "", description: "", basePrice: 0, sku: "" },
+    defaultValues: {
+      categoryId: "",
+      name: "",
+      description: "",
+      basePrice: 0,
+      sku: "",
+      imageUrl: null,
+    },
   });
 
   const filteredItems = useMemo(() => {
@@ -95,9 +106,11 @@ export default function MenuPage() {
   const onSubmitCategory = catForm.handleSubmit(async (values) => {
     try {
       if (catEditing) {
-        // Workaround for hook tied to id — reuse useUpdateMenuCategory by id
-        // Direct fetch via separate hook would be cleaner but inline here:
-        await updateCat.mutateAsync({ name: values.name, description: values.description });
+        await updateCat.mutateAsync({
+          id: catEditing.id,
+          name: values.name,
+          description: values.description,
+        });
       } else {
         await createCat.mutateAsync({
           name: values.name,
@@ -118,6 +131,7 @@ export default function MenuPage() {
       description: "",
       basePrice: 0,
       sku: "",
+      imageUrl: null,
     });
     setItemDialogOpen(true);
   };
@@ -130,6 +144,7 @@ export default function MenuPage() {
         description: values.description || undefined,
         sku: values.sku || undefined,
         basePrice: { amount: values.basePrice, currency: "VND" },
+        imageUrl: values.imageUrl ?? undefined,
       });
       toast.success("Đã thêm món");
       setItemDialogOpen(false);
@@ -231,15 +246,23 @@ export default function MenuPage() {
               <Card key={it.id} className={it.isAvailable ? "" : "opacity-60"}>
                 <CardHeader className="flex flex-row items-start gap-3 space-y-0">
                   <div className="bg-muted flex size-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-md">
-                    {it.imageUrl ? (
+                    {mediaUrl(it.imageUrl) ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={it.imageUrl} alt={it.name} className="h-full w-full object-cover" />
+                      <img
+                        src={mediaUrl(it.imageUrl)!}
+                        alt={it.name}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       <ImageOff className="text-muted-foreground size-6" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <CardTitle className="truncate text-base">{it.name}</CardTitle>
+                    <CardTitle className="truncate text-base">
+                      <Link href={`/menu/${it.id}`} className="hover:underline">
+                        {it.name}
+                      </Link>
+                    </CardTitle>
                     <CardDescription className="text-foreground text-sm font-medium">
                       {formatVnd(it.basePrice.amount)}
                     </CardDescription>
@@ -254,6 +277,11 @@ export default function MenuPage() {
                     className="flex-1"
                   >
                     {it.isAvailable ? "Tạm hết" : "Mở bán"}
+                  </Button>
+                  <Button asChild size="icon" variant="ghost" aria-label="Sửa món">
+                    <Link href={`/menu/${it.id}`}>
+                      <Pencil className="size-4" />
+                    </Link>
                   </Button>
                   <Button size="icon" variant="ghost" onClick={() => handleDeleteItem(it)}>
                     <Trash2 className="text-destructive size-4" />
@@ -297,11 +325,20 @@ export default function MenuPage() {
 
       {/* Item Dialog */}
       <Dialog open={itemDialogOpen} onOpenChange={setItemDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90svh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Thêm món</DialogTitle>
           </DialogHeader>
           <form onSubmit={onSubmitItem} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Ảnh món</Label>
+              <ImageUpload
+                value={itemForm.watch("imageUrl")}
+                onChange={(url) => itemForm.setValue("imageUrl", url)}
+                aspect="square"
+                label="Tải ảnh món"
+              />
+            </div>
             <div className="space-y-2">
               <Label>Nhóm món *</Label>
               <Select

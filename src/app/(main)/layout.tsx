@@ -82,7 +82,9 @@ export default function MainLayout({ children }: { children: ReactNode }) {
       <DesktopSidebar />
       <TabletDrawer />
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden pb-16 md:pb-0">{children}</main>
+      <main className="flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto pb-16 md:pb-0">
+        {children}
+      </main>
 
       <MobileBottomNav />
     </div>
