@@ -61,7 +61,7 @@ const LAYOUTS: Record<LayoutKey, LayoutSpec> = {
 
 const buildQrUrl = (origin: string, tenantSlug: string, tableId: string): string => {
   return `${origin}/m/${tenantSlug}/t/${tableId}`;
-}
+};
 
 interface StickerProps {
   url: string;
@@ -89,7 +89,7 @@ const Sticker = ({ url, tableName, venueName, layout }: StickerProps) => {
       </div>
     </div>
   );
-}
+};
 
 export default function PrintQrPage() {
   const { tenants, activeTenantId } = useAuth();
@@ -160,11 +160,10 @@ export default function PrintQrPage() {
 
   if (tenant && !tenant.slug) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-svh p-6 text-center">
-        <h1 className="text-xl font-bold mb-2">Tenant chưa có slug</h1>
+      <div className="flex min-h-svh flex-col items-center justify-center p-6 text-center">
+        <h1 className="mb-2 text-xl font-bold">Tenant chưa có slug</h1>
         <p className="text-muted-foreground mb-4 max-w-md">
-          Quán của bạn được tạo trước khi tính năng QR có. Tải lại trang —
-          backend sẽ tự sinh slug.
+          Quán của bạn được tạo trước khi tính năng QR có. Tải lại trang — backend sẽ tự sinh slug.
         </p>
         <button
           onClick={() => window.location.reload()}
@@ -433,4 +432,4 @@ const PrintArea = ({
       ))}
     </div>
   );
-}
+};

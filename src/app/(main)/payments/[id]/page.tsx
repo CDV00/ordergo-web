@@ -58,31 +58,31 @@ export default function TablePaymentPage() {
   if (!table) {
     return (
       <SidebarProvider>
-      <SidebarInset>
-        <MobileHeader />
-        <header className="fixed top-0 right-0 left-0 z-50 hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/payments">Thanh toán</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Không tìm thấy</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </header>
-        <div className="flex flex-1 flex-col items-center justify-center p-4 lg:pl-50">
-          <h1 className="text-2xl font-bold text-red-500">Lỗi: Không tìm thấy bàn</h1>
-          <p className="text-muted-foreground">Bàn với mã "{tableId}" không tồn tại.</p>
-          <Button asChild className="mt-4">
-            <Link href="/payments">Quay lại danh sách thanh toán</Link>
-          </Button>
-        </div>
+        <SidebarInset>
+          <MobileHeader />
+          <header className="fixed top-0 right-0 left-0 z-50 hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/payments">Thanh toán</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Không tìm thấy</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </header>
+          <div className="flex flex-1 flex-col items-center justify-center p-4 lg:pl-50">
+            <h1 className="text-2xl font-bold text-red-500">Lỗi: Không tìm thấy bàn</h1>
+            <p className="text-muted-foreground">Bàn với mã "{tableId}" không tồn tại.</p>
+            <Button asChild className="mt-4">
+              <Link href="/payments">Quay lại danh sách thanh toán</Link>
+            </Button>
+          </div>
         </SidebarInset>
-        </SidebarProvider>
+      </SidebarProvider>
     );
   }
 
@@ -100,153 +100,157 @@ export default function TablePaymentPage() {
 
   return (
     <SidebarProvider>
-    <SidebarInset>
-      <MobileHeader />
-      <header className="fixed top-0 right-0 left-0 z-50 hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/payments">Thanh toán</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{table.name}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </header>
-      <div className="mt-16 flex flex-1 flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8 lg:pl-50">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <h1 className="text-xl font-bold sm:text-2xl">Thanh toán cho {table.name}</h1>
-            <p className="text-muted-foreground text-sm">Mã bàn: {table.id}</p>
+      <SidebarInset>
+        <MobileHeader />
+        <header className="fixed top-0 right-0 left-0 z-50 hidden h-16 shrink-0 items-center gap-2 border-b px-4 sm:px-6 lg:ml-40 lg:flex lg:px-8">
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/payments">Thanh toán</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{table.name}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </header>
+        <div className="mt-16 flex flex-1 flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8 lg:pl-50">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <h1 className="text-xl font-bold sm:text-2xl">Thanh toán cho {table.name}</h1>
+              <p className="text-muted-foreground text-sm">Mã bàn: {table.id}</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                className="min-h-[44px] min-w-[44px] bg-transparent"
+                asChild
+              >
+                <Link href="/payments">Quay lại</Link>
+              </Button>
+              <Button
+                className="min-h-[44px] min-w-[44px]"
+                onClick={handleProcessPayment}
+                disabled={!currentOrder}
+              >
+                <DollarSign className="mr-2 h-4 w-4" />
+                Thanh toán
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" className="min-h-[44px] min-w-[44px] bg-transparent" asChild>
-              <Link href="/payments">Quay lại</Link>
-            </Button>
-            <Button
-              className="min-h-[44px] min-w-[44px]"
-              onClick={handleProcessPayment}
-              disabled={!currentOrder}
-            >
-              <DollarSign className="mr-2 h-4 w-4" />
-              Thanh toán
-            </Button>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="md:col-span-1">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Thông tin bàn</CardTitle>
+                <CardDescription>Tổng quan về bàn ăn</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm">Trạng thái:</span>
+                  <Badge className={getTableStatusColor(table.status)}>{table.status}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm">Sức chứa:</span>
+                  <span className="flex items-center gap-1 font-medium">
+                    <Users className="h-4 w-4" /> {table.capacity} người
+                  </span>
+                </div>
+                {table.customers !== null && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">Số khách hiện tại:</span>
+                    <span className="font-medium">{table.customers}</span>
+                  </div>
+                )}
+                {table.orderTime && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">Thời gian gọi món:</span>
+                    <span className="font-medium">{table.orderTime}</span>
+                  </div>
+                )}
+                {table.waitTime && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">Thời gian chờ:</span>
+                    <span className="font-medium">{table.waitTime}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="md:col-span-1 lg:col-span-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Đơn hàng hiện tại</CardTitle>
+                <CardDescription>Chi tiết đơn hàng cần thanh toán</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {currentOrder ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-sm">Mã đơn:</span>
+                      <span className="font-medium">{currentOrder.id}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-sm">Khách hàng:</span>
+                      <span className="flex items-center gap-1 font-medium">
+                        <User className="h-4 w-4" /> {currentOrder.customer}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-sm">Điện thoại:</span>
+                      <span className="flex items-center gap-1 font-medium">
+                        <Phone className="h-4 w-4" /> {currentOrder.phone}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-sm">Trạng thái đơn:</span>
+                      <Badge className={getStatusColor(currentOrder.overallStatus)}>
+                        {currentOrder.overallStatus}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-sm">Nhân viên phục vụ:</span>
+                      <span className="font-medium">
+                        {assignedStaff?.name || currentOrder.server}
+                      </span>
+                    </div>
+                    <Separator className="my-3" />
+                    <p className="text-muted-foreground mb-2 text-sm font-semibold">Các món ăn:</p>
+                    <ul className="space-y-2">
+                      {currentOrder.items.map((item, itemIndex) => (
+                        <li key={itemIndex} className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <UtensilsCrossed className="text-muted-foreground h-4 w-4" />
+                            <span className="text-sm">
+                              {item.name} (x{item.quantity})
+                            </span>
+                          </div>
+                          <Badge className={getOrderItemStatusColor(item.status)}>
+                            {item.status}
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
+                    <Separator className="my-3" />
+                    <div className="flex items-center justify-between text-lg font-semibold">
+                      <span className="text-muted-foreground text-sm">Tổng tiền:</span>
+                      <span>{currentOrder.total}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-muted-foreground py-4 text-center">
+                    <p>Bàn này hiện không có đơn hàng đang hoạt động.</p>
+                    <Button size="sm" className="mt-2">
+                      Tạo đơn mới
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
-
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="md:col-span-1">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Thông tin bàn</CardTitle>
-              <CardDescription>Tổng quan về bàn ăn</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">Trạng thái:</span>
-                <Badge className={getTableStatusColor(table.status)}>{table.status}</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">Sức chứa:</span>
-                <span className="flex items-center gap-1 font-medium">
-                  <Users className="h-4 w-4" /> {table.capacity} người
-                </span>
-              </div>
-              {table.customers !== null && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">Số khách hiện tại:</span>
-                  <span className="font-medium">{table.customers}</span>
-                </div>
-              )}
-              {table.orderTime && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">Thời gian gọi món:</span>
-                  <span className="font-medium">{table.orderTime}</span>
-                </div>
-              )}
-              {table.waitTime && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">Thời gian chờ:</span>
-                  <span className="font-medium">{table.waitTime}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="md:col-span-1 lg:col-span-2">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Đơn hàng hiện tại</CardTitle>
-              <CardDescription>Chi tiết đơn hàng cần thanh toán</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {currentOrder ? (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">Mã đơn:</span>
-                    <span className="font-medium">{currentOrder.id}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">Khách hàng:</span>
-                    <span className="flex items-center gap-1 font-medium">
-                      <User className="h-4 w-4" /> {currentOrder.customer}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">Điện thoại:</span>
-                    <span className="flex items-center gap-1 font-medium">
-                      <Phone className="h-4 w-4" /> {currentOrder.phone}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">Trạng thái đơn:</span>
-                    <Badge className={getStatusColor(currentOrder.overallStatus)}>
-                      {currentOrder.overallStatus}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">Nhân viên phục vụ:</span>
-                    <span className="font-medium">
-                      {assignedStaff?.name || currentOrder.server}
-                    </span>
-                  </div>
-                  <Separator className="my-3" />
-                  <p className="text-muted-foreground mb-2 text-sm font-semibold">Các món ăn:</p>
-                  <ul className="space-y-2">
-                    {currentOrder.items.map((item, itemIndex) => (
-                      <li key={itemIndex} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <UtensilsCrossed className="text-muted-foreground h-4 w-4" />
-                          <span className="text-sm">
-                            {item.name} (x{item.quantity})
-                          </span>
-                        </div>
-                        <Badge className={getOrderItemStatusColor(item.status)}>
-                          {item.status}
-                        </Badge>
-                      </li>
-                    ))}
-                  </ul>
-                  <Separator className="my-3" />
-                  <div className="flex items-center justify-between text-lg font-semibold">
-                    <span className="text-muted-foreground text-sm">Tổng tiền:</span>
-                    <span>{currentOrder.total}</span>
-                  </div>
-                </>
-              ) : (
-                <div className="text-muted-foreground py-4 text-center">
-                  <p>Bàn này hiện không có đơn hàng đang hoạt động.</p>
-                  <Button size="sm" className="mt-2">
-                    Tạo đơn mới
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
       </SidebarInset>
-  </SidebarProvider>
+    </SidebarProvider>
   );
 }
