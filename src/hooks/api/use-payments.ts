@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/lib/api-client";
 import { useAuth } from "@/contexts/auth-context";
+import { useLiveInterval } from "@/providers/realtime-provider";
 
 export type PaymentMethod =
   | "cash"
@@ -136,5 +137,45 @@ export function useRefundPayment() {
       qc.invalidateQueries({ queryKey: ["payments"] });
       qc.invalidateQueries({ queryKey: ["orders"] });
     },
+  });
+}
+
+// ─── Khách báo thanh toán từ trang QR (chờ nhân viên xác nhận) ─────────────
+
+export type PaymentRequestMethod = "vietqr" | "cash" | "card";
+
+export const PAYMENT_REQUEST_LABEL: Record<PaymentRequestMethod, string> = {
+  vietqr: "Báo đã chuyển khoản",
+  cash: "Muốn trả tiền mặt",
+  card: "Muốn quẹt thẻ",
+};
+
+export interface PendingPaymentRequest {
+  orderId: string;
+  orderNumber: string;
+  venueId: string;
+  tableName: string | null;
+  source: string;
+  status: string;
+  total: number;
+  paidAmount: number;
+  amountDue: number;
+  method: PaymentRequestMethod;
+  requestedAt: string;
+}
+
+/**
+ * Đơn khách đã báo thanh toán nhưng chưa ai xác nhận. Key nằm dưới ["orders"] nên sự kiện
+ * realtime order.changed tự làm mới; poll dự phòng khi mất kết nối socket.
+ */
+export function usePendingPaymentRequests() {
+  const { isAuthenticated, activeVenueId } = useAuth();
+  const interval = useLiveInterval(10_000);
+  return useQuery({
+    queryKey: ["orders", "payment-requests", activeVenueId],
+    enabled: isAuthenticated && !!activeVenueId,
+    refetchInterval: interval,
+    queryFn: () =>
+      apiGet<PendingPaymentRequest[]>(`/payments/pending?venueId=${activeVenueId ?? ""}`),
   });
 }

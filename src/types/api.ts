@@ -267,5 +267,11 @@ export interface Order {
   createdAt: string;
   sentAt: string | null;
   paidAt: string | null;
+  /** Khách báo thanh toán từ trang QR, chờ nhân viên xác nhận (null khi chưa báo / đã xong) */
+  paymentRequest?: {
+    method: "vietqr" | "cash" | "card";
+    amount: number;
+    requestedAt: string;
+  } | null;
   cancelledAt: string | null;
 }
