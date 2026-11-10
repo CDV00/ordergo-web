@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useAuth } from "@/contexts/auth-context";
 import { useLogout } from "@/hooks/api/use-auth";
 import { cn } from "@/lib/utils";
+import { ROLE_LABEL } from "@/hooks/api/use-staff";
 import { ChangePasswordDialog } from "@/components/change-password-dialog";
 
 interface Props {
@@ -44,15 +45,15 @@ export function SidebarUserMenu({ collapsed }: Props) {
       )}
       aria-label={user?.displayName ?? "User menu"}
     >
-      <div className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
+      <div className="bg-sidebar-primary text-sidebar-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ring-2 ring-white/10">
         {initial}
       </div>
       {!collapsed && (
         <>
           <div className="min-w-0 flex-1 text-left">
             <div className="truncate text-sm font-semibold">{user?.displayName ?? "User"}</div>
-            <div className="text-muted-foreground truncate text-xs capitalize">
-              {m?.roleCode?.replace("_", " ") ?? "—"}
+            <div className="text-muted-foreground truncate text-xs">
+              {(m?.roleCode && ROLE_LABEL[m.roleCode]) ?? m?.roleCode ?? "—"}
             </div>
           </div>
           <ChevronsUpDown className="text-muted-foreground size-4 shrink-0" />

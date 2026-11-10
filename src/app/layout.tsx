@@ -1,11 +1,15 @@
 import type React from "react";
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppProviders } from "@/providers/app-providers";
 
-const inter = Inter({ subsets: ["latin", "vietnamese"] });
+const beVietnam = Be_Vietnam_Pro({
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-be-vietnam",
+});
 
 export const metadata: Metadata = {
   title: "OrderGo - Quản lý đơn hàng thông minh",
@@ -16,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f172a",
+  themeColor: "#2b211b",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -28,7 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {/* suppressHydrationWarning trên body: extension trình duyệt (vd: Bitdefender
           Anti-tracker, Grammarly) hay inject attribute (`bis_register`, `__processed_*`,
           `data-gr-ext-*`) vào body sau SSR, gây hydration mismatch giả. */}
-      <body className={inter.className} suppressHydrationWarning>
+      <body className={`${beVietnam.variable} font-sans`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
