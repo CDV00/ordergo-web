@@ -20,6 +20,7 @@ import { PaymentList, PaymentListSkeleton } from "./_components/payment-list";
 import { errorMessage, isForbidden } from "./_components/payment-status";
 import { PaymentSummary } from "./_components/payment-summary";
 import { PendingRequestsCard } from "./_components/pending-requests-card";
+import { UnpaidOrdersCard } from "./_components/unpaid-orders-card";
 import { PaymentsShell, StateMessage } from "./_components/payments-shell";
 
 /** API trả tối đa 500 giao dịch mỗi lần. */
@@ -82,7 +83,7 @@ export default function PaymentsPage() {
         <PageHeader
           icon={CreditCard}
           title="Thanh toán"
-          description="Lịch sử các khoản đã thu trong ngày"
+          description="Đơn chưa thu và lịch sử các khoản đã thu trong ngày"
           actions={filters}
         />
       }
@@ -95,6 +96,7 @@ export default function PaymentsPage() {
       ) : (
         <>
           <PendingRequestsCard />
+          <UnpaidOrdersCard />
           <PaymentSummary payments={day.data} loading={day.isLoading} />
 
           <Card>
