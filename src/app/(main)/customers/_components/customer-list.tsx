@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, SearchX, Users } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -49,11 +50,15 @@ export function CustomerList({
 
   if (customers.length === 0) {
     return (
-      <div className="text-muted-foreground py-12 text-center text-sm">
-        {searching
-          ? "Không tìm thấy khách phù hợp. Thử số điện thoại đầy đủ hoặc một phần tên."
-          : "Chưa có khách hàng nào. Khách sẽ xuất hiện khi gọi món qua QR hoặc được gắn vào đơn."}
-      </div>
+      <EmptyState
+        icon={searching ? SearchX : Users}
+        title={searching ? "Không tìm thấy khách phù hợp" : "Chưa có khách hàng nào"}
+        description={
+          searching
+            ? "Không tìm thấy khách phù hợp. Thử số điện thoại đầy đủ hoặc một phần tên."
+            : "Chưa có khách hàng nào. Khách sẽ xuất hiện khi gọi món qua QR hoặc được gắn vào đơn."
+        }
+      />
     );
   }
 
@@ -81,13 +86,21 @@ export function CustomerList({
                 onClick={() => router.push(`/customers/${c.id}`)}
               >
                 <TableCell className="font-medium">
-                  <Link
-                    href={`/customers/${c.id}`}
-                    className="hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {displayName(c.name, c.anonymizedAt)}
-                  </Link>
+                  <span className="flex items-center gap-3">
+                    <span
+                      aria-hidden
+                      className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+                    >
+                      {displayName(c.name, c.anonymizedAt).charAt(0).toUpperCase()}
+                    </span>
+                    <Link
+                      href={`/customers/${c.id}`}
+                      className="hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {displayName(c.name, c.anonymizedAt)}
+                    </Link>
+                  </span>
                 </TableCell>
                 <TableCell className="font-mono text-sm">{c.phone ?? "—"}</TableCell>
                 <TableCell className="text-right tabular-nums">{c.visits}</TableCell>
@@ -111,7 +124,7 @@ export function CustomerList({
       <div className="space-y-2 md:hidden">
         {customers.map((c) => (
           <Link key={c.id} href={`/customers/${c.id}`} className="block">
-            <Card className="transition-shadow hover:shadow-md">
+            <Card className="rounded-xl transition-shadow hover:shadow-md">
               <CardContent className="flex min-h-[44px] items-center gap-3 p-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">

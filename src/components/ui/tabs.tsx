@@ -1,54 +1,43 @@
 "use client";
 
-import * as React from "react";
-import * as TabsPrimitive from "@radix-ui/react-tabs";
+// Tabs có thanh highlight trượt (animate-ui).
+import type * as React from "react";
+import { Tabs as TabsPrimitive } from "radix-ui";
+import { motion, type HTMLMotionProps } from "motion/react";
 import { cn } from "@/lib/utils";
 
-const Tabs = TabsPrimitive.Root;
+export {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContents,
+  type TabsProps,
+  type TabsListProps,
+  type TabsTriggerProps,
+} from "@/components/animate-ui/components/radix/tabs";
 
-const TabsList = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.List
-    ref={ref}
-    className={cn(
-      "bg-muted text-muted-foreground inline-flex h-10 items-center justify-center rounded-md p-1",
-      className,
-    )}
-    {...props}
-  />
-));
-TabsList.displayName = TabsPrimitive.List.displayName;
+type TabsContentProps = Omit<
+  React.ComponentProps<typeof TabsPrimitive.Content>,
+  "asChild" | "forceMount"
+> &
+  HTMLMotionProps<"div">;
 
-const TabsTrigger = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      "ring-offset-background focus-visible:ring-ring data-[state=active]:bg-background data-[state=active]:text-foreground inline-flex items-center justify-center rounded-sm px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm",
-      className,
-    )}
-    {...props}
-  />
-));
-TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
-
-const TabsContent = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.Content
-    ref={ref}
-    className={cn(
-      "ring-offset-background focus-visible:ring-ring mt-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-      className,
-    )}
-    {...props}
-  />
-));
-TabsContent.displayName = TabsPrimitive.Content.displayName;
-
-export { Tabs, TabsList, TabsTrigger, TabsContent };
+/**
+ * Nội dung tab: chỉ hiệu ứng hiện vào (mờ → rõ), không giữ bản cũ để chạy hiệu ứng thoát.
+ * Bản của animate-ui bọc AnimatePresence nên có lúc 2 bản cùng nằm trong DOM → trùng id
+ * (vd 2 ô #login-password), làm lỗi label/autofill và test.
+ */
+export function TabsContent({ value, className, ...props }: TabsContentProps) {
+  return (
+    <TabsPrimitive.Content value={value} asChild>
+      <motion.div
+        data-slot="tabs-content"
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+        className={cn("flex-1 outline-none", className)}
+        {...props}
+      />
+    </TabsPrimitive.Content>
+  );
+}

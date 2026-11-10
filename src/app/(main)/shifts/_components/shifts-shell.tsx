@@ -2,35 +2,49 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, SearchX } from "lucide-react";
 import { MenuToggle } from "@/components/menu-toggle";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import type { ApiException } from "@/lib/api-client";
 
-/** Khung trang ca làm: header (MenuToggle + tiêu đề/breadcrumb) và nội dung. */
-export function ShiftsShell({ title, children }: { title?: string; children: ReactNode }) {
+/**
+ * Khung trang ca làm. Trang danh sách truyền `header` (PageHeader);
+ * trang chi tiết truyền `title` → hiện breadcrumb "Ca làm / …".
+ */
+export function ShiftsShell({
+  title,
+  header,
+  children,
+}: {
+  title?: string;
+  header?: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <div className="flex flex-col">
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-        <MenuToggle />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <nav className="flex min-w-0 items-center gap-1 text-lg font-semibold">
-          {title ? (
-            <>
-              <Link href="/shifts" className="text-muted-foreground hover:text-foreground">
-                Ca làm
-              </Link>
-              <ChevronRight className="text-muted-foreground h-4 w-4 shrink-0" />
-              <span className="truncate">{title}</span>
-            </>
-          ) : (
-            <h1>Ca làm</h1>
-          )}
-        </nav>
-      </header>
-      <main className="flex-1 space-y-4 p-4 md:p-6">{children}</main>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-4 md:p-6">
+      {title ? (
+        <div className="flex items-center gap-2">
+          <MenuToggle />
+          <Button asChild variant="ghost" size="icon" aria-label="Về danh sách ca">
+            <Link href="/shifts">
+              <ArrowLeft className="size-5" />
+            </Link>
+          </Button>
+          <nav className="flex min-w-0 items-center gap-2 text-sm font-medium">
+            <Link href="/shifts" className="text-muted-foreground hover:text-foreground">
+              Ca làm
+            </Link>
+            <ChevronRight className="text-muted-foreground size-4 shrink-0" />
+            <span className="truncate">{title}</span>
+          </nav>
+        </div>
+      ) : (
+        <div className="flex items-start gap-2">
+          <MenuToggle className="mt-0.5" />
+          <div className="min-w-0 flex-1">{header}</div>
+        </div>
+      )}
+      {children}
     </div>
   );
 }
@@ -48,20 +62,25 @@ export function StateMessage({
   action?: ReactNode;
 }) {
   return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
+    <div className="bg-card flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-12 text-center">
+      <div className="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-full">
+        <SearchX className="size-6" />
+      </div>
+      <div className="space-y-1">
         <p className="text-lg font-semibold">{title}</p>
-        {description && <p className="text-muted-foreground text-sm">{description}</p>}
-        <div className="mt-2 flex gap-2">
+        {description && <p className="text-muted-foreground max-w-md text-sm">{description}</p>}
+      </div>
+      {(action || backLink) && (
+        <div className="mt-1 flex flex-wrap justify-center gap-2">
           {action}
           {backLink && (
-            <Button asChild variant="outline" className="min-h-[44px]">
+            <Button asChild variant="outline" className="h-11">
               <Link href="/shifts">Quay lại danh sách ca</Link>
             </Button>
           )}
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
 

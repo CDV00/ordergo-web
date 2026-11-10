@@ -31,8 +31,8 @@ export default function CustomerDetailPage() {
     return (
       <CustomersShell title="Đang tải...">
         <div className="grid gap-4 lg:grid-cols-2">
-          <Skeleton className="h-96 w-full" />
-          <Skeleton className="h-96 w-full" />
+          <Skeleton className="h-96 w-full rounded-2xl" />
+          <Skeleton className="h-96 w-full rounded-2xl" />
         </div>
       </CustomersShell>
     );
@@ -58,10 +58,10 @@ export default function CustomerDetailPage() {
   const title = displayName(c.name, c.anonymizedAt);
 
   return (
-    <CustomersShell title={title}>
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <h2 className="truncate text-xl font-bold sm:text-2xl">{title}</h2>
-        <div className="flex flex-wrap items-center gap-2">
+    <CustomersShell
+      title={title}
+      actions={
+        <>
           <Button variant="outline" className="min-h-[44px]" asChild>
             <Link href="/customers">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -84,9 +84,9 @@ export default function CustomerDetailPage() {
               Xoá dữ liệu cá nhân
             </Button>
           )}
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <div className="space-y-4">
           <CustomerProfileCard customer={c} />

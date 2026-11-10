@@ -6,7 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReceiptText } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -18,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { useUpdateVenue, type UpdateVenueInput } from "@/hooks/api/use-tenant";
 import type { Venue } from "@/types/api";
-import { apiErrorMessage, FieldError, textareaClass } from "./shared";
+import { apiErrorMessage, FieldError, SettingsCardHeader, textareaClass } from "./shared";
 
 const VAT_OPTIONS = [
   { value: "0", label: "0% (không chịu thuế)" },
@@ -82,10 +83,11 @@ export function InvoiceTaxCard({ venue }: { venue: Venue }) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Hoá đơn &amp; thuế</CardTitle>
-        <CardDescription>Áp dụng cho các đơn tạo mới tại cơ sở này.</CardDescription>
-      </CardHeader>
+      <SettingsCardHeader
+        icon={ReceiptText}
+        title="Hoá đơn & thuế"
+        description="Áp dụng cho các đơn tạo mới tại cơ sở này."
+      />
       <CardContent>
         <form onSubmit={onSubmit} noValidate className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">

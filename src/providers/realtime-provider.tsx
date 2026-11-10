@@ -57,6 +57,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const listeners = useRef(new Set<Listener>());
   /** Trạng thái đơn đã biết — để chỉ báo "món đã xong" khi vừa chuyển sang ready */
   const lastStatus = useRef(new Map<string, string>());
+  const lastRequest = useRef(new Map<string, string>());
 
   const onOrderChanged = useCallback((fn: Listener) => {
     listeners.current.add(fn);
@@ -97,6 +98,23 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       qc.invalidateQueries({ queryKey: ["reports"] });
       if (e.tableId) qc.invalidateQueries({ queryKey: ["tables"] });
       listeners.current.forEach((fn) => fn(e));
+
+      // Khách báo thanh toán từ trang QR → nhắc thu ngân (mỗi lần báo chỉ nhắc 1 lần)
+      const req = e.paymentRequest;
+      if (req && lastRequest.current.get(e.id) !== req.requestedAt) {
+        lastRequest.current.set(e.id, req.requestedAt);
+        const label =
+          req.method === "vietqr"
+            ? "báo đã chuyển khoản"
+            : req.method === "cash"
+              ? "muốn trả tiền mặt"
+              : "muốn quẹt thẻ";
+        toast.warning(`${e.tableName ? `Bàn ${e.tableName}` : e.orderNumber} ${label}`, {
+          description: `${e.orderNumber} · ${new Intl.NumberFormat("vi-VN").format(req.amount)}đ`,
+          action: { label: "Xác nhận", onClick: () => router.push("/payments") },
+          duration: 15_000,
+        });
+      }
 
       const prev = lastStatus.current.get(e.id);
       lastStatus.current.set(e.id, e.status);

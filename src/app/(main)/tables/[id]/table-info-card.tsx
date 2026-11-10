@@ -8,17 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useChangeTableStatus } from "@/hooks/api/use-tables";
 import { ApiException } from "@/lib/api-client";
-import { TABLE_STATUS_LABEL, formatTime, minutesSince } from "@/lib/format";
+import {
+  TABLE_STATUS_CLASS,
+  TABLE_STATUS_DOT,
+  TABLE_STATUS_LABEL,
+  formatTime,
+  minutesSince,
+} from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { RestaurantTable, TableStatus } from "@/types/api";
 
-export const TABLE_STATUS_CLASS: Record<TableStatus, string> = {
-  available: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300",
-  occupied: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
-  reserved: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300",
-  cleaning: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
-  out_of_order: "bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300",
-};
+/** Giữ export cũ — màu trạng thái bàn nay dùng chung ở `lib/format`. */
+export { TABLE_STATUS_CLASS };
 
 /** "occupied" do đơn hàng tự đặt — không cho đổi tay. */
 const MANUAL_STATUSES: TableStatus[] = ["available", "reserved", "cleaning", "out_of_order"];
@@ -71,7 +72,7 @@ export function TableInfoCard({ table, hasOpenOrders, ordersUnknown }: Props) {
   };
 
   return (
-    <Card>
+    <Card className="shadow-xs">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Thông tin bàn</CardTitle>
         <CardDescription>Khu vực, sức chứa và trạng thái</CardDescription>
@@ -99,7 +100,7 @@ export function TableInfoCard({ table, hasOpenOrders, ordersUnknown }: Props) {
         )}
 
         <div className="space-y-2 border-t pt-3">
-          <p className="text-sm font-medium">Đổi trạng thái</p>
+          <p className="text-sm font-semibold">Đổi trạng thái</p>
           <div className="grid grid-cols-2 gap-2">
             {MANUAL_STATUSES.map((s) => {
               const blocked = (hasOpenOrders || ordersUnknown) && BLOCKED_WHEN_OPEN.includes(s);
@@ -108,12 +109,19 @@ export function TableInfoCard({ table, hasOpenOrders, ordersUnknown }: Props) {
                 <Button
                   key={s}
                   size="sm"
-                  variant={current ? "default" : "outline"}
-                  className="min-h-[40px]"
+                  variant="outline"
+                  className={cn(
+                    "h-11 justify-start rounded-xl",
+                    current && cn("border-transparent disabled:opacity-100", TABLE_STATUS_CLASS[s]),
+                  )}
                   disabled={current || blocked || changeStatus.isPending}
                   title={blocked ? "Bàn còn đơn chưa thanh toán" : undefined}
                   onClick={() => onChange(s)}
                 >
+                  <span
+                    aria-hidden
+                    className={cn("size-2 shrink-0 rounded-full", TABLE_STATUS_DOT[s])}
+                  />
                   {TABLE_STATUS_LABEL[s]}
                 </Button>
               );

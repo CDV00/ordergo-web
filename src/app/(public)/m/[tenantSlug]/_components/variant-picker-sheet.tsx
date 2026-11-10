@@ -86,12 +86,12 @@ export function VariantPickerSheet({ item, sessionId, open, onClose }: Props) {
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
         side="bottom"
-        className="flex max-h-[90vh] flex-col gap-0 overflow-y-auto rounded-t-2xl p-0"
+        className="flex max-h-[90vh] flex-col gap-0 overflow-y-auto rounded-t-3xl p-0"
       >
         <SheetTitle className="sr-only">{item.name}</SheetTitle>
 
         {/* Hero image */}
-        <div className="bg-muted flex aspect-[16/10] shrink-0 items-center justify-center">
+        <div className="bg-muted relative flex aspect-[16/10] shrink-0 items-center justify-center overflow-hidden">
           {item.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -110,7 +110,9 @@ export function VariantPickerSheet({ item, sessionId, open, onClose }: Props) {
             {item.description && (
               <p className="text-muted-foreground mt-1 text-sm">{item.description}</p>
             )}
-            <div className="text-primary mt-2 text-2xl font-bold">{fmt(item.basePrice.amount)}</div>
+            <div className="text-primary tabular mt-2 text-2xl font-bold">
+              {fmt(item.basePrice.amount)}
+            </div>
           </div>
 
           {/* Variants */}
@@ -122,10 +124,10 @@ export function VariantPickerSheet({ item, sessionId, open, onClose }: Props) {
                   <button
                     key={v.id}
                     onClick={() => setVariantId(v.id)}
-                    className={`rounded-lg border-2 p-3 text-left ${
+                    className={`min-h-14 rounded-xl border-2 p-3 text-left transition-colors active:scale-[0.98] ${
                       variantId === v.id
                         ? "border-primary bg-primary/10 text-primary"
-                        : "border-border"
+                        : "border-border hover:bg-muted/50"
                     }`}
                   >
                     <div className="text-sm font-medium">{v.name}</div>
@@ -155,8 +157,10 @@ export function VariantPickerSheet({ item, sessionId, open, onClose }: Props) {
                       key={o.id}
                       disabled={!o.isAvailable}
                       onClick={() => toggleTopping(o.id, g)}
-                      className={`rounded-lg border-2 p-3 text-left ${
-                        selected ? "border-primary bg-primary/10 text-primary" : "border-border"
+                      className={`min-h-14 rounded-xl border-2 p-3 text-left transition-colors active:scale-[0.98] ${
+                        selected
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border hover:bg-muted/50"
                       } ${!o.isAvailable ? "opacity-50" : ""}`}
                     >
                       <div className="text-sm font-medium">{o.name}</div>
@@ -178,17 +182,17 @@ export function VariantPickerSheet({ item, sessionId, open, onClose }: Props) {
               placeholder="Vd: ít đường, không đá"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="bg-background focus:ring-primary w-full rounded-lg border px-3 py-2.5 text-sm focus:ring-2 focus:outline-none"
+              className="bg-background focus:ring-primary/40 h-12 w-full rounded-xl border px-3 text-sm focus:ring-2 focus:outline-none"
             />
           </section>
         </div>
 
         {/* Bottom action bar */}
-        <div className="flex shrink-0 items-center gap-3 border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div className="flex items-center gap-2">
+        <div className="bg-background flex shrink-0 items-center gap-3 border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="flex items-center gap-1 rounded-full border p-1">
             <button
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              className="bg-muted flex size-10 items-center justify-center rounded-full active:scale-95"
+              className="hover:bg-muted flex size-10 items-center justify-center rounded-full active:scale-95"
               aria-label="Giảm"
             >
               <Minus className="size-4" />
@@ -196,7 +200,7 @@ export function VariantPickerSheet({ item, sessionId, open, onClose }: Props) {
             <span className="w-8 text-center font-bold tabular-nums">{quantity}</span>
             <button
               onClick={() => setQuantity((q) => q + 1)}
-              className="bg-muted flex size-10 items-center justify-center rounded-full active:scale-95"
+              className="hover:bg-muted flex size-10 items-center justify-center rounded-full active:scale-95"
               aria-label="Tăng"
             >
               <Plus className="size-4" />
@@ -204,7 +208,7 @@ export function VariantPickerSheet({ item, sessionId, open, onClose }: Props) {
           </div>
           <button
             onClick={handleAdd}
-            className="bg-primary text-primary-foreground flex-1 rounded-full py-3 font-bold transition-transform active:scale-95"
+            className="bg-primary text-primary-foreground shadow-primary/30 h-12 flex-1 rounded-full font-bold shadow-lg transition-transform active:scale-95"
           >
             Thêm — {fmt(unitPrice * quantity)}
           </button>

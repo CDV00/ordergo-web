@@ -3,7 +3,17 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Minus, Plus, Trash2, Send, Loader2 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import {
+  ArrowLeft,
+  Minus,
+  Plus,
+  Trash2,
+  Send,
+  Loader2,
+  ShoppingBag,
+  StickyNote,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   selectPubCartLines,
@@ -12,10 +22,8 @@ import {
 } from "@/lib/public-cart-store";
 import { useCreatePublicOrder } from "@/hooks/api/use-public";
 import { PublicApiException } from "@/lib/public-api-client";
-
-function fmt(n: number) {
-  return new Intl.NumberFormat("vi-VN").format(n) + "đ";
-}
+import { AnimatedNumber } from "@/components/animated-number";
+import { mediaUrl } from "@/lib/media";
 
 export default function PublicCartPage() {
   const params = useParams();
@@ -75,105 +83,136 @@ export default function PublicCartPage() {
   }
 
   return (
-    <div className="flex min-h-svh flex-col">
-      <header className="bg-background sticky top-0 z-20 flex items-center gap-3 border-b px-4 py-3">
+    <div className="mx-auto flex min-h-svh max-w-2xl flex-col">
+      <header className="bg-background/90 sticky top-0 z-20 flex items-center gap-3 border-b px-4 py-3 backdrop-blur-md">
         <Link
           href={`/m/${tenantSlug}/menu`}
-          className="hover:bg-muted -ml-2 flex size-10 items-center justify-center rounded-lg"
+          className="hover:bg-muted -ml-2 flex size-11 items-center justify-center rounded-xl"
           aria-label="Quay lại menu"
         >
           <ArrowLeft className="size-5" />
         </Link>
         <div className="flex-1">
-          <h1 className="font-semibold">Giỏ hàng</h1>
+          <h1 className="text-base font-bold">Giỏ hàng</h1>
           {tableName && <p className="text-muted-foreground text-xs">Bàn {tableName}</p>}
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-3 pb-32">
+      <main className="flex-1 px-4 py-4 pb-44">
         {lines.length === 0 ? (
           <div className="text-muted-foreground flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-3 text-6xl">🛒</div>
-            <p className="mb-4">Giỏ trống. Hãy chọn món bạn thích.</p>
+            <div className="bg-primary/10 text-primary mb-4 flex size-16 items-center justify-center rounded-full">
+              <ShoppingBag className="size-7" />
+            </div>
+            <p className="mb-5">Giỏ trống. Hãy chọn món bạn thích.</p>
             <Link
               href={`/m/${tenantSlug}/menu`}
-              className="bg-primary text-primary-foreground rounded-full px-5 py-2.5 font-medium"
+              className="bg-primary text-primary-foreground inline-flex h-11 items-center rounded-full px-6 font-semibold shadow-sm"
             >
               Xem menu
             </Link>
           </div>
         ) : (
-          <ul className="space-y-3">
-            {lines.map((l) => (
-              <li key={l.clientLineId} className="bg-card space-y-2 rounded-xl border p-3">
-                <div className="flex items-start gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="leading-tight font-semibold">{l.name}</div>
-                    {l.variantName && (
-                      <div className="text-muted-foreground text-xs">{l.variantName}</div>
-                    )}
-                    {l.toppingNames.length > 0 && (
-                      <div className="text-muted-foreground text-xs">
-                        + {l.toppingNames.join(", ")}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => remove(sessionId, l.clientLineId)}
-                    className="text-muted-foreground p-1"
-                    aria-label="Xoá"
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
-                </div>
-
-                <input
-                  type="text"
-                  defaultValue={l.note ?? ""}
-                  placeholder="Ghi chú..."
-                  onBlur={(e) => setNote(sessionId, l.clientLineId, e.target.value)}
-                  className="focus:border-primary w-full border-b border-dashed bg-transparent py-1 text-sm focus:outline-none"
-                />
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+          <ul className="relative space-y-3">
+            <AnimatePresence initial={false} mode="popLayout">
+              {lines.map((l) => (
+                <motion.li
+                  key={l.clientLineId}
+                  layout
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -24, transition: { duration: 0.15 } }}
+                  transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  className="bg-card space-y-3 rounded-2xl border p-3 shadow-xs"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="bg-muted size-14 shrink-0 overflow-hidden rounded-xl">
+                      {l.imageUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={mediaUrl(l.imageUrl) ?? undefined}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="leading-tight font-semibold">{l.name}</div>
+                      {l.variantName && (
+                        <div className="text-muted-foreground text-xs">{l.variantName}</div>
+                      )}
+                      {l.toppingNames.length > 0 && (
+                        <div className="text-muted-foreground text-xs">
+                          + {l.toppingNames.join(", ")}
+                        </div>
+                      )}
+                    </div>
                     <button
-                      onClick={() => dec(sessionId, l.clientLineId)}
-                      className="bg-muted flex size-8 items-center justify-center rounded-full active:scale-95"
-                      aria-label="Giảm"
+                      onClick={() => remove(sessionId, l.clientLineId)}
+                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 -m-1 flex size-10 items-center justify-center rounded-xl transition-colors"
+                      aria-label="Xoá"
                     >
-                      <Minus className="size-3.5" />
-                    </button>
-                    <span className="w-6 text-center font-semibold tabular-nums">{l.quantity}</span>
-                    <button
-                      onClick={() => inc(sessionId, l.clientLineId)}
-                      className="bg-muted flex size-8 items-center justify-center rounded-full active:scale-95"
-                      aria-label="Tăng"
-                    >
-                      <Plus className="size-3.5" />
+                      <Trash2 className="size-4" />
                     </button>
                   </div>
-                  <div className="font-bold tabular-nums">{fmt(l.unitPrice * l.quantity)}</div>
-                </div>
-              </li>
-            ))}
+
+                  <label className="bg-muted/60 focus-within:ring-primary/40 flex items-center gap-2 rounded-xl px-3 focus-within:ring-2">
+                    <StickyNote className="text-muted-foreground size-4 shrink-0" />
+                    <input
+                      type="text"
+                      defaultValue={l.note ?? ""}
+                      placeholder="Ghi chú..."
+                      onBlur={(e) => setNote(sessionId, l.clientLineId, e.target.value)}
+                      className="h-10 w-full bg-transparent text-sm focus:outline-none"
+                    />
+                  </label>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 rounded-full border p-1">
+                      <button
+                        onClick={() => dec(sessionId, l.clientLineId)}
+                        className="hover:bg-muted flex size-9 items-center justify-center rounded-full active:scale-95"
+                        aria-label="Giảm"
+                      >
+                        <Minus className="size-3.5" />
+                      </button>
+                      <span className="w-7 text-center font-semibold tabular-nums">
+                        {l.quantity}
+                      </span>
+                      <button
+                        onClick={() => inc(sessionId, l.clientLineId)}
+                        className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-full active:scale-95"
+                        aria-label="Tăng"
+                      >
+                        <Plus className="size-3.5" />
+                      </button>
+                    </div>
+                    <AnimatedNumber
+                      value={l.unitPrice * l.quantity}
+                      format="vnd"
+                      className="text-primary font-bold"
+                    />
+                  </div>
+                </motion.li>
+              ))}
+            </AnimatePresence>
           </ul>
         )}
       </main>
 
       {lines.length > 0 && (
-        <div className="bg-background fixed inset-x-0 bottom-0 z-30 border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="bg-background/95 fixed inset-x-0 bottom-0 z-30 border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.15)] backdrop-blur-md">
           <div className="mx-auto max-w-md space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground text-sm">
                 {lines.reduce((s, l) => s + l.quantity, 0)} món
               </span>
-              <span className="text-2xl font-bold tabular-nums">{fmt(subtotal)}</span>
+              <AnimatedNumber value={subtotal} format="vnd" className="text-2xl font-bold" />
             </div>
             <button
               onClick={handleSubmit}
               disabled={createOrder.isPending}
-              className="bg-primary text-primary-foreground w-full rounded-full py-4 font-bold transition-transform active:scale-95 disabled:opacity-50"
+              className="bg-primary text-primary-foreground shadow-primary/30 h-14 w-full rounded-2xl font-bold shadow-lg transition-transform active:scale-[0.97] disabled:opacity-50"
             >
               {createOrder.isPending ? (
                 <>

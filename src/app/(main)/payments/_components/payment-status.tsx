@@ -14,11 +14,11 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
 };
 
 export const PAYMENT_STATUS_CLASS: Record<PaymentStatus, string> = {
-  succeeded: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300",
-  partially_refunded: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300",
-  refunded: "bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300",
-  failed: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
-  pending: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+  succeeded: "bg-success-soft text-success",
+  partially_refunded: "bg-warning-soft text-[oklch(0.5_0.12_70)] dark:text-warning",
+  refunded: "bg-destructive/10 text-destructive",
+  failed: "bg-destructive/10 text-destructive",
+  pending: "bg-muted text-muted-foreground",
 };
 
 export function PaymentStatusBadge({

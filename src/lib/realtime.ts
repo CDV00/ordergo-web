@@ -20,6 +20,8 @@ export interface OrderChangedEvent {
   status: string;
   source: string;
   kitchen: { queued: number; preparing: number; ready: number };
+  /** Khách báo thanh toán từ trang QR (chờ nhân viên xác nhận) */
+  paymentRequest?: { method: string; amount: number; requestedAt: string } | null;
 }
 
 export interface TableChangedEvent {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import type * as React from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -15,7 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Store } from "lucide-react";
+import { Check, Coffee, Store } from "lucide-react";
+import { FadeIn } from "@/components/motion";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { useSetupWizard } from "@/hooks/api/use-tenant";
 import { ApiException } from "@/lib/api-client";
@@ -42,6 +45,76 @@ const BUSINESS_TYPE_LABELS: Record<BusinessType, string> = {
   education: "Trung tâm dạy học",
   coworking: "Co-working",
 };
+
+const STEPS = [
+  { label: "Tạo tài khoản", hint: "Đã xong" },
+  { label: "Doanh nghiệp & cơ sở", hint: "Đang điền" },
+  { label: "Bắt đầu bán", hint: "Menu, bàn, POS" },
+];
+/** Bước hiện tại của trang này (0-based) — tài khoản đã tạo xong trước khi vào đây. */
+const CURRENT_STEP = 1;
+
+/** Thanh bước của trình thiết lập. */
+function StepIndicator() {
+  return (
+    <ol className="flex items-start" aria-label="Các bước thiết lập">
+      {STEPS.map((step, i) => {
+        const done = i < CURRENT_STEP;
+        const current = i === CURRENT_STEP;
+        return (
+          <li
+            key={step.label}
+            className="relative flex flex-1 flex-col items-center gap-2 text-center"
+            aria-current={current ? "step" : undefined}
+          >
+            {i > 0 && (
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute top-4 right-1/2 h-0.5 w-full",
+                  i <= CURRENT_STEP ? "bg-primary" : "bg-border",
+                )}
+              />
+            )}
+            <span
+              className={cn(
+                "relative z-[1] flex size-8 items-center justify-center rounded-full text-sm font-semibold transition-colors",
+                done && "bg-primary text-primary-foreground",
+                current && "bg-primary text-primary-foreground ring-primary/20 ring-4",
+                !done && !current && "bg-muted text-muted-foreground border",
+              )}
+            >
+              {done ? <Check className="size-4" strokeWidth={3} /> : i + 1}
+            </span>
+            <span className="space-y-0.5">
+              <span
+                className={cn(
+                  "block text-xs font-semibold sm:text-sm",
+                  !done && !current && "text-muted-foreground",
+                )}
+              >
+                {step.label}
+              </span>
+              <span className="text-muted-foreground hidden text-xs sm:block">{step.hint}</span>
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** Tiêu đề nhóm trường trong form: số thứ tự + tên. */
+function SectionTitle({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <h3 className="flex items-center gap-2 text-sm font-semibold">
+      <span className="bg-primary/10 text-primary flex size-6 items-center justify-center rounded-lg text-xs font-bold">
+        {n}
+      </span>
+      {children}
+    </h3>
+  );
+}
 
 export default function SetupPage() {
   const router = useRouter();
@@ -93,97 +166,108 @@ export default function SetupPage() {
   if (!isReady || !isAuthenticated) return null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4 dark:from-gray-900 dark:to-gray-800">
-      <Card className="w-full max-w-2xl">
-        <CardHeader className="space-y-1 text-center">
-          <div className="mb-2 flex items-center justify-center space-x-2">
-            <div className="bg-primary text-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg">
-              <Store className="size-5" />
-            </div>
+    <div className="bg-muted/40 relative flex min-h-svh items-start justify-center overflow-hidden p-4 py-8 sm:items-center sm:p-8">
+      <div className="bg-primary/10 pointer-events-none absolute -top-40 -left-32 size-96 rounded-full blur-3xl" />
+      <div className="bg-chart-4/15 pointer-events-none absolute -right-32 -bottom-40 size-96 rounded-full blur-3xl" />
+      <FadeIn className="relative w-full max-w-2xl space-y-6">
+        <div className="flex items-center justify-center gap-2.5">
+          <div className="bg-primary text-primary-foreground flex size-10 items-center justify-center rounded-xl shadow-md">
+            <Coffee className="size-5" strokeWidth={2.4} />
           </div>
-          <CardTitle className="text-2xl">Thiết lập doanh nghiệp</CardTitle>
-          <CardDescription>
-            Hãy cho chúng tôi biết về doanh nghiệp của bạn để bắt đầu
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="space-y-6">
-            <section className="space-y-4">
-              <h3 className="text-muted-foreground text-sm font-semibold uppercase">
-                Thông tin doanh nghiệp
-              </h3>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="tenantName">Tên doanh nghiệp *</Label>
-                  <Input
-                    id="tenantName"
-                    placeholder="Cà phê ABC"
-                    {...form.register("tenantName", { required: true, minLength: 2 })}
-                  />
+          <span className="text-xl font-bold tracking-tight">OrderGo</span>
+        </div>
+        <StepIndicator />
+        <Card className="w-full shadow-lg shadow-black/5">
+          <CardHeader className="space-y-1.5 text-center">
+            <div className="bg-primary/10 text-primary mx-auto mb-1 flex size-12 items-center justify-center rounded-2xl">
+              <Store className="size-6" />
+            </div>
+            <CardTitle className="text-2xl font-bold tracking-tight">
+              Thiết lập doanh nghiệp
+            </CardTitle>
+            <CardDescription>
+              Hãy cho chúng tôi biết về doanh nghiệp của bạn để bắt đầu
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={onSubmit} className="space-y-6">
+              <section className="space-y-4">
+                <SectionTitle n={1}>Thông tin doanh nghiệp</SectionTitle>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="tenantName">Tên doanh nghiệp *</Label>
+                    <Input
+                      id="tenantName"
+                      placeholder="Cà phê ABC"
+                      {...form.register("tenantName", { required: true, minLength: 2 })}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="taxCode">Mã số thuế (tuỳ chọn)</Label>
+                    <Input id="taxCode" placeholder="0123456789" {...form.register("taxCode")} />
+                  </div>
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="taxCode">Mã số thuế (tuỳ chọn)</Label>
-                  <Input id="taxCode" placeholder="0123456789" {...form.register("taxCode")} />
-                </div>
-              </div>
-            </section>
+              </section>
 
-            <section className="space-y-4">
-              <h3 className="text-muted-foreground text-sm font-semibold uppercase">
-                Cơ sở đầu tiên
-              </h3>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="venueName">Tên cơ sở *</Label>
-                  <Input
-                    id="venueName"
-                    placeholder="Chi nhánh Quận 1"
-                    {...form.register("venueName", { required: true, minLength: 2 })}
-                  />
+              <section className="space-y-4 border-t pt-6">
+                <SectionTitle n={2}>Cơ sở đầu tiên</SectionTitle>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="venueName">Tên cơ sở *</Label>
+                    <Input
+                      id="venueName"
+                      placeholder="Chi nhánh Quận 1"
+                      {...form.register("venueName", { required: true, minLength: 2 })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="venueCode">Mã chi nhánh *</Label>
+                    <Input
+                      id="venueCode"
+                      placeholder="CN1"
+                      {...form.register("venueCode", { required: true })}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="businessType">Loại hình *</Label>
+                    <Select
+                      value={form.watch("businessType")}
+                      onValueChange={(v) => form.setValue("businessType", v as BusinessType)}
+                    >
+                      <SelectTrigger id="businessType">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(BUSINESS_TYPE_LABELS) as BusinessType[]).map((k) => (
+                          <SelectItem key={k} value={k}>
+                            {BUSINESS_TYPE_LABELS[k]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Địa chỉ</Label>
+                    <Input
+                      id="address"
+                      placeholder="123 Nguyễn Huệ"
+                      {...form.register("address")}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city">Thành phố</Label>
+                    <Input id="city" placeholder="TP. Hồ Chí Minh" {...form.register("city")} />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="venueCode">Mã chi nhánh *</Label>
-                  <Input
-                    id="venueCode"
-                    placeholder="CN1"
-                    {...form.register("venueCode", { required: true })}
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="businessType">Loại hình *</Label>
-                  <Select
-                    value={form.watch("businessType")}
-                    onValueChange={(v) => form.setValue("businessType", v as BusinessType)}
-                  >
-                    <SelectTrigger id="businessType">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(Object.keys(BUSINESS_TYPE_LABELS) as BusinessType[]).map((k) => (
-                        <SelectItem key={k} value={k}>
-                          {BUSINESS_TYPE_LABELS[k]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Địa chỉ</Label>
-                  <Input id="address" placeholder="123 Nguyễn Huệ" {...form.register("address")} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city">Thành phố</Label>
-                  <Input id="city" placeholder="TP. Hồ Chí Minh" {...form.register("city")} />
-                </div>
-              </div>
-            </section>
+              </section>
 
-            <Button type="submit" className="w-full" disabled={setup.isPending} size="lg">
-              {setup.isPending ? "Đang tạo..." : "Hoàn tất thiết lập"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <Button type="submit" className="w-full" disabled={setup.isPending} size="lg">
+                {setup.isPending ? "Đang tạo..." : "Hoàn tất thiết lập"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </FadeIn>
     </div>
   );
 }

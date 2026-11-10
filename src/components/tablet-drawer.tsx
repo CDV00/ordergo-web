@@ -20,7 +20,7 @@ export function TabletDrawer() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="left"
-        className="bg-sidebar text-sidebar-foreground border-sidebar-border flex w-72 flex-col gap-0 border-r p-0"
+        className="sidebar-scope bg-sidebar text-sidebar-foreground border-sidebar-border flex w-72 flex-col gap-0 border-r p-0"
       >
         <SheetTitle className="sr-only">Menu chính</SheetTitle>
         <SidebarBrand collapsed={false} onClick={() => setOpen(false)} />

@@ -1,9 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Building2, Copy, MapPin, Pencil, Phone, Plus, Users } from "lucide-react";
+import { Building2, Copy, MapPin, Pencil, Phone, Plus, Store, Users } from "lucide-react";
 import { MenuToggle } from "@/components/menu-toggle";
-import { Separator } from "@/components/ui/separator";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { FadeIn, Stagger, StaggerItem } from "@/components/motion";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,18 +22,13 @@ import type { Venue } from "@/types/api";
 import { BUSINESS_TYPE_LABELS, VenueFormDialog } from "./_components/venue-form-dialog";
 import { CopyMenuDialog } from "./_components/copy-menu-dialog";
 
-const STATUS: Record<Venue["status"], { label: string; className: string }> = {
-  active: {
-    label: "Đang hoạt động",
-    className:
-      "border-transparent bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
-  },
-  inactive: {
-    label: "Tạm ngưng",
-    className:
-      "border-transparent bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
-  },
-  archived: { label: "Đã lưu trữ", className: "text-muted-foreground" },
+const STATUS: Record<
+  Venue["status"],
+  { label: string; variant: "success" | "warning" | "outline" }
+> = {
+  active: { label: "Đang hoạt động", variant: "success" },
+  inactive: { label: "Tạm ngưng", variant: "warning" },
+  archived: { label: "Đã lưu trữ", variant: "outline" },
 };
 
 function VenueCard({
@@ -55,25 +53,36 @@ function VenueCard({
   const status = STATUS[venue.status] ?? STATUS.active;
   const address = [venue.address?.line1, venue.address?.city].filter(Boolean).join(", ");
   return (
-    <Card className={active ? "border-primary" : undefined}>
+    <Card
+      className={cn(
+        "flex h-full flex-col transition-shadow hover:shadow-md",
+        active && "border-primary/60 ring-primary/15 ring-4",
+      )}
+    >
       <CardHeader className="space-y-1 pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="min-w-0 text-base">
-            <span className="truncate">{venue.name}</span>
-          </CardTitle>
-          <div className="flex shrink-0 gap-1">
-            {active && <Badge variant="secondary">Đang chọn</Badge>}
-            <Badge variant="outline" className={status.className}>
-              {status.label}
-            </Badge>
+        <div className="flex items-start gap-3">
+          <div
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-xl",
+              active ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary",
+            )}
+          >
+            <Store className="size-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <CardTitle className="truncate text-base">{venue.name}</CardTitle>
+            <div className="mt-1 flex flex-wrap gap-1">
+              {active && <Badge variant="soft">Đang chọn</Badge>}
+              <Badge variant={status.variant}>{status.label}</Badge>
+            </div>
           </div>
         </div>
-        <p className="text-muted-foreground text-xs">
+        <p className="text-muted-foreground pt-1 text-xs">
           Mã <span className="text-foreground font-medium">{venue.code}</span> ·{" "}
           {BUSINESS_TYPE_LABELS[venue.businessType] ?? venue.businessType}
         </p>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="flex flex-1 flex-col gap-4">
         <div className="text-muted-foreground space-y-1 text-sm">
           <p className="flex items-start gap-2">
             <MapPin className="mt-0.5 size-4 shrink-0" />
@@ -91,13 +100,15 @@ function VenueCard({
           </p>
         </div>
 
-        <div className="bg-muted/60 grid grid-cols-2 gap-2 rounded-lg p-3">
+        <div className="bg-muted/60 grid grid-cols-2 gap-2 rounded-xl p-3">
           <div>
             <div className="text-muted-foreground text-xs">Doanh thu hôm nay</div>
             {todayLoading ? (
               <Skeleton className="mt-1 h-5 w-24" />
             ) : (
-              <div className="font-semibold tabular-nums">{formatVnd(today?.revenue ?? 0)}</div>
+              <div className="text-primary text-lg font-bold tabular-nums">
+                {formatVnd(today?.revenue ?? 0)}
+              </div>
             )}
           </div>
           <div>
@@ -105,12 +116,12 @@ function VenueCard({
             {todayLoading ? (
               <Skeleton className="mt-1 h-5 w-10" />
             ) : (
-              <div className="font-semibold tabular-nums">{today?.orders ?? 0}</div>
+              <div className="text-lg font-bold tabular-nums">{today?.orders ?? 0}</div>
             )}
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="mt-auto flex flex-wrap gap-2 border-t pt-3">
           <Button size="sm" variant="outline" onClick={onEdit}>
             <Pencil className="mr-1.5 size-4" /> Sửa
           </Button>
@@ -157,74 +168,73 @@ export default function VenuesPage() {
   const list = venues.data ?? [];
 
   return (
-    <div className="flex flex-col">
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-        <MenuToggle />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <h1 className="text-lg font-semibold">Chi nhánh</h1>
-        {allowed && (
-          <Button
-            size="sm"
-            className="ml-auto"
-            onClick={() => {
-              setEditing(null);
-              setFormOpen(true);
-            }}
-          >
-            <Plus className="mr-1.5 size-4" /> Thêm chi nhánh
-          </Button>
-        )}
-      </header>
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6 lg:p-8">
+      <FadeIn className="flex items-start gap-2">
+        <MenuToggle className="mt-1" />
+        <PageHeader
+          className="min-w-0 flex-1"
+          icon={Building2}
+          title="Chi nhánh"
+          description={
+            allowed && venues.data
+              ? `${list.length} cơ sở · nhân viên gắn với từng cơ sở, chủ quán đổi cơ sở ở thanh bên`
+              : "Quản lý các cơ sở trong chuỗi"
+          }
+          actions={
+            allowed && (
+              <Button
+                onClick={() => {
+                  setEditing(null);
+                  setFormOpen(true);
+                }}
+              >
+                <Plus className="size-4" /> Thêm chi nhánh
+              </Button>
+            )
+          }
+        />
+      </FadeIn>
 
-      <div className="mx-auto w-full max-w-6xl space-y-4 p-4 md:p-6">
-        {!allowed ? (
-          <Card>
-            <CardContent className="text-muted-foreground flex flex-col items-center gap-2 py-12 text-center text-sm">
-              <Building2 className="size-8 opacity-50" />
-              Chỉ chủ quán hoặc quản trị toàn chuỗi mới quản lý được chi nhánh.
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            <p className="text-muted-foreground text-sm">
-              {venues.data ? `${list.length} cơ sở. ` : ""}
-              Nhân viên gắn với từng cơ sở; chủ quán làm việc ở mọi cơ sở và đổi cơ sở ở thanh bên.
-            </p>
-            {venues.isLoading ? (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-64 w-full rounded-xl" />
-                ))}
-              </div>
-            ) : venues.error ? (
-              <Card>
-                <CardContent className="text-muted-foreground py-10 text-center text-sm">
-                  Không tải được danh sách chi nhánh.
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {list.map((v) => (
-                  <VenueCard
-                    key={v.id}
-                    venue={v}
-                    active={v.id === activeVenueId}
-                    staffCount={staffCount(v.id)}
-                    today={todayByVenue.get(v.id)}
-                    todayLoading={today.isLoading}
-                    onEdit={() => {
-                      setEditing(v);
-                      setFormOpen(true);
-                    }}
-                    onCopyMenu={() => setCopyTarget(v)}
-                    onSwitch={() => switchTo(v.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      {!allowed ? (
+        <EmptyState
+          icon={Building2}
+          className="bg-muted/30"
+          title="Không có quyền"
+          description="Chỉ chủ quán hoặc quản trị toàn chuỗi mới quản lý được chi nhánh."
+        />
+      ) : venues.isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-72 w-full rounded-2xl" />
+          ))}
+        </div>
+      ) : venues.error ? (
+        <EmptyState
+          icon={Building2}
+          className="bg-muted/30"
+          title="Không tải được danh sách chi nhánh."
+        />
+      ) : (
+        <Stagger className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {list.map((v) => (
+            <StaggerItem key={v.id}>
+              <VenueCard
+                venue={v}
+                active={v.id === activeVenueId}
+                staffCount={staffCount(v.id)}
+                today={todayByVenue.get(v.id)}
+                todayLoading={today.isLoading}
+                onEdit={() => {
+                  setEditing(v);
+                  setFormOpen(true);
+                }}
+                onCopyMenu={() => setCopyTarget(v)}
+                onSwitch={() => switchTo(v.id)}
+              />
+            </StaggerItem>
+          ))}
+        </Stagger>
+      )}
 
       <VenueFormDialog
         open={formOpen}

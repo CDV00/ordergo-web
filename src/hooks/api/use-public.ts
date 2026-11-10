@@ -168,3 +168,18 @@ export function useGeneratePaymentQr(sessionId: string | null) {
     },
   });
 }
+
+/** Khách báo đã chuyển khoản / muốn trả tại quầy → nhân viên thấy ở "Chờ xác nhận". */
+export function useRequestPayment(sessionId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orderId, method }: { orderId: string; method: "vietqr" | "cash" | "card" }) => {
+      if (!sessionId) throw new Error("No session");
+      return pubPost<{ orderId: string; method: string; amount: number; requestedAt: string }>(
+        `/public/sessions/${sessionId}/orders/${orderId}/payment-request`,
+        { method },
+      );
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["public-orders", sessionId] }),
+  });
+}

@@ -1,24 +1,31 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, type ComponentType, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  BarChart3,
+  Building2,
+  CheckCircle2,
+  ChefHat,
+  Clock,
+  MapPin,
+  Trophy,
+  TrendingUp,
+  UtensilsCrossed,
+  Wallet,
+} from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MenuToggle } from "@/components/menu-toggle";
-import { Separator } from "@/components/ui/separator";
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  Building2,
-  CheckCircle2,
-  Clock,
-  DollarSign,
-  TrendingUp,
-  UtensilsCrossed,
-} from "lucide-react";
-import Link from "next/link";
+import { StatCard } from "@/components/stat-card";
+import { EmptyState } from "@/components/empty-state";
+import { FadeIn, Stagger, StaggerItem } from "@/components/motion";
+import { useAuth } from "@/contexts/auth-context";
 import {
   ALL_VENUES,
   useDailySummary,
@@ -26,6 +33,9 @@ import {
   type DailySalesSummary,
 } from "@/hooks/api/use-reports";
 import { useAccessibleVenues } from "@/hooks/api/use-tenant";
+import { cn } from "@/lib/utils";
+import { BarChart } from "./reports/_components/bar-chart";
+import { compactVnd } from "./reports/_components/range";
 
 function formatVnd(n: number) {
   return new Intl.NumberFormat("vi-VN").format(n) + "đ";
@@ -35,6 +45,25 @@ function yesterdayYmd(): string {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Lời chào theo buổi trong ngày. */
+function greeting(hour: number): string {
+  if (hour < 11) return "Chào buổi sáng";
+  if (hour < 14) return "Chào buổi trưa";
+  if (hour < 18) return "Chào buổi chiều";
+  return "Chào buổi tối";
+}
+
+/** "Thứ Ba, 10 tháng 11, 2026" */
+function longDate(d: Date): string {
+  const s = new Intl.DateTimeFormat("vi-VN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(d);
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 /** Tổng doanh thu / số đơn từ 0h tới hết giờ hiện tại — để so cùng mốc với hôm qua. */
@@ -52,53 +81,64 @@ function pctChange(today: number, yesterday: number): number | null {
   return Math.round(((today - yesterday) / yesterday) * 100);
 }
 
-function Delta({ pct }: { pct: number | null }) {
-  if (pct === null) return null;
-  const up = pct >= 0;
+/** Dòng phụ dưới số KPI: so với cùng giờ hôm qua (+ ghi chú). */
+function KpiHint({ pct, note }: { pct?: number | null; note?: string }) {
+  const hasPct = pct !== undefined && pct !== null;
+  if (!hasPct && !note) return null;
+  const up = (pct ?? 0) >= 0;
   const Icon = up ? ArrowUpRight : ArrowDownRight;
   return (
-    <p className="text-muted-foreground mt-1 flex items-center gap-1 text-xs">
-      <Icon
-        className={`size-3.5 ${up ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}
-        aria-hidden
-      />
-      <span>
-        {up ? "Tăng" : "Giảm"} {Math.abs(pct)}% so với cùng giờ hôm qua
-      </span>
-    </p>
+    <span className="flex flex-col gap-0.5">
+      {hasPct && (
+        <span className="flex items-center gap-1">
+          <span
+            className={cn(
+              "inline-flex items-center gap-0.5 rounded-full px-1.5 py-px font-semibold",
+              up ? "bg-success-soft text-success" : "bg-destructive/10 text-destructive",
+            )}
+          >
+            <Icon className="size-3" aria-hidden />
+            {Math.abs(pct!)}%
+          </span>
+          <span>{up ? "Tăng" : "Giảm"} so với cùng giờ hôm qua</span>
+        </span>
+      )}
+      {note && <span className="truncate">{note}</span>}
+    </span>
   );
 }
 
-function StatCard({
-  title,
-  value,
-  hint,
-  delta,
+/** Thẻ khung dùng chung cho các khối trên trang tổng quan. */
+function SectionCard({
   icon: Icon,
-  loading,
+  title,
+  description,
+  action,
+  className,
+  children,
 }: {
+  icon: ComponentType<{ className?: string }>;
   title: string;
-  value: string;
-  hint?: string;
-  delta?: number | null;
-  icon: typeof DollarSign;
-  loading?: boolean;
+  description?: ReactNode;
+  action?: ReactNode;
+  className?: string;
+  children: ReactNode;
 }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="text-muted-foreground size-4" />
+    <Card className={cn("flex flex-col", className)}>
+      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-xl">
+            <Icon className="size-[18px]" />
+          </div>
+          <div className="min-w-0">
+            <CardTitle className="text-base">{title}</CardTitle>
+            {description && <CardDescription className="truncate">{description}</CardDescription>}
+          </div>
+        </div>
+        {action}
       </CardHeader>
-      <CardContent>
-        {loading ? (
-          <Skeleton className="mb-1 h-8 w-32" />
-        ) : (
-          <div className="text-2xl font-bold tabular-nums">{value}</div>
-        )}
-        {hint && <p className="text-muted-foreground mt-1 text-xs">{hint}</p>}
-        {delta !== undefined && !loading && <Delta pct={delta} />}
-      </CardContent>
+      <CardContent className="flex-1">{children}</CardContent>
     </Card>
   );
 }
@@ -110,37 +150,113 @@ function HourlyChart({
   data: Array<{ hour: number; revenue: number; orderCount: number }>;
   loading: boolean;
 }) {
-  const max = useMemo(() => Math.max(1, ...data.map((d) => d.revenue)), [data]);
-
-  if (loading) return <Skeleton className="h-48 w-full rounded-lg" />;
+  if (loading) return <Skeleton className="h-[220px] w-full rounded-xl" />;
 
   // Chỉ hiển thị 6h–24h (giờ kinh doanh)
   const visible = data.filter((d) => d.hour >= 6 && d.hour <= 23);
+  if (!visible.some((d) => d.revenue > 0)) {
+    return (
+      <EmptyState
+        icon={BarChart3}
+        title="Chưa có doanh thu hôm nay"
+        description="Biểu đồ sẽ hiện khi có đơn được thanh toán."
+        className="py-10"
+      />
+    );
+  }
 
   return (
-    <div className="flex h-48 w-full items-end gap-1">
-      {visible.map((d) => {
-        const h = (d.revenue / max) * 100;
-        return (
-          <div
-            key={d.hour}
-            className="group relative flex flex-1 flex-col items-center justify-end"
-          >
-            <div
-              className="bg-primary/20 group-hover:bg-primary/40 relative w-full rounded-t transition-colors"
-              style={{ height: `${Math.max(2, h)}%` }}
-            >
-              {d.revenue > 0 && (
-                <div className="bg-foreground text-background absolute -top-6 left-1/2 -translate-x-1/2 rounded px-1.5 py-0.5 text-[10px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100">
-                  {formatVnd(d.revenue)}
-                </div>
-              )}
-            </div>
-            <div className="text-muted-foreground mt-1 text-[10px] tabular-nums">{d.hour}h</div>
-          </div>
-        );
-      })}
+    <BarChart
+      ariaLabel="Biểu đồ doanh thu theo giờ hôm nay"
+      formatValue={formatVnd}
+      formatAxis={compactVnd}
+      height={200}
+      maxLabels={9}
+      barMaxWidth={18}
+      data={visible.map((d) => ({
+        key: String(d.hour),
+        label: `${d.hour}h`,
+        title: `${String(d.hour).padStart(2, "0")}:00–${String(d.hour).padStart(2, "0")}:59`,
+        value: d.revenue,
+        detail: `${d.orderCount} đơn`,
+      }))}
+    />
+  );
+}
+
+/** Chip thứ hạng: top 3 nổi bật bằng màu chính, còn lại trung tính. */
+function RankChip({ rank }: { rank: number }) {
+  return (
+    <div
+      className={cn(
+        "tabular flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
+        rank === 1
+          ? "bg-primary text-primary-foreground shadow-xs"
+          : rank <= 3
+            ? "bg-primary/10 text-primary"
+            : "bg-muted text-muted-foreground",
+      )}
+    >
+      {rank}
     </div>
+  );
+}
+
+function TopItemsCard({
+  items,
+  loading,
+}: {
+  items: DailySalesSummary["topItems"] | undefined;
+  loading: boolean;
+}) {
+  const top = (items ?? []).slice(0, 8);
+  const max = Math.max(1, ...top.map((it) => it.revenue));
+  return (
+    <SectionCard icon={Trophy} title="Top món bán chạy" description="Theo doanh thu hôm nay">
+      {loading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      ) : top.length === 0 ? (
+        <EmptyState
+          icon={UtensilsCrossed}
+          title="Chưa có dữ liệu"
+          description="Món bán chạy sẽ hiện khi có đơn hôm nay."
+          className="py-8"
+        />
+      ) : (
+        <Stagger className="space-y-3" stagger={0.03}>
+          {top.map((it, idx) => (
+            <StaggerItem key={it.menuItemId}>
+              <div className="flex items-center gap-3">
+                <RankChip rank={idx + 1} />
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-sm font-medium">{it.name}</span>
+                    <span className="tabular shrink-0 text-sm font-semibold">
+                      {formatVnd(it.revenue)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-muted h-1 flex-1 overflow-hidden rounded-full" aria-hidden>
+                      <div
+                        className="bg-chart-1/70 h-full rounded-full"
+                        style={{ width: `${(Math.max(0, it.revenue) / max) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-muted-foreground tabular shrink-0 text-xs">
+                      {it.quantity} bán
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </StaggerItem>
+          ))}
+        </Stagger>
+      )}
+    </SectionCard>
   );
 }
 
@@ -150,61 +266,63 @@ function VenuesTodayCard({ activeVenueId }: { activeVenueId: string | null }) {
   const rows = data?.byVenue ?? [];
   const max = Math.max(1, ...rows.map((r) => r.revenue));
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <div>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Building2 className="size-4" /> Chi nhánh hôm nay
-          </CardTitle>
-          <CardDescription>
-            {data
-              ? `Toàn chuỗi: ${formatVnd(data.revenue.net)} · ${data.orders.count} đơn`
-              : "Doanh thu đã thu theo từng cơ sở"}
-          </CardDescription>
-        </div>
-        <Button asChild size="sm" variant="ghost">
+    <SectionCard
+      icon={Building2}
+      title="Chi nhánh hôm nay"
+      description={
+        data
+          ? `Toàn chuỗi: ${formatVnd(data.revenue.net)} · ${data.orders.count} đơn`
+          : "Doanh thu đã thu theo từng cơ sở"
+      }
+      action={
+        <Button asChild size="sm" variant="ghost" className="shrink-0">
           <Link href="/reports">Báo cáo</Link>
         </Button>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <Skeleton key={i} className="h-9 w-full" />
-            ))}
-          </div>
-        ) : error ? (
-          <p className="text-muted-foreground py-2 text-sm">Không tải được số liệu chi nhánh.</p>
-        ) : (
-          <ul className="space-y-2.5">
-            {rows.map((r) => (
-              <li key={r.venueId} className="space-y-1">
+      }
+    >
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      ) : error ? (
+        <p className="text-muted-foreground py-2 text-sm">Không tải được số liệu chi nhánh.</p>
+      ) : (
+        <ul className="grid gap-x-8 gap-y-4 md:grid-cols-2">
+          {rows.map((r) => {
+            const current = r.venueId === activeVenueId;
+            return (
+              <li key={r.venueId} className="space-y-1.5">
                 <div className="flex items-baseline justify-between gap-3 text-sm">
-                  <span className="min-w-0 truncate font-medium">
-                    {r.venueName}
-                    {r.venueId === activeVenueId && (
-                      <span className="text-muted-foreground ml-1.5 text-xs font-normal">
+                  <span className="flex min-w-0 items-center gap-1.5 font-medium">
+                    <span className="truncate">{r.venueName}</span>
+                    {current && (
+                      <span className="bg-primary/10 text-primary shrink-0 rounded-full px-1.5 py-px text-[11px] font-medium">
                         (đang chọn)
                       </span>
                     )}
                   </span>
-                  <span className="shrink-0 tabular-nums">
+                  <span className="tabular shrink-0">
                     <span className="font-semibold">{formatVnd(r.revenue)}</span>
                     <span className="text-muted-foreground"> · {r.orders} đơn</span>
                   </span>
                 </div>
                 <div className="bg-muted h-1.5 overflow-hidden rounded-full" aria-hidden>
                   <div
-                    className="bg-primary h-full rounded-full"
+                    className={cn(
+                      "h-full rounded-full transition-[width] duration-500 ease-out",
+                      current ? "bg-chart-1" : "bg-chart-1/55",
+                    )}
                     style={{ width: `${(Math.max(0, r.revenue) / max) * 100}%` }}
                   />
                 </div>
               </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+            );
+          })}
+        </ul>
+      )}
+    </SectionCard>
   );
 }
 
@@ -219,133 +337,148 @@ export default function DashboardPage() {
       can("order.create") ? "/pos" : can("order.update_kitchen_status") ? "/kds" : "/orders",
     );
   }, [canView, can, router]);
+  const { user } = useAuth();
   const { data, isLoading, error, refetch } = useTodaySummary();
   const { venues, tenantWide, activeVenue } = useAccessibleVenues();
   const showChain = canView && tenantWide && venues.length >= 2;
   const yesterday = useDailySummary(yesterdayYmd());
-  const nowHour = new Date().getHours();
+  const now = new Date();
+  const nowHour = now.getHours();
   const todayCum = upToHour(data, nowHour);
   const yCum = upToHour(yesterday.data, nowHour);
+  const firstName = user?.displayName?.trim().split(/\s+/).pop();
 
   return (
-    <div className="flex flex-col">
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-3 md:px-4">
-        <MenuToggle />
-        <Separator orientation="vertical" className="mr-2 hidden h-4 md:block" />
-        <h1 className="text-base font-semibold md:text-lg">Tổng quan hôm nay</h1>
-        <div className="ml-auto flex gap-2">
-          <Button asChild size="sm" variant="outline">
-            <Link href="/kds">Màn bếp</Link>
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6 lg:p-8">
+      {/* Lời chào + ngày + cơ sở */}
+      <FadeIn className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex min-w-0 items-start gap-2">
+          <MenuToggle className="mt-1" />
+          <div className="min-w-0">
+            <p className="text-primary text-xs font-semibold tracking-wider uppercase">
+              Tổng quan hôm nay
+            </p>
+            <h1 className="mt-1 truncate text-2xl font-bold tracking-tight sm:text-[28px]">
+              {greeting(nowHour)}
+              {firstName ? `, ${firstName}` : ""}
+            </h1>
+            <p className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+              <span>{longDate(now)}</span>
+              {activeVenue && (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="size-3.5" aria-hidden />
+                  {activeVenue.name}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <Button asChild variant="outline">
+            <Link href="/kds">
+              <ChefHat className="size-4" />
+              Màn bếp
+            </Link>
           </Button>
-          <Button asChild size="sm">
+          <Button asChild>
             <Link href="/pos">
               Vào POS
-              <ArrowUpRight className="ml-1 size-4" />
+              <ArrowUpRight className="size-4" />
             </Link>
           </Button>
         </div>
-      </header>
+      </FadeIn>
 
-      <main className="flex-1 space-y-6 p-4 md:p-6">
-        {error ? (
-          <Card>
-            <CardContent className="space-y-2 py-8 text-center">
-              <p className="text-destructive">Không tải được dữ liệu báo cáo.</p>
-              <Button size="sm" variant="outline" onClick={() => refetch()}>
-                Thử lại
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            {/* Stats grid */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {error ? (
+        <Card>
+          <CardContent className="space-y-3 py-10 text-center">
+            <p className="text-destructive font-medium">Không tải được dữ liệu báo cáo.</p>
+            <Button size="sm" variant="outline" onClick={() => refetch()}>
+              Thử lại
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* KPI */}
+          <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StaggerItem>
               <StatCard
-                title="Doanh thu (đã thu)"
-                value={data ? formatVnd(data.revenue.net) : "—"}
-                hint={data ? `Tổng giá trị đơn: ${formatVnd(data.revenue.gross)}` : undefined}
-                delta={yesterday.data ? pctChange(todayCum.revenue, yCum.revenue) : undefined}
-                icon={DollarSign}
-                loading={isLoading}
-              />
-              <StatCard
-                title="Đơn hôm nay"
-                value={data ? data.orders.count.toString() : "—"}
+                label="Doanh thu (đã thu)"
+                value={data?.revenue.net ?? 0}
+                format="vnd"
+                icon={Wallet}
+                tone="primary"
+                className={cn(isLoading && "animate-pulse")}
                 hint={
-                  data?.orders.cancelledCount ? `${data.orders.cancelledCount} đã huỷ` : undefined
+                  <KpiHint
+                    pct={yesterday.data ? pctChange(todayCum.revenue, yCum.revenue) : undefined}
+                    note={data ? `Tổng giá trị đơn: ${formatVnd(data.revenue.gross)}` : undefined}
+                  />
                 }
-                delta={yesterday.data ? pctChange(todayCum.orders, yCum.orders) : undefined}
+              />
+            </StaggerItem>
+            <StaggerItem>
+              <StatCard
+                label="Đơn hôm nay"
+                value={data?.orders.count ?? 0}
                 icon={UtensilsCrossed}
-                loading={isLoading}
+                tone="info"
+                className={cn(isLoading && "animate-pulse")}
+                hint={
+                  <KpiHint
+                    pct={yesterday.data ? pctChange(todayCum.orders, yCum.orders) : undefined}
+                    note={
+                      data?.orders.cancelledCount
+                        ? `${data.orders.cancelledCount} đã huỷ`
+                        : undefined
+                    }
+                  />
+                }
               />
+            </StaggerItem>
+            <StaggerItem>
               <StatCard
-                title="Đã thanh toán"
-                value={data ? formatVnd(data.byPaymentStatus.paid) : "—"}
+                label="Đã thanh toán"
+                value={data?.byPaymentStatus.paid ?? 0}
+                format="vnd"
                 icon={CheckCircle2}
-                loading={isLoading}
+                tone="success"
+                className={cn(isLoading && "animate-pulse")}
               />
+            </StaggerItem>
+            <StaggerItem>
               <StatCard
-                title="Chưa thu"
-                value={data ? formatVnd(data.byPaymentStatus.pending) : "—"}
+                label="Chưa thu"
+                value={data?.byPaymentStatus.pending ?? 0}
+                format="vnd"
                 icon={Clock}
-                loading={isLoading}
+                tone="warning"
+                className={cn(isLoading && "animate-pulse")}
               />
-            </div>
+            </StaggerItem>
+          </Stagger>
 
-            {showChain && <VenuesTodayCard activeVenueId={activeVenue?.id ?? null} />}
+          {showChain && (
+            <FadeIn delay={0.05}>
+              <VenuesTodayCard activeVenueId={activeVenue?.id ?? null} />
+            </FadeIn>
+          )}
 
-            {/* Hourly + Top items */}
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <TrendingUp className="size-4" /> Doanh thu theo giờ
-                  </CardTitle>
-                  <CardDescription>Giờ kinh doanh 6h–23h</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <HourlyChart data={data?.byHour ?? []} loading={isLoading} />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Top món bán chạy</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="space-y-2">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Skeleton key={i} className="h-10 w-full" />
-                      ))}
-                    </div>
-                  ) : data?.topItems.length === 0 ? (
-                    <p className="text-muted-foreground py-4 text-center text-sm">
-                      Chưa có dữ liệu
-                    </p>
-                  ) : (
-                    <ol className="space-y-2.5">
-                      {data?.topItems.slice(0, 8).map((it, idx) => (
-                        <li key={it.menuItemId} className="flex items-center gap-3">
-                          <div className="bg-primary/10 text-primary flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-bold">
-                            {idx + 1}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-medium">{it.name}</div>
-                            <div className="text-muted-foreground text-xs tabular-nums">
-                              {it.quantity} bán · {formatVnd(it.revenue)}
-                            </div>
-                          </div>
-                        </li>
-                      ))}
-                    </ol>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </>
-        )}
-      </main>
+          {/* Doanh thu theo giờ + món bán chạy */}
+          <FadeIn delay={0.08} className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <SectionCard
+              icon={TrendingUp}
+              title="Doanh thu theo giờ"
+              description="Giờ kinh doanh 6h–23h"
+              className="lg:col-span-2"
+            >
+              <HourlyChart data={data?.byHour ?? []} loading={isLoading} />
+            </SectionCard>
+            <TopItemsCard items={data?.topItems} loading={isLoading} />
+          </FadeIn>
+        </>
+      )}
     </div>
   );
 }

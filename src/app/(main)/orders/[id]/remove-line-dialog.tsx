@@ -82,11 +82,7 @@ export function RemoveLineDialog({ orderId, line, onClose }: Props) {
           <Button variant="outline" onClick={close} disabled={remove.isPending}>
             Đóng
           </Button>
-          <Button
-            className="bg-destructive hover:bg-destructive/90 text-white"
-            onClick={onConfirm}
-            disabled={remove.isPending}
-          >
+          <Button variant="destructive" onClick={onConfirm} disabled={remove.isPending}>
             {remove.isPending ? "Đang xử lý…" : sent ? "Huỷ món" : "Xoá món"}
           </Button>
         </DialogFooter>

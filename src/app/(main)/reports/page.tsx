@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Building2 } from "lucide-react";
+import { FadeIn } from "@/components/motion";
 import { ALL_VENUES, useSalesReport, type ReportRangeParams } from "@/hooks/api/use-reports";
 import { useAccessibleVenues } from "@/hooks/api/use-tenant";
 import { useAuth } from "@/contexts/auth-context";
@@ -23,7 +25,7 @@ import {
   presetRange,
   type RangePreset,
 } from "./_components/range";
-import { ReportToolbar } from "./_components/report-toolbar";
+import { ExportCsvButton, ReportToolbar } from "./_components/report-toolbar";
 import { StaffTable, TopItemsTable } from "./_components/report-tables";
 import { ReportsShell, StateMessage } from "./_components/reports-shell";
 import { DailyRevenueCard, HourlyCard } from "./_components/sales-charts";
@@ -72,32 +74,25 @@ export default function ReportsPage() {
     setPreset(p);
   };
 
-  return (
-    <ReportsShell>
-      <div>
-        <h2 className="text-xl font-bold sm:text-2xl">Báo cáo bán hàng</h2>
-        <p className="text-muted-foreground text-sm">
-          {venueLabel && tenantWide ? `${venueLabel} · ` : ""}
-          {range
-            ? range.from === range.to
-              ? `Ngày ${fullDate(range.from)}`
-              : `Từ ${fullDate(range.from)} đến ${fullDate(range.to)}`
-            : "Chọn khoảng thời gian"}
-        </p>
-      </div>
+  const rangeLabel = range
+    ? range.from === range.to
+      ? `Ngày ${fullDate(range.from)}`
+      : `Từ ${fullDate(range.from)} đến ${fullDate(range.to)}`
+    : "Chọn khoảng thời gian";
 
-      <ReportToolbar
-        preset={preset}
-        onPreset={onPreset}
-        custom={custom}
-        onCustom={setCustom}
-        range={range}
-        rangeError={customError}
-        venueId={viewVenueId}
-        venueSelect={
-          tenantWide && venues.length > 0 ? (
+  return (
+    <ReportsShell
+      description={
+        tenantWide && venueLabel
+          ? `${venueLabel} · doanh thu, món bán chạy và nhân viên`
+          : "Doanh thu, món bán chạy và nhân viên theo khoảng thời gian"
+      }
+      actions={
+        <>
+          {tenantWide && venues.length > 0 && (
             <Select value={viewVenueId ?? ""} onValueChange={(v) => v && setVenueSel(v)}>
-              <SelectTrigger className="min-h-[44px] w-[200px]" aria-label="Cơ sở">
+              <SelectTrigger className="bg-card min-h-[44px] w-[200px]" aria-label="Cơ sở">
+                <Building2 className="text-muted-foreground size-4 shrink-0" aria-hidden />
                 <SelectValue placeholder="Chọn cơ sở" />
               </SelectTrigger>
               <SelectContent>
@@ -109,9 +104,21 @@ export default function ReportsPage() {
                 ))}
               </SelectContent>
             </Select>
-          ) : null
-        }
-      />
+          )}
+          <ExportCsvButton range={range} venueId={viewVenueId} />
+        </>
+      }
+    >
+      <FadeIn delay={0.04}>
+        <ReportToolbar
+          preset={preset}
+          onPreset={onPreset}
+          custom={custom}
+          onCustom={setCustom}
+          rangeLabel={rangeLabel}
+          rangeError={customError}
+        />
+      </FadeIn>
 
       {forbidden ? (
         <StateMessage
@@ -127,16 +134,18 @@ export default function ReportsPage() {
       ) : (
         <>
           <KpiTiles report={report.data} loading={loading} />
-          {isAll && <VenueBreakdownCard report={report.data} loading={loading} />}
-          <div className="grid gap-4 xl:grid-cols-3">
-            <DailyRevenueCard report={report.data} loading={loading} className="xl:col-span-2" />
-            <PaymentMethodsCard report={report.data} loading={loading} />
-          </div>
-          <HourlyCard report={report.data} loading={loading} />
-          <div className="grid gap-4 lg:grid-cols-2">
-            <TopItemsTable report={report.data} loading={loading} />
-            <StaffTable report={report.data} loading={loading} />
-          </div>
+          <FadeIn delay={0.08} className="space-y-6">
+            {isAll && <VenueBreakdownCard report={report.data} loading={loading} />}
+            <div className="grid gap-6 xl:grid-cols-3">
+              <DailyRevenueCard report={report.data} loading={loading} className="xl:col-span-2" />
+              <PaymentMethodsCard report={report.data} loading={loading} />
+            </div>
+            <HourlyCard report={report.data} loading={loading} />
+            <div className="grid gap-6 lg:grid-cols-2">
+              <TopItemsTable report={report.data} loading={loading} />
+              <StaffTable report={report.data} loading={loading} />
+            </div>
+          </FadeIn>
         </>
       )}
     </ReportsShell>

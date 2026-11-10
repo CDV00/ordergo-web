@@ -58,12 +58,14 @@ export default function ScanEntryPage() {
   if (error) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center p-6 text-center">
-        <AlertCircle className="text-destructive mb-4 size-16" />
+        <div className="bg-destructive/10 mb-4 rounded-full p-4">
+          <AlertCircle className="text-destructive size-12" />
+        </div>
         <h1 className="mb-2 text-xl font-semibold">Không thể quét QR</h1>
         <p className="text-muted-foreground mb-6 max-w-sm">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="bg-primary text-primary-foreground rounded-lg px-6 py-3 font-semibold"
+          className="bg-primary text-primary-foreground h-12 rounded-full px-8 font-semibold shadow-sm active:scale-95"
         >
           Thử lại
         </button>
@@ -74,9 +76,9 @@ export default function ScanEntryPage() {
   if (needsJoinConfirm && scan.data) {
     const orderCount = scan.data.session.orderCount;
     return (
-      <div className="flex min-h-svh flex-col items-center justify-center bg-amber-50 p-6 text-center dark:bg-amber-950/30">
-        <div className="mb-4 rounded-full bg-amber-100 p-4 dark:bg-amber-900">
-          <AlertCircle className="size-12 text-amber-700 dark:text-amber-400" />
+      <div className="bg-warning-soft/60 flex min-h-svh flex-col items-center justify-center p-6 text-center">
+        <div className="bg-warning-soft dark:text-warning mb-4 rounded-full p-4 text-[oklch(0.5_0.12_70)]">
+          <AlertCircle className="size-12" />
         </div>
         <h1 className="mb-2 text-xl font-bold">Bàn này đang phục vụ</h1>
         <p className="text-muted-foreground mb-1">
@@ -89,7 +91,7 @@ export default function ScanEntryPage() {
         <div className="flex w-full max-w-xs flex-col gap-3">
           <button
             onClick={() => router.replace(`/m/${tenantSlug}/menu`)}
-            className="bg-primary text-primary-foreground rounded-lg py-3.5 font-semibold transition-transform active:scale-95"
+            className="bg-primary text-primary-foreground h-12 rounded-full font-semibold shadow-sm transition-transform active:scale-95"
           >
             Vâng, tôi cùng nhóm — Đặt thêm
           </button>
@@ -98,7 +100,7 @@ export default function ScanEntryPage() {
               sessionStorage.clear();
               setError("Vui lòng liên hệ nhân viên để được hướng dẫn.");
             }}
-            className="bg-muted text-foreground rounded-lg py-3 font-medium"
+            className="bg-card text-foreground h-12 rounded-full border font-medium"
           >
             Tôi không phải bàn này
           </button>
@@ -109,8 +111,11 @@ export default function ScanEntryPage() {
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center p-6 text-center">
-      <div className="bg-primary/10 mb-4 rounded-full p-4">
-        <Store className="text-primary size-12" />
+      <div className="relative mb-5">
+        <span className="bg-primary/20 absolute inset-0 animate-ping rounded-full" />
+        <div className="bg-primary/10 relative rounded-full p-4">
+          <Store className="text-primary size-12" />
+        </div>
       </div>
       <h1 className="mb-2 text-xl font-semibold">Đang kết nối với quán...</h1>
       <Loader2 className="text-muted-foreground size-6 animate-spin" />

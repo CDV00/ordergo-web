@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Building2, Check, ChevronsUpDown, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -32,6 +32,7 @@ export function VenueSwitcher({ collapsed = false, onSwitched, className }: Prop
   const { venues, activeVenue, tenantWide } = useAccessibleVenues();
   const { can } = usePermissions();
   const switchTo = useSwitchVenue();
+  const router = useRouter();
   const canSwitch = venues.length > 1;
   const name = activeVenue?.name ?? "Chưa chọn cơ sở";
 
@@ -121,10 +122,14 @@ export function VenueSwitcher({ collapsed = false, onSwitched, className }: Prop
         {tenantWide && can("venue.manage") && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/venues" onClick={onSwitched} className="gap-2">
-                <Settings2 className="size-4" /> Quản lý chi nhánh
-              </Link>
+            <DropdownMenuItem
+              className="gap-2"
+              onSelect={() => {
+                router.push("/venues");
+                onSwitched?.();
+              }}
+            >
+              <Settings2 className="size-4" /> Quản lý chi nhánh
             </DropdownMenuItem>
           </>
         )}

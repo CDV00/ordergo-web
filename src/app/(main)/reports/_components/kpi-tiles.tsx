@@ -1,46 +1,13 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { BadgePercent, Receipt, ShoppingBag, Wallet } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Stagger, StaggerItem } from "@/components/motion";
+import { StatCard } from "@/components/stat-card";
 import type { SalesReport } from "@/hooks/api/use-reports";
 import { formatVnd } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-function Tile({
-  title,
-  icon,
-  value,
-  note,
-  loading,
-}: {
-  title: string;
-  icon: ReactNode;
-  value: string;
-  note: string;
-  loading: boolean;
-}) {
-  return (
-    <Card className="min-h-[96px]">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-muted-foreground text-xs font-medium">{title}</CardTitle>
-        <span className="text-muted-foreground">{icon}</span>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <Skeleton className="h-8 w-28" />
-        ) : (
-          <>
-            <div className="text-lg font-bold tabular-nums sm:text-2xl">{value}</div>
-            <p className="text-muted-foreground text-xs">{note}</p>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-/** 4 chỉ số chính: doanh thu thuần, số đơn, giá trị TB/đơn, giảm giá. */
+/** 4 chỉ số chính: doanh thu thuần, số đơn, giá trị TB/đơn, giảm giá (số trượt khi đổi khoảng). */
 export function KpiTiles({
   report,
   loading,
@@ -49,40 +16,56 @@ export function KpiTiles({
   loading: boolean;
 }) {
   const t = report?.totals;
+  const pulse = cn(loading && "animate-pulse");
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <Tile
-        title="Doanh thu thuần"
-        icon={<Wallet className="h-4 w-4" />}
-        loading={loading}
-        value={formatVnd(t?.netRevenue ?? 0)}
-        note={t && t.refunds > 0 ? `Đã trừ hoàn ${formatVnd(t.refunds)}` : "Đã thu − đã hoàn"}
-      />
-      <Tile
-        title="Số đơn"
-        icon={<ShoppingBag className="h-4 w-4" />}
-        loading={loading}
-        value={String(t?.orders ?? 0)}
-        note={t?.cancelledOrders ? `${t.cancelledOrders} đơn huỷ` : "Không tính đơn huỷ"}
-      />
-      <Tile
-        title="Giá trị TB/đơn"
-        icon={<Receipt className="h-4 w-4" />}
-        loading={loading}
-        value={formatVnd(t?.averageTicket ?? 0)}
-        note={`Tổng giá trị đơn ${formatVnd(t?.grossOrderValue ?? 0)}`}
-      />
-      <Tile
-        title="Giảm giá"
-        icon={<BadgePercent className="h-4 w-4" />}
-        loading={loading}
-        value={formatVnd(t?.discountTotal ?? 0)}
-        note={
-          t?.serviceChargeTotal
-            ? `Phí dịch vụ ${formatVnd(t.serviceChargeTotal)}`
-            : "Tổng giảm giá trên đơn"
-        }
-      />
-    </div>
+    <Stagger className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <StaggerItem>
+        <StatCard
+          label="Doanh thu thuần"
+          value={t?.netRevenue ?? 0}
+          format="vnd"
+          icon={Wallet}
+          tone="primary"
+          className={pulse}
+          hint={t && t.refunds > 0 ? `Đã trừ hoàn ${formatVnd(t.refunds)}` : "Đã thu − đã hoàn"}
+        />
+      </StaggerItem>
+      <StaggerItem>
+        <StatCard
+          label="Số đơn"
+          value={t?.orders ?? 0}
+          icon={ShoppingBag}
+          tone="info"
+          className={pulse}
+          hint={t?.cancelledOrders ? `${t.cancelledOrders} đơn huỷ` : "Không tính đơn huỷ"}
+        />
+      </StaggerItem>
+      <StaggerItem>
+        <StatCard
+          label="Giá trị TB/đơn"
+          value={t?.averageTicket ?? 0}
+          format="vnd"
+          icon={Receipt}
+          tone="success"
+          className={pulse}
+          hint={`Tổng giá trị đơn ${formatVnd(t?.grossOrderValue ?? 0)}`}
+        />
+      </StaggerItem>
+      <StaggerItem>
+        <StatCard
+          label="Giảm giá"
+          value={t?.discountTotal ?? 0}
+          format="vnd"
+          icon={BadgePercent}
+          tone="warning"
+          className={pulse}
+          hint={
+            t?.serviceChargeTotal
+              ? `Phí dịch vụ ${formatVnd(t.serviceChargeTotal)}`
+              : "Tổng giảm giá trên đơn"
+          }
+        />
+      </StaggerItem>
+    </Stagger>
   );
 }

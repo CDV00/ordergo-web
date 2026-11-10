@@ -13,7 +13,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-3">
       <span className="text-muted-foreground shrink-0 text-sm">{label}</span>
-      <span className="text-right text-sm font-medium">{children}</span>
+      <span className="text-right text-sm font-medium break-words">{children}</span>
     </div>
   );
 }
@@ -25,7 +25,7 @@ export function OrderInfoCard({ order }: { order: Order }) {
         <CardTitle className="text-lg">Thông tin chung</CardTitle>
         <CardDescription>Tổng quan về đơn hàng</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="divide-y [&>*]:py-2.5 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
         <Row label="Mã đơn">{order.orderNumber}</Row>
         <Row label="Trạng thái">
           <Badge className={cn("border-transparent", ORDER_STATUS_CLASS[order.status])}>

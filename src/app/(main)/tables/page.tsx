@@ -1,17 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
+import { MotionConfig } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -21,26 +13,17 @@ import {
 } from "@/components/ui/select";
 import { MenuToggle } from "@/components/menu-toggle";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Printer, Trash2, Users } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
+import { Stagger, StaggerItem } from "@/components/motion";
+import { Armchair, ChevronRight, Printer, Trash2, Users } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
-import {
-  useChangeTableStatus,
-  useCreateTable,
-  useDeleteTable,
-  useTables,
-} from "@/hooks/api/use-tables";
-import { useAuth } from "@/contexts/auth-context";
+import { useChangeTableStatus, useDeleteTable, useTables } from "@/hooks/api/use-tables";
 import { ApiException } from "@/lib/api-client";
+import { TABLE_STATUS_ACCENT, TABLE_STATUS_CLASS, TABLE_STATUS_DOT } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { RestaurantTable, TableStatus } from "@/types/api";
 import AddTableModal from "@/app/(main)/tables/modals/add-table-modal";
-
-interface TableForm {
-  name: string;
-  section: string;
-  capacity: number;
-}
 
 const STATUS_LABELS: Record<TableStatus, string> = {
   available: "Trống",
@@ -50,22 +33,14 @@ const STATUS_LABELS: Record<TableStatus, string> = {
   out_of_order: "Hỏng",
 };
 
-const STATUS_COLORS: Record<TableStatus, string> = {
-  available: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800",
-  occupied: "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800",
-  reserved: "bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800",
-  cleaning: "bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800",
-  out_of_order: "bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800",
-};
+const STATUS_ORDER = Object.keys(STATUS_LABELS) as TableStatus[];
+
+const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6";
 
 export default function TablesPage() {
   const tables = useTables();
   const changeStatus = useChangeTableStatus();
   const remove = useDeleteTable();
-
-  const form = useForm<TableForm>({
-    defaultValues: { name: "", section: "Sảnh", capacity: 4 },
-  });
 
   const onChangeStatus = async (id: string, status: TableStatus) => {
     try {
@@ -90,78 +65,141 @@ export default function TablesPage() {
     return acc;
   }, {});
 
-  return (
-    <div className="flex flex-col">
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-        <MenuToggle />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <h1 className="text-lg font-semibold">Bàn ăn</h1>
-        <div className="ml-auto flex gap-2">
-          <Button asChild variant="outline">
-            <Link href="/tables/qr">
-              <Printer className="mr-1 size-4" /> In QR
-            </Link>
-          </Button>
-          <AddTableModal />
-        </div>
-      </header>
+  /** Số bàn theo trạng thái (chú thích đầu trang) */
+  const counts = useMemo(() => {
+    const c = {} as Record<TableStatus, number>;
+    for (const t of tables.data ?? []) c[t.status] = (c[t.status] ?? 0) + 1;
+    return c;
+  }, [tables.data]);
 
-      <main className="flex-1 space-y-6 p-4 md:p-6">
-        {tables.isLoading ? (
-          <p className="text-muted-foreground">Đang tải...</p>
-        ) : tables.data?.length === 0 ? (
-          <Card>
-            <CardContent className="text-muted-foreground py-12 text-center">
-              Chưa có bàn nào. Bấm &quot;Thêm bàn&quot; để bắt đầu.
-            </CardContent>
-          </Card>
-        ) : (
-          Object.entries(grouped).map(([section, list]) => (
-            <section key={section} className="space-y-3">
-              <h2 className="text-base font-semibold">{section}</h2>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-                {list.map((t) => (
-                  <Card key={t.id} className={`${STATUS_COLORS[t.status]} border-2`}>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="flex items-center justify-between text-base">
-                        <span>{t.name}</span>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6"
-                          onClick={() => onDelete(t.id, t.name)}
-                        >
-                          <Trash2 className="text-destructive size-3" />
-                        </Button>
-                      </CardTitle>
-                      <CardDescription className="flex items-center gap-1 text-xs">
-                        <Users className="size-3" /> {t.capacity} chỗ
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Select
-                        value={t.status}
-                        onValueChange={(v) => onChangeStatus(t.id, v as TableStatus)}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(Object.keys(STATUS_LABELS) as TableStatus[]).map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {STATUS_LABELS[s]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </CardContent>
-                  </Card>
+  return (
+    <MotionConfig reducedMotion="user">
+      <div className="flex flex-col">
+        <header className="bg-background/85 sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
+          <MenuToggle />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <span className="bg-primary/10 text-primary hidden size-8 items-center justify-center rounded-lg sm:flex">
+            <Armchair className="size-4" />
+          </span>
+          <h1 className="text-lg font-bold tracking-tight">Bàn ăn</h1>
+          <div className="ml-auto flex gap-2">
+            <Button asChild variant="outline">
+              <Link href="/tables/qr">
+                <Printer className="size-4" /> In QR
+              </Link>
+            </Button>
+            <AddTableModal />
+          </div>
+        </header>
+
+        <main className="flex-1 space-y-6 p-4 md:p-6">
+          {tables.isLoading ? (
+            <div className={GRID}>
+              {Array.from({ length: 12 }).map((_, i) => (
+                <Skeleton key={i} className="h-36 rounded-2xl" />
+              ))}
+            </div>
+          ) : tables.data?.length === 0 ? (
+            <EmptyState
+              icon={Armchair}
+              title="Chưa có bàn nào"
+              description='Bấm "Thêm bàn" để bắt đầu.'
+            />
+          ) : (
+            <>
+              {/* Chú thích trạng thái + số lượng */}
+              <ul className="flex flex-wrap gap-2">
+                {STATUS_ORDER.filter((s) => counts[s]).map((s) => (
+                  <li
+                    key={s}
+                    className="bg-card flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium shadow-xs"
+                  >
+                    <span aria-hidden className={cn("size-2 rounded-full", TABLE_STATUS_DOT[s])} />
+                    {STATUS_LABELS[s]}
+                    <span className="text-muted-foreground tabular-nums">{counts[s]}</span>
+                  </li>
                 ))}
-              </div>
-            </section>
-          ))
-        )}
-      </main>
-    </div>
+              </ul>
+
+              {Object.entries(grouped).map(([section, list]) => (
+                <section key={section} className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-sm font-semibold">{section}</h2>
+                    <span className="text-muted-foreground text-xs tabular-nums">
+                      {list.length} bàn
+                    </span>
+                    <div className="bg-border h-px flex-1" />
+                  </div>
+                  <Stagger className={GRID} stagger={0.025}>
+                    {list.map((t) => (
+                      <StaggerItem
+                        key={t.id}
+                        className={cn(
+                          "bg-card flex flex-col rounded-2xl border border-l-4 p-3.5 shadow-xs transition-shadow hover:shadow-md",
+                          TABLE_STATUS_ACCENT[t.status],
+                          t.status === "out_of_order" && "opacity-70",
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <Link
+                            href={`/tables/${t.id}`}
+                            className="group flex min-w-0 items-center gap-1 hover:underline"
+                          >
+                            <span className="truncate text-xl leading-tight font-bold tracking-tight">
+                              {t.name}
+                            </span>
+                            <ChevronRight className="text-muted-foreground size-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                          </Link>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive -mt-1 -mr-1.5 size-9 shrink-0"
+                            aria-label={`Xoá bàn ${t.name}`}
+                            onClick={() => onDelete(t.id, t.name)}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                        <div className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs">
+                          <Users className="size-3.5" /> {t.capacity} chỗ
+                        </div>
+                        <div className="mt-auto pt-3">
+                          <Select
+                            value={t.status}
+                            onValueChange={(v) => onChangeStatus(t.id, v as TableStatus)}
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                "h-10 rounded-full border-transparent text-xs font-semibold shadow-none",
+                                TABLE_STATUS_CLASS[t.status],
+                              )}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {STATUS_ORDER.map((s) => (
+                                <SelectItem key={s} value={s}>
+                                  <span className="flex items-center gap-2">
+                                    <span
+                                      aria-hidden
+                                      className={cn("size-2 rounded-full", TABLE_STATUS_DOT[s])}
+                                    />
+                                    {STATUS_LABELS[s]}
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </StaggerItem>
+                    ))}
+                  </Stagger>
+                </section>
+              ))}
+            </>
+          )}
+        </main>
+      </div>
+    </MotionConfig>
   );
 }

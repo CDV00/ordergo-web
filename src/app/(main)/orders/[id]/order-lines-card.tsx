@@ -18,7 +18,7 @@ function LineStatusBadge({ line }: { line: OrderLine }) {
     return (
       <Badge
         variant="outline"
-        className="border-dashed border-slate-400 text-slate-700 dark:text-slate-300"
+        className="border-muted-foreground/40 text-muted-foreground border-dashed"
       >
         Chưa gửi bếp
       </Badge>
@@ -53,17 +53,22 @@ export function OrderLinesCard({ order, isOpen }: Props) {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Danh sách món</CardTitle>
-        <CardDescription>{activeCount} món trong đơn</CardDescription>
+      <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 pb-3">
+        <div className="space-y-1">
+          <CardTitle className="text-lg">Danh sách món</CardTitle>
+          <CardDescription>{activeCount} món trong đơn</CardDescription>
+        </div>
+        <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-xl">
+          <UtensilsCrossed className="size-5" />
+        </div>
       </CardHeader>
       <CardContent>
         {order.lines.length === 0 ? (
-          <div className="text-muted-foreground py-6 text-center text-sm">
+          <div className="text-muted-foreground rounded-xl border border-dashed py-8 text-center text-sm">
             Đơn hàng này chưa có món nào.
           </div>
         ) : (
-          <ul className="divide-y">
+          <ul className="-mx-2 space-y-1">
             {order.lines.map((line) => {
               const cancelled = line.kitchenStatus === "cancelled";
               const unsent = !line.sentToKitchenAt;
@@ -77,21 +82,24 @@ export function OrderLinesCard({ order, isOpen }: Props) {
                 <li
                   key={line.id}
                   className={cn(
-                    "flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-start",
+                    "hover:bg-muted/50 flex flex-col gap-2 rounded-xl px-2 py-3 transition-colors sm:flex-row sm:items-start",
                     cancelled && "opacity-60",
                   )}
                 >
-                  <div className="flex min-w-0 flex-1 items-start gap-2">
-                    <UtensilsCrossed className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <span className="bg-muted tabular flex h-8 min-w-8 shrink-0 items-center justify-center rounded-lg px-1.5 text-sm font-bold">
+                      {line.quantity}
+                    </span>
                     <div className="min-w-0 space-y-0.5">
-                      <p className={cn("text-sm font-medium", cancelled && "line-through")}>
-                        {line.quantity}× {line.productSnapshot.name}
+                      <p className={cn("font-medium", cancelled && "line-through")}>
+                        <span className="sr-only">{line.quantity}× </span>
+                        {line.productSnapshot.name}
                       </p>
                       {options.length > 0 && (
                         <p className="text-muted-foreground text-xs">{options.join(", ")}</p>
                       )}
                       {line.note && (
-                        <p className="text-xs text-amber-700 italic dark:text-amber-400">
+                        <p className="bg-warning-soft dark:text-warning inline-block rounded-md px-2 py-0.5 text-xs font-medium text-[oklch(0.45_0.12_60)]">
                           Ghi chú: {line.note}
                         </p>
                       )}
@@ -106,7 +114,7 @@ export function OrderLinesCard({ order, isOpen }: Props) {
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-2 sm:flex-col sm:items-end">
-                    <span className={cn("text-sm font-semibold", cancelled && "line-through")}>
+                    <span className={cn("tabular font-semibold", cancelled && "line-through")}>
                       {formatVnd(line.lineTotal.amount)}
                     </span>
                     <div className="flex items-center gap-1">
@@ -115,22 +123,22 @@ export function OrderLinesCard({ order, isOpen }: Props) {
                           <Button
                             size="icon"
                             variant="outline"
-                            className="h-8 w-8"
+                            className="size-10"
                             aria-label="Giảm số lượng"
                             disabled={line.quantity <= 1 || update.isPending}
                             onClick={() => changeQty(line, line.quantity - 1)}
                           >
-                            <Minus className="h-3 w-3" />
+                            <Minus className="size-4" />
                           </Button>
                           <Button
                             size="icon"
                             variant="outline"
-                            className="h-8 w-8"
+                            className="size-10"
                             aria-label="Tăng số lượng"
                             disabled={update.isPending}
                             onClick={() => changeQty(line, line.quantity + 1)}
                           >
-                            <Plus className="h-3 w-3" />
+                            <Plus className="size-4" />
                           </Button>
                         </>
                       )}
@@ -138,12 +146,12 @@ export function OrderLinesCard({ order, isOpen }: Props) {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-8 w-8"
+                          className="size-10"
                           aria-label={unsent ? "Xoá món" : "Huỷ món"}
                           title={unsent ? "Xoá món" : "Huỷ món (cần quyền quản lý)"}
                           onClick={() => setRemoving(line)}
                         >
-                          <Trash2 className="text-destructive h-4 w-4" />
+                          <Trash2 className="text-destructive size-4" />
                         </Button>
                       )}
                     </div>

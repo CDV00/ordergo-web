@@ -68,7 +68,7 @@ export function RemoveLineDialog({
                   key={r}
                   type="button"
                   onClick={() => setReason(r)}
-                  className={`rounded-full border px-3 py-1 text-xs ${reason === r ? "border-primary bg-primary/10" : ""}`}
+                  className={`h-9 rounded-full border px-3 text-xs font-medium transition-colors ${reason === r ? "border-primary bg-primary/10 text-primary" : "bg-card hover:bg-muted"}`}
                 >
                   {r}
                 </button>

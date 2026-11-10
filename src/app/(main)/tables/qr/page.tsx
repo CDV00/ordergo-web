@@ -216,7 +216,7 @@ export default function PrintQrPage() {
 
       {/* Toolbar (no-print) */}
       <div className="no-print flex flex-col">
-        <header className="bg-background sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b px-3 md:px-4">
+        <header className="bg-background/85 sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b px-3 backdrop-blur md:px-4">
           <Link
             href="/tables"
             className="hover:bg-muted -ml-2 flex size-9 items-center justify-center rounded-lg"
@@ -242,7 +242,7 @@ export default function PrintQrPage() {
         <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-[320px_1fr]">
           {/* Sidebar config */}
           <aside className="space-y-4">
-            <section className="bg-card space-y-3 rounded-lg border p-4">
+            <section className="bg-card space-y-3 rounded-2xl border p-4 shadow-xs">
               <h2 className="flex items-center gap-2 font-semibold">
                 <Store className="size-4" />
                 Quán
@@ -255,7 +255,7 @@ export default function PrintQrPage() {
               </div>
             </section>
 
-            <section className="bg-card space-y-3 rounded-lg border p-4">
+            <section className="bg-card space-y-3 rounded-2xl border p-4 shadow-xs">
               <h2 className="font-semibold">Bố cục in</h2>
               <Select value={layoutKey} onValueChange={(v) => setLayoutKey(v as LayoutKey)}>
                 <SelectTrigger>
@@ -270,7 +270,7 @@ export default function PrintQrPage() {
               <p className="text-muted-foreground text-xs">{layout.description}</p>
             </section>
 
-            <section className="bg-card space-y-3 rounded-lg border p-4">
+            <section className="bg-card space-y-3 rounded-2xl border p-4 shadow-xs">
               <h2 className="flex items-center justify-between font-semibold">
                 <span>Chọn bàn</span>
                 {tables.data && tables.data.length > 0 && (
@@ -316,7 +316,7 @@ export default function PrintQrPage() {
                           {list.map((t) => (
                             <label
                               key={t.id}
-                              className={`flex cursor-pointer items-center gap-2 rounded border px-2.5 py-1.5 text-sm ${
+                              className={`flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors ${
                                 selectedIds.has(t.id)
                                   ? "bg-primary/10 border-primary"
                                   : "bg-muted/40 hover:border-border border-transparent"
@@ -339,7 +339,7 @@ export default function PrintQrPage() {
               )}
             </section>
 
-            <section className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+            <section className="bg-warning-soft border-warning/40 dark:text-warning space-y-2 rounded-2xl border p-4 text-sm text-[oklch(0.45_0.11_70)]">
               <p className="font-semibold">💡 Lưu ý in</p>
               <ul className="list-disc space-y-1 pl-4 text-xs">
                 <li>Tắt &quot;Headers and footers&quot; trong dialog in</li>
@@ -354,7 +354,7 @@ export default function PrintQrPage() {
           <div className="space-y-4">
             <h2 className="text-muted-foreground text-sm font-semibold">Xem trước</h2>
             {selectedTables.length === 0 ? (
-              <div className="text-muted-foreground rounded-lg border-2 border-dashed p-12 text-center">
+              <div className="text-muted-foreground rounded-2xl border-2 border-dashed p-12 text-center">
                 Chọn bàn để xem trước QR
               </div>
             ) : (

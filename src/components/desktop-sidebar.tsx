@@ -21,7 +21,7 @@ export function DesktopSidebar() {
     <aside
       data-state={collapsed ? "collapsed" : "expanded"}
       className={cn(
-        "hidden shrink-0 flex-col overflow-hidden xl:flex",
+        "sidebar-scope hidden shrink-0 flex-col overflow-hidden xl:flex",
         "bg-sidebar text-sidebar-foreground border-sidebar-border border-r",
         "transition-[width] duration-300 ease-in-out",
         collapsed ? "w-16" : "w-60",

@@ -40,8 +40,8 @@ export function VietQrPanel({ orderId }: { orderId: string }) {
   if (!qr.data) return null;
   const d = qr.data;
   return (
-    <div className="bg-muted space-y-3 rounded-lg p-4 text-center">
-      <div className="mx-auto w-fit rounded-lg bg-white p-3">
+    <div className="bg-muted/60 space-y-3 rounded-2xl border p-4 text-center">
+      <div className="mx-auto w-fit rounded-xl bg-white p-3 shadow-sm">
         <QRCodeSVG value={d.qrPayload} size={200} level="M" includeMargin={false} />
       </div>
       <div className="text-2xl font-bold tabular-nums">{formatVnd(d.amount)}</div>

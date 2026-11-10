@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Bell, Search } from "lucide-react";
+import { Bell, Coffee, Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -18,29 +18,35 @@ export function MobileHeader() {
   const { toggleSidebar } = useSidebar();
 
   return (
-    <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 fixed top-0 right-0 left-0 z-50 flex items-center justify-between border-b p-4 backdrop-blur lg:hidden">
-      <div className="flex items-center space-x-3">
+    <div className="bg-card/90 supports-[backdrop-filter]:bg-card/75 fixed top-0 right-0 left-0 z-50 flex h-14 items-center justify-between border-b px-2 shadow-xs backdrop-blur-lg lg:hidden">
+      <div className="flex items-center gap-1">
         <Button
           variant="ghost"
           size="sm"
           onClick={toggleSidebar}
+          aria-label="Mở menu"
           className="touch-friendly min-h-[44px] min-w-[44px]"
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <div className="flex items-center space-x-2">
-          <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-            <span className="text-xs font-bold">O</span>
+        <div className="flex items-center gap-2">
+          <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-xl shadow-xs">
+            <Coffee className="size-4" strokeWidth={2.4} />
           </div>
-          <span className="text-lg font-semibold">OrderGo</span>
+          <span className="text-base font-bold tracking-tight">OrderGo</span>
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-0.5">
         {/* Mobile Search */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="touch-friendly min-h-[44px] min-w-[44px]">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="touch-friendly min-h-[44px] min-w-[44px]"
+              aria-label="Tìm kiếm"
+            >
               <Search className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
@@ -60,7 +66,7 @@ export function MobileHeader() {
               className="touch-friendly relative min-h-[44px] min-w-[44px]"
             >
               <Bell className="h-5 w-5" />
-              <Badge className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center p-0 text-xs">
+              <Badge className="ring-card absolute top-1 right-1 flex size-4 items-center justify-center p-0 text-[10px] ring-2">
                 5
               </Badge>
             </Button>

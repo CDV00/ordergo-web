@@ -1,16 +1,24 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CloudOff, Package, Users } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
+import { AnimatedNumber } from "@/components/animated-number";
+import { Pressable, Stagger, StaggerItem } from "@/components/motion";
+import { Armchair, Clock, CloudOff, Package, Users } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useOutboxStore } from "@/lib/offline/outbox";
 import { pendingCartKeys } from "@/lib/offline/outbox-core";
 import { useTables } from "@/hooks/api/use-tables";
 import { useOrders } from "@/hooks/api/use-orders";
-import { formatVnd, minutesSince } from "@/lib/format";
+import {
+  minutesSince,
+  TABLE_STATUS_ACCENT,
+  TABLE_STATUS_CLASS,
+  TABLE_STATUS_DOT,
+} from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { RestaurantTable, TableStatus } from "@/types/api";
 
 const STATUS_LABELS: Record<TableStatus, string> = {
@@ -21,21 +29,81 @@ const STATUS_LABELS: Record<TableStatus, string> = {
   out_of_order: "Tạm ngưng",
 };
 
-const STATUS_BG: Record<TableStatus, string> = {
-  available:
-    "bg-emerald-50 hover:bg-emerald-100 border-emerald-200 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:border-emerald-800",
-  occupied:
-    "bg-blue-50 hover:bg-blue-100 border-blue-200 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 dark:border-blue-800",
-  reserved:
-    "bg-amber-50 hover:bg-amber-100 border-amber-200 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 dark:border-amber-800",
-  cleaning: "bg-orange-50 hover:bg-orange-100 border-orange-200 dark:bg-orange-950/40",
-  out_of_order: "bg-rose-50 border-rose-200 dark:bg-rose-950/40 cursor-not-allowed opacity-50",
-};
+const STATUS_ORDER: TableStatus[] = [
+  "available",
+  "occupied",
+  "reserved",
+  "cleaning",
+  "out_of_order",
+];
+
+const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6";
 
 interface Props {
   onPickTable: (tableId: string, tableName: string) => void;
   onPickTakeaway: () => void;
 }
+
+interface TableCardProps {
+  table: RestaurantTable;
+  pending: boolean;
+  open: { total: number; since: string } | undefined;
+  onPick: (tableId: string, tableName: string) => void;
+}
+
+/** Thẻ bàn: chấm màu + viền nhấn theo trạng thái, tên lớn, số chỗ, tiền đơn đang mở + số phút. */
+const TableCard = memo(function TableCard({ table: t, pending, open, onPick }: TableCardProps) {
+  const disabled = t.status === "out_of_order";
+  return (
+    <Pressable
+      disabled={disabled}
+      onClick={() => onPick(t.id, t.name)}
+      {...(disabled ? { whileHover: undefined, whileTap: undefined } : {})}
+      className={cn(
+        "bg-card group flex min-h-28 w-full flex-col rounded-2xl border border-l-4 p-3.5 text-left shadow-xs transition-shadow",
+        "focus-visible:ring-ring/40 focus-visible:ring-[3px] focus-visible:outline-none",
+        TABLE_STATUS_ACCENT[t.status],
+        disabled ? "cursor-not-allowed opacity-55" : "hover:shadow-md",
+        t.status === "occupied" && "bg-primary/[0.03]",
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="truncate text-xl leading-tight font-bold tracking-tight">{t.name}</div>
+        <span
+          aria-hidden
+          className={cn("mt-1.5 size-2.5 shrink-0 rounded-full", TABLE_STATUS_DOT[t.status])}
+        />
+      </div>
+      <div className="text-muted-foreground mt-1 flex items-center gap-1 text-xs">
+        <Users className="size-3.5" /> {t.capacity}
+      </div>
+      <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-2">
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+            TABLE_STATUS_CLASS[t.status],
+          )}
+        >
+          {STATUS_LABELS[t.status]}
+        </span>
+        {pending && (
+          <span className="bg-warning-soft dark:text-warning flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold text-[oklch(0.5_0.12_70)]">
+            <CloudOff className="size-3" /> Chờ gửi
+          </span>
+        )}
+      </div>
+      {open && (
+        <div className="mt-2 flex items-baseline justify-between gap-1 border-t border-dashed pt-2 text-xs">
+          <AnimatedNumber value={open.total} format="vnd" className="text-sm font-bold" />
+          <span className="text-muted-foreground flex items-center gap-0.5 tabular-nums">
+            <Clock className="size-3" />
+            {minutesSince(open.since)}′
+          </span>
+        </div>
+      )}
+    </Pressable>
+  );
+});
 
 function TablePickerInner({ onPickTable, onPickTakeaway }: Props) {
   const { data, isLoading, error } = useTables();
@@ -69,12 +137,25 @@ function TablePickerInner({ onPickTable, onPickTakeaway }: Props) {
     }, {});
   }, [data]);
 
+  /** Đếm bàn theo trạng thái cho chú thích */
+  const counts = useMemo(() => {
+    const c = {} as Record<TableStatus, number>;
+    for (const t of data ?? []) c[t.status] = (c[t.status] ?? 0) + 1;
+    return c;
+  }, [data]);
+
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 rounded-xl" />
-        ))}
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-12 w-36 rounded-xl" />
+        </div>
+        <div className={GRID}>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -86,53 +167,56 @@ function TablePickerInner({ onPickTable, onPickTakeaway }: Props) {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Chọn bàn để bắt đầu</h2>
-        <Button size="lg" onClick={onPickTakeaway}>
-          <Package className="mr-2 size-5" /> Mang về
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold tracking-tight">Chọn bàn để bắt đầu</h2>
+          {/* Chú thích trạng thái */}
+          <ul className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+            {STATUS_ORDER.filter((s) => counts[s]).map((s) => (
+              <li key={s} className="flex items-center gap-1.5">
+                <span aria-hidden className={cn("size-2 rounded-full", TABLE_STATUS_DOT[s])} />
+                {STATUS_LABELS[s]}
+                <span className="text-foreground font-semibold tabular-nums">{counts[s]}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <Button size="lg" onClick={onPickTakeaway} className="h-14 rounded-xl px-6 text-base">
+          <Package className="size-5" /> Mang về
         </Button>
       </div>
 
       {data?.length === 0 && (
-        <Card className="text-muted-foreground p-12 text-center">
-          Chưa có bàn nào. Vào trang <strong>Bàn ăn</strong> để tạo trước.
-        </Card>
+        <EmptyState
+          icon={Armchair}
+          title="Chưa có bàn nào"
+          description={
+            <>
+              Vào trang <strong>Bàn ăn</strong> để tạo trước.
+            </>
+          }
+        />
       )}
 
       {Object.entries(grouped).map(([section, list]) => (
         <section key={section} className="space-y-3">
-          <h3 className="text-muted-foreground text-sm font-semibold uppercase">{section}</h3>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {list.map((t) => (
-              <button
-                key={t.id}
-                disabled={t.status === "out_of_order"}
-                onClick={() => onPickTable(t.id, t.name)}
-                className={`${STATUS_BG[t.status]} focus:ring-primary rounded-xl border-2 p-4 text-left transition-colors focus:ring-2 focus:outline-none active:scale-[0.98]`}
-              >
-                <div className="text-base font-semibold">{t.name}</div>
-                <div className="text-muted-foreground mt-1 flex items-center gap-1 text-xs">
-                  <Users className="size-3" /> {t.capacity}
-                </div>
-                <div className="mt-1.5 text-xs font-medium">{STATUS_LABELS[t.status]}</div>
-                {pendingTables.has(t.id) && (
-                  <div className="mt-1 flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400">
-                    <CloudOff className="size-3" /> Chờ gửi
-                  </div>
-                )}
-                {openByTable.has(t.id) && (
-                  <div className="mt-1 flex items-baseline justify-between gap-1 text-xs">
-                    <span className="font-semibold tabular-nums">
-                      {formatVnd(openByTable.get(t.id)!.total)}
-                    </span>
-                    <span className="text-muted-foreground tabular-nums">
-                      {minutesSince(openByTable.get(t.id)!.since)}′
-                    </span>
-                  </div>
-                )}
-              </button>
-            ))}
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-semibold">{section}</h3>
+            <span className="text-muted-foreground text-xs tabular-nums">{list.length} bàn</span>
+            <div className="bg-border h-px flex-1" />
           </div>
+          <Stagger className={GRID} stagger={0.025}>
+            {list.map((t) => (
+              <StaggerItem key={t.id} className="flex">
+                <TableCard
+                  table={t}
+                  pending={pendingTables.has(t.id)}
+                  open={openByTable.get(t.id)}
+                  onPick={onPickTable}
+                />
+              </StaggerItem>
+            ))}
+          </Stagger>
         </section>
       ))}
     </div>

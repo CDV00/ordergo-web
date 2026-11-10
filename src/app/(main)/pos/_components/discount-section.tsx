@@ -49,18 +49,18 @@ export function DiscountSection({ order }: { order: Order }) {
   }
 
   return (
-    <div className="space-y-2 rounded-lg border p-3">
+    <div className="bg-card space-y-2.5 rounded-2xl border p-3 shadow-xs">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">Giảm giá</span>
-        <div className="bg-muted flex rounded-md p-0.5 text-xs">
+        <div className="bg-muted flex rounded-full p-0.5 text-xs">
           {(["percent", "amount"] as const).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setType(t)}
               className={cn(
-                "rounded px-2.5 py-1 font-medium",
-                type === t && "bg-background shadow-sm",
+                "rounded-full px-3 py-1 font-medium transition-colors",
+                type === t && "bg-card shadow-sm",
               )}
             >
               {t === "percent" ? "%" : "Số tiền"}
@@ -80,7 +80,7 @@ export function DiscountSection({ order }: { order: Order }) {
                 void submit(p, "percent");
               }}
               className={cn(
-                "rounded-full border px-3 py-1 text-xs",
+                "h-9 rounded-full border px-3.5 text-xs font-semibold transition-colors",
                 current?.type === "percent" && current.value === p
                   ? "border-primary bg-primary/10"
                   : "hover:border-primary/50",
@@ -126,7 +126,7 @@ export function DiscountSection({ order }: { order: Order }) {
       />
       {current && (
         <div className="flex items-center justify-between text-xs">
-          <span className="text-emerald-700 dark:text-emerald-400">
+          <span className="text-success font-medium">
             Đang giảm {formatVnd(order.pricing.discount.amount)}
             {current.type === "percent" ? ` (${current.value}%)` : ""}
           </span>

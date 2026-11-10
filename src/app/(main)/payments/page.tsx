@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { CreditCard } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +19,8 @@ import { todayYmd } from "@/lib/format";
 import { PaymentList, PaymentListSkeleton } from "./_components/payment-list";
 import { errorMessage, isForbidden } from "./_components/payment-status";
 import { PaymentSummary } from "./_components/payment-summary";
+import { PendingRequestsCard } from "./_components/pending-requests-card";
+import { UnpaidOrdersCard } from "./_components/unpaid-orders-card";
 import { PaymentsShell, StateMessage } from "./_components/payments-shell";
 
 /** API trả tối đa 500 giao dịch mỗi lần. */
@@ -40,45 +44,50 @@ export default function PaymentsPage() {
   const forbidden = isForbidden(day.error) || isForbidden(list.error);
   const listError = list.error ?? day.error;
 
-  return (
-    <PaymentsShell>
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <h2 className="text-xl font-bold sm:text-2xl">Lịch sử thanh toán</h2>
-          <p className="text-muted-foreground text-sm">Các khoản đã thu trong ngày</p>
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="space-y-1">
-            <Label htmlFor="payment-date" className="text-xs">
-              Ngày
-            </Label>
-            <Input
-              id="payment-date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value || todayYmd())}
-              className="min-h-[44px] sm:w-[170px]"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Phương thức</Label>
-            <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod | "all")}>
-              <SelectTrigger className="min-h-[44px] w-full sm:w-[190px]">
-                <SelectValue placeholder="Phương thức" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                {METHODS.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {PAYMENT_METHOD_LABEL[m]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+  const filters = (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+      <div className="space-y-1">
+        <Label htmlFor="payment-date" className="text-xs">
+          Ngày
+        </Label>
+        <Input
+          id="payment-date"
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value || todayYmd())}
+          className="min-h-[44px] sm:w-[170px]"
+        />
       </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Phương thức</Label>
+        <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod | "all")}>
+          <SelectTrigger className="min-h-[44px] w-full sm:w-[190px]">
+            <SelectValue placeholder="Phương thức" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả</SelectItem>
+            {METHODS.map((m) => (
+              <SelectItem key={m} value={m}>
+                {PAYMENT_METHOD_LABEL[m]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
 
+  return (
+    <PaymentsShell
+      header={
+        <PageHeader
+          icon={CreditCard}
+          title="Thanh toán"
+          description="Đơn chưa thu và lịch sử các khoản đã thu trong ngày"
+          actions={filters}
+        />
+      }
+    >
       {forbidden ? (
         <StateMessage
           title="Bạn không có quyền xem thanh toán"
@@ -86,6 +95,8 @@ export default function PaymentsPage() {
         />
       ) : (
         <>
+          <PendingRequestsCard />
+          <UnpaidOrdersCard />
           <PaymentSummary payments={day.data} loading={day.isLoading} />
 
           <Card>

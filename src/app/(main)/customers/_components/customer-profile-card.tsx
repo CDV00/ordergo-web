@@ -139,7 +139,7 @@ export function CustomerProfileCard({ customer }: { customer: CustomerDetail }) 
         ) : (
           hasPii &&
           (revealed ? (
-            <div className="flex items-center justify-between gap-2 rounded-md border border-amber-300 bg-amber-50 p-2 text-sm dark:border-amber-800 dark:bg-amber-950/40">
+            <div className="bg-warning-soft border-warning/30 flex items-center justify-between gap-2 rounded-xl border p-2 pl-3 text-sm">
               <span>Đang hiện thông tin đầy đủ · tự che sau {secondsLeft}s</span>
               <Button variant="outline" size="sm" className="min-h-[36px]" onClick={hide}>
                 <EyeOff className="mr-1 h-4 w-4" />

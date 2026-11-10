@@ -8,9 +8,7 @@ import { cn } from "@/lib/utils";
 
 /** Màu chênh lệch tiền: khớp = xanh, lệch = vàng cam. */
 export function differenceClass(diff: number): string {
-  return diff === 0
-    ? "text-emerald-600 dark:text-emerald-400"
-    : "text-amber-600 dark:text-amber-400";
+  return diff === 0 ? "text-success" : "text-[oklch(0.5_0.12_70)] dark:text-warning";
 }
 
 export function formatDifference(diff: number): string {
@@ -21,11 +19,7 @@ export function formatDifference(diff: number): string {
 /** Badge chênh lệch (ca đã đóng) hoặc "Đang mở". */
 export function DifferenceBadge({ shift }: { shift: Shift }) {
   if (shift.status === "open") {
-    return (
-      <Badge className="border-transparent bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/50 dark:text-blue-300">
-        Đang mở
-      </Badge>
-    );
+    return <Badge className="bg-info-soft text-info border-transparent">Đang mở</Badge>;
   }
   const diff = shift.difference ?? 0;
   return (
@@ -33,8 +27,8 @@ export function DifferenceBadge({ shift }: { shift: Shift }) {
       className={cn(
         "border-transparent",
         diff === 0
-          ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/50 dark:text-emerald-300"
-          : "bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900/50 dark:text-amber-300",
+          ? "bg-success-soft text-success"
+          : "bg-warning-soft dark:text-warning text-[oklch(0.5_0.12_70)]",
       )}
     >
       {formatDifference(diff)}
@@ -67,7 +61,7 @@ export function ShiftSummaryView({ shift }: { shift: Shift }) {
   const closed = shift.status === "closed";
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
+      <div className="bg-muted/50 space-y-1.5 rounded-xl p-3">
         <p className="text-sm font-semibold">Đối soát tiền mặt</p>
         <Row label="Tiền đầu ca" value={formatVnd(shift.openingCash)} />
         <Row label="Tiền mặt thu trong ca" value={`+${formatVnd(s?.cashReceived ?? 0)}`} />
@@ -110,7 +104,7 @@ export function ShiftSummaryView({ shift }: { shift: Shift }) {
           <Row
             label={`Đã hoàn tiền (${s?.refundCount ?? 0})`}
             value={`−${formatVnd(s?.refundTotal ?? 0)}`}
-            className="text-rose-600 dark:text-rose-400"
+            className="text-destructive"
           />
         )}
         <Row

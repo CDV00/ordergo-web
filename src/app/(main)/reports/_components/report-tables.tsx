@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import type { SalesReport } from "@/hooks/api/use-reports";
 import { formatVnd } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { EmptyNote } from "./chart-card";
 
 function TableCard({
@@ -28,10 +29,12 @@ function TableCard({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base sm:text-lg">{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardTitle className="text-base">{title}</CardTitle>
+        <CardDescription className="mt-0.5">{description}</CardDescription>
       </CardHeader>
-      <CardContent>{loading ? <Skeleton className="h-48 w-full" /> : children}</CardContent>
+      <CardContent>
+        {loading ? <Skeleton className="h-48 w-full rounded-xl" /> : children}
+      </CardContent>
     </Card>
   );
 }
@@ -67,7 +70,20 @@ export function TopItemsTable({
             <TableBody>
               {items.map((i, idx) => (
                 <TableRow key={i.menuItemId}>
-                  <TableCell className="text-muted-foreground tabular-nums">{idx + 1}</TableCell>
+                  <TableCell>
+                    <span
+                      className={cn(
+                        "tabular flex size-6 items-center justify-center rounded-md text-xs font-bold",
+                        idx === 0
+                          ? "bg-primary text-primary-foreground"
+                          : idx < 3
+                            ? "bg-primary/10 text-primary"
+                            : "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {idx + 1}
+                    </span>
+                  </TableCell>
                   <TableCell className="max-w-[220px] truncate font-medium">{i.name}</TableCell>
                   <TableCell className="text-right tabular-nums">{i.quantity}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatVnd(i.revenue)}</TableCell>

@@ -56,15 +56,9 @@ export default function CustomersPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <CustomersShell>
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <h2 className="text-xl font-bold sm:text-2xl">Khách hàng</h2>
-          <p className="text-muted-foreground text-sm">
-            Thông tin cá nhân được che — mở chi tiết để xem thẻ thành viên và lịch sử
-          </p>
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+    <CustomersShell description="Thông tin cá nhân được che — mở chi tiết để xem thẻ thành viên và lịch sử">
+      <div className="bg-muted/40 flex flex-col gap-3 rounded-2xl border p-3 sm:flex-row sm:items-end sm:p-4">
+        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
           <div className="space-y-1">
             <Label htmlFor="customer-search" className="text-xs">
               Tìm khách
@@ -79,7 +73,7 @@ export default function CustomersPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Số điện thoại hoặc tên"
                 maxLength={100}
-                className="min-h-[44px] pl-9 sm:w-[260px]"
+                className="min-h-[44px] pl-9 sm:w-[300px]"
               />
             </div>
           </div>
@@ -115,7 +109,7 @@ export default function CustomersPage() {
       ) : (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg sm:text-xl">Danh sách khách</CardTitle>
+            <CardTitle className="text-base">Danh sách khách</CardTitle>
             <CardDescription>
               {list.data ? `${total} khách · ghé gần nhất trước` : "Đang tải..."}
             </CardDescription>

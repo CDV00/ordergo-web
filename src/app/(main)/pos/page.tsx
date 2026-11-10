@@ -5,7 +5,9 @@ import { MenuToggle } from "@/components/menu-toggle";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { ArrowLeft, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Package, ShoppingCart, Armchair } from "lucide-react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { AnimatedNumber } from "@/components/animated-number";
 import { toast } from "sonner";
 import { TablePicker } from "./_components/table-picker";
 import { MenuGrid } from "./_components/menu-grid";
@@ -33,7 +35,6 @@ import { planSubmission, type OutboxDisplayLine } from "@/lib/offline/outbox-cor
 import { submitSteps } from "@/lib/offline/submit";
 import { usePendingLines } from "@/lib/offline/use-online";
 import { useOffline } from "@/providers/offline/offline-provider";
-import { formatVnd } from "@/lib/format";
 import { OPEN_ORDER_STATUSES, type MenuItem, type OrderLine } from "@/types/api";
 
 const toLineInput = (l: CartLine): OrderLineInput => ({
@@ -224,16 +225,24 @@ export default function POSPage() {
   ]);
 
   const header = (
-    <header className="bg-background flex h-14 shrink-0 items-center gap-2 border-b px-3 md:px-4">
+    <header className="bg-background/85 supports-[backdrop-filter]:bg-background/70 flex h-14 shrink-0 items-center gap-2 border-b px-3 backdrop-blur md:px-4">
       <MenuToggle />
       <Separator orientation="vertical" className="mr-2 hidden h-4 md:block" />
       {activeKey && (
-        <Button variant="ghost" size="sm" onClick={handleBack} className="px-2">
-          <ArrowLeft className="size-4 md:mr-1" />
+        <Button variant="ghost" size="sm" onClick={handleBack} className="rounded-full px-2.5">
+          <ArrowLeft className="size-4" />
           <span className="hidden sm:inline">Đổi bàn</span>
         </Button>
       )}
-      <h1 className="truncate text-base font-semibold md:text-lg">
+      {activeKey && (
+        <span
+          aria-hidden
+          className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-lg"
+        >
+          {isTakeaway ? <Package className="size-4" /> : <Armchair className="size-4" />}
+        </span>
+      )}
+      <h1 className="truncate text-base font-bold tracking-tight md:text-lg">
         {activeKey ? contextLabel : "POS — Gọi món"}
       </h1>
       <ShiftIndicator />
@@ -262,13 +271,15 @@ export default function POSPage() {
 
   if (!activeKey) {
     return (
-      <div className={containerClass}>
-        {header}
-        <div className="flex-1 overflow-y-auto">
-          <TablePicker onPickTable={handlePickTable} onPickTakeaway={handlePickTakeaway} />
+      <MotionConfig reducedMotion="user">
+        <div className={containerClass}>
+          {header}
+          <div className="flex-1 overflow-y-auto">
+            <TablePicker onPickTable={handlePickTable} onPickTakeaway={handlePickTakeaway} />
+          </div>
+          {dialogs}
         </div>
-        {dialogs}
-      </div>
+      </MotionConfig>
     );
   }
 
@@ -301,41 +312,66 @@ export default function POSPage() {
   const pendingTotal = pendingLines.reduce((acc, l) => acc + l.unitPrice * l.quantity, 0);
   const floatingTotal = (openOrder?.pricing.total.amount ?? 0) + pendingTotal + subtotal;
 
+  const showFloating = count > 0 || !!openOrder || pendingLines.length > 0;
+
   return (
-    <div className={containerClass}>
-      {header}
-      <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_440px]">
-        <div className="overflow-hidden">
-          <MenuGrid onPickItem={handlePickItem} />
+    <MotionConfig reducedMotion="user">
+      <div className={containerClass}>
+        {header}
+        <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_440px]">
+          <div className="overflow-hidden">
+            <MenuGrid onPickItem={handlePickItem} />
+          </div>
+          <div className="hidden flex-col overflow-hidden lg:flex">{cartPanel}</div>
+          <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+            <SheetContent
+              side="right"
+              className="flex w-full flex-col gap-0 p-0 sm:max-w-md lg:hidden"
+            >
+              <SheetTitle className="sr-only">Giỏ hàng</SheetTitle>
+              {cartPanel}
+            </SheetContent>
+          </Sheet>
         </div>
-        <div className="hidden flex-col overflow-hidden lg:flex">{cartPanel}</div>
-        <Sheet open={cartOpen} onOpenChange={setCartOpen}>
-          <SheetContent
-            side="right"
-            className="flex w-full flex-col gap-0 p-0 sm:max-w-md lg:hidden"
-          >
-            <SheetTitle className="sr-only">Giỏ hàng</SheetTitle>
-            {cartPanel}
-          </SheetContent>
-        </Sheet>
+
+        {/* Nút xem giỏ — chỉ < lg, khi có món mới hoặc đơn đang mở */}
+        <AnimatePresence>
+          {showFloating && (
+            <motion.button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              initial={{ opacity: 0, y: 16, x: "-50%" }}
+              animate={{ opacity: 1, y: 0, x: "-50%" }}
+              exit={{ opacity: 0, y: 16, x: "-50%" }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 500, damping: 35 }}
+              className="bg-primary text-primary-foreground shadow-primary/30 fixed bottom-20 left-1/2 z-30 flex h-14 items-center gap-3 rounded-full pr-5 pl-2 shadow-lg lg:hidden"
+            >
+              <span className="bg-primary-foreground/15 relative flex size-10 items-center justify-center rounded-full">
+                <ShoppingCart className="size-5" />
+                {count > 0 && (
+                  <motion.span
+                    key={count}
+                    initial={{ scale: 0.6 }}
+                    animate={{ scale: 1 }}
+                    aria-hidden
+                    className="bg-primary-foreground text-primary absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full text-[11px] font-bold tabular-nums"
+                  >
+                    {count}
+                  </motion.span>
+                )}
+              </span>
+              <span className="font-semibold tabular-nums">
+                {count > 0 ? `${count} món mới` : "Xem đơn"}
+              </span>
+              <span className="bg-primary-foreground/30 h-5 w-px" />
+              <AnimatedNumber value={floatingTotal} format="vnd" className="font-bold" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {dialogs}
       </div>
-
-      {/* Nút xem giỏ — chỉ < lg, khi có món mới hoặc đơn đang mở */}
-      {(count > 0 || openOrder || pendingLines.length > 0) && (
-        <button
-          type="button"
-          onClick={() => setCartOpen(true)}
-          className="bg-primary text-primary-foreground fixed bottom-20 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full px-5 py-3 shadow-lg transition-transform active:scale-95 lg:hidden"
-        >
-          <ShoppingCart className="size-5" />
-          <span className="font-semibold tabular-nums">
-            {count > 0 ? `${count} món mới` : "Xem đơn"}
-          </span>
-          <span className="font-bold tabular-nums">{formatVnd(floatingTotal)}</span>
-        </button>
-      )}
-
-      {dialogs}
-    </div>
+    </MotionConfig>
   );
 }

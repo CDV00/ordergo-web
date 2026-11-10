@@ -93,7 +93,7 @@ function CloseShiftForm({
         </DialogDescription>
       </DialogHeader>
 
-      <div className="bg-muted/50 space-y-1 rounded-lg p-3 text-sm">
+      <div className="bg-muted/50 space-y-1 rounded-xl border p-3 text-sm">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Tiền đầu ca</span>
           <span className="tabular-nums">{formatVnd(shift.openingCash)}</span>
@@ -127,19 +127,25 @@ function CloseShiftForm({
             placeholder={String(expected)}
             value={counted}
             onChange={(e) => setCounted(e.target.value)}
-            className="min-h-[44px] text-lg tabular-nums"
+            className="h-12 rounded-xl text-lg font-bold tabular-nums"
           />
           <Button
             type="button"
             variant="outline"
-            className="min-h-[44px] shrink-0"
+            className="h-12 shrink-0 rounded-xl"
             onClick={() => setCounted(String(expected))}
           >
             Đúng bằng dự kiến
           </Button>
         </div>
         {validAmount && (
-          <p className={cn("text-sm font-semibold", differenceClass(diff))}>
+          <p
+            className={cn(
+              "rounded-lg px-3 py-2 text-sm font-semibold",
+              diff === 0 ? "bg-success-soft" : "bg-warning-soft",
+              differenceClass(diff),
+            )}
+          >
             Chênh lệch: {formatDifference(diff)}
           </p>
         )}
@@ -182,7 +188,7 @@ function ClosedSummary({ shift, onDone }: { shift: Shift; onDone: () => void }) 
     <div className="space-y-4">
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
-          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+          <CheckCircle2 className="text-success h-5 w-5" />
           Tổng kết ca
         </DialogTitle>
         <DialogDescription>

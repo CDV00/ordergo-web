@@ -16,7 +16,7 @@ import {
   useTables,
 } from "@/hooks/api/use-tables";
 import { ApiException } from "@/lib/api-client";
-import { DialogTrigger } from "@radix-ui/react-dialog";
+import { DialogTrigger } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";

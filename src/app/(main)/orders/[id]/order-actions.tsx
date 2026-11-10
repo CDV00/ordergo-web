@@ -36,9 +36,9 @@ export function OrderActions({ order, isOpen }: Props) {
   };
 
   const printButton = canPrint && (
-    <Button asChild variant="outline" className="min-h-[44px]">
+    <Button asChild variant="outline" className="h-11">
       <Link href={`/print/receipt/${order.id}`} target="_blank" rel="noopener noreferrer">
-        <Printer className="mr-2 h-4 w-4" /> In hoá đơn
+        <Printer className="size-4" /> In hoá đơn
       </Link>
     </Button>
   );
@@ -48,28 +48,28 @@ export function OrderActions({ order, isOpen }: Props) {
   return (
     <div className="flex flex-wrap gap-2">
       {unsentCount > 0 && (
-        <Button className="min-h-[44px]" onClick={onSend} disabled={send.isPending}>
-          <ChefHat className="mr-2 h-4 w-4" />
+        <Button size="lg" className="h-11" onClick={onSend} disabled={send.isPending}>
+          <ChefHat className="size-4" />
           {send.isPending ? "Đang gửi…" : `Gửi bếp (${unsentCount})`}
         </Button>
       )}
-      <Button asChild variant="secondary" className="min-h-[44px]">
+      <Button asChild variant="secondary" className="h-11">
         <Link href="/pos">
-          <CreditCard className="mr-2 h-4 w-4" /> Thu tiền tại POS
+          <CreditCard className="size-4" /> Thu tiền tại POS
         </Link>
       </Button>
       {order.orderType === "dine_in" && (
-        <Button variant="outline" className="min-h-[44px]" onClick={() => setMoveOpen(true)}>
-          <ArrowRightLeft className="mr-2 h-4 w-4" /> Chuyển bàn
+        <Button variant="outline" className="h-11" onClick={() => setMoveOpen(true)}>
+          <ArrowRightLeft className="size-4" /> Chuyển bàn
         </Button>
       )}
       {printButton}
       <Button
         variant="outline"
-        className="text-destructive hover:text-destructive min-h-[44px]"
+        className="text-destructive hover:bg-destructive/10 hover:text-destructive h-11 sm:ml-auto"
         onClick={() => setCancelOpen(true)}
       >
-        <XCircle className="mr-2 h-4 w-4" /> Huỷ đơn
+        <XCircle className="size-4" /> Huỷ đơn
       </Button>
 
       <MoveTableDialog order={order} open={moveOpen} onOpenChange={setMoveOpen} />

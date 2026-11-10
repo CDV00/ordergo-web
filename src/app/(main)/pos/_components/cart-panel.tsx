@@ -1,8 +1,20 @@
 "use client";
 
 import { memo } from "react";
+import { AnimatePresence, motion, type Transition } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus, Trash2, Send, CreditCard, Receipt, X, CloudOff } from "lucide-react";
+import { AnimatedNumber } from "@/components/animated-number";
+import {
+  Minus,
+  Plus,
+  Trash2,
+  Send,
+  CreditCard,
+  Receipt,
+  X,
+  CloudOff,
+  ArrowLeftRight,
+} from "lucide-react";
 import { useCartStore, type CartLine, type CartKey } from "@/lib/cart-store";
 import { formatVnd, KITCHEN_STATUS_CLASS, KITCHEN_STATUS_LABEL } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -26,6 +38,38 @@ interface Props {
   onCancel: () => void;
 }
 
+/** Dòng giỏ vào/ra nhanh (≤ 250ms) để không làm chậm thu ngân. */
+const lineSpring: Transition = { type: "spring", stiffness: 500, damping: 38 };
+const lineMotion = {
+  layout: "position" as const,
+  initial: { opacity: 0, y: -6 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, x: 24, transition: { duration: 0.15 } },
+  transition: lineSpring,
+};
+
+function SectionTitle({
+  children,
+  amount,
+  className,
+}: {
+  children: React.ReactNode;
+  amount?: number;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between pt-3 pb-1 text-xs font-semibold tracking-wide uppercase",
+        className,
+      )}
+    >
+      {children}
+      {amount !== undefined && <AnimatedNumber value={amount} format="vnd" />}
+    </div>
+  );
+}
+
 const CartLineRow = ({ cartKey, line }: { cartKey: CartKey; line: CartLine }) => {
   const inc = useCartStore((s) => s.incrementLine);
   const dec = useCartStore((s) => s.decrementLine);
@@ -33,12 +77,12 @@ const CartLineRow = ({ cartKey, line }: { cartKey: CartKey; line: CartLine }) =>
   const setNote = useCartStore((s) => s.setNote);
 
   return (
-    <div className="border-b py-3 last:border-b-0">
+    <div className="bg-card rounded-xl border p-3 shadow-xs">
       <div className="flex justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="text-sm leading-tight font-medium">{line.name}</div>
+          <div className="text-sm leading-tight font-semibold">{line.name}</div>
           {line.variantName && (
-            <div className="text-muted-foreground text-xs">{line.variantName}</div>
+            <div className="text-muted-foreground mt-0.5 text-xs">{line.variantName}</div>
           )}
           {line.toppingNames.length > 0 && (
             <div className="text-muted-foreground text-xs">+ {line.toppingNames.join(", ")}</div>
@@ -46,7 +90,7 @@ const CartLineRow = ({ cartKey, line }: { cartKey: CartKey; line: CartLine }) =>
         </div>
         <button
           onClick={() => remove(cartKey, line.clientLineId)}
-          className="text-muted-foreground hover:text-destructive shrink-0"
+          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 -m-1.5 flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors"
           aria-label="Xoá"
         >
           <Trash2 className="size-4" />
@@ -57,34 +101,36 @@ const CartLineRow = ({ cartKey, line }: { cartKey: CartKey; line: CartLine }) =>
         defaultValue={line.note ?? ""}
         placeholder="Ghi chú..."
         onBlur={(e) => setNote(cartKey, line.clientLineId, e.target.value)}
-        className="border-border focus:border-primary mt-1.5 w-full border-b border-dashed bg-transparent py-1 text-xs focus:outline-none"
+        className="border-border focus:border-primary placeholder:text-muted-foreground/70 mt-1.5 w-full border-b border-dashed bg-transparent py-1 text-xs focus:outline-none"
       />
 
-      <div className="mt-2 flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
+      <div className="mt-2.5 flex items-center justify-between">
+        <div className="bg-muted flex items-center gap-0.5 rounded-full p-0.5">
           <Button
             size="icon"
-            variant="outline"
-            className="h-7 w-7"
+            variant="ghost"
+            className="bg-card size-9 rounded-full shadow-xs"
+            aria-label="Giảm"
             onClick={() => dec(cartKey, line.clientLineId)}
           >
-            <Minus className="size-3" />
+            <Minus className="size-4" />
           </Button>
-          <span className="w-7 text-center text-sm font-semibold tabular-nums">
-            {line.quantity}
-          </span>
+          <span className="w-8 text-center text-sm font-bold tabular-nums">{line.quantity}</span>
           <Button
             size="icon"
-            variant="outline"
-            className="h-7 w-7"
+            variant="ghost"
+            className="bg-card size-9 rounded-full shadow-xs"
+            aria-label="Tăng"
             onClick={() => inc(cartKey, line.clientLineId)}
           >
-            <Plus className="size-3" />
+            <Plus className="size-4" />
           </Button>
         </div>
-        <div className="text-sm font-semibold tabular-nums">
-          {formatVnd(line.unitPrice * line.quantity)}
-        </div>
+        <AnimatedNumber
+          value={line.unitPrice * line.quantity}
+          format="vnd"
+          className="text-sm font-bold"
+        />
       </div>
     </div>
   );
@@ -96,10 +142,12 @@ const MemoCartLineRow = memo(CartLineRow);
 function PendingLineRow({ line }: { line: OutboxDisplayLine }) {
   const extras = [line.variantName, ...line.toppingNames].filter(Boolean);
   return (
-    <div className="flex items-start gap-2 py-2 text-sm" data-testid="pending-line">
-      <span className="w-6 shrink-0 font-semibold tabular-nums">{line.quantity}×</span>
+    <div className="flex items-start gap-2 py-2.5 text-sm" data-testid="pending-line">
+      <span className="bg-warning-soft dark:text-warning flex h-6 min-w-7 shrink-0 items-center justify-center rounded-md px-1 text-xs font-bold text-[oklch(0.5_0.12_70)] tabular-nums">
+        {line.quantity}×
+      </span>
       <div className="min-w-0 flex-1">
-        <div className="leading-tight">{line.name}</div>
+        <div className="leading-tight font-medium">{line.name}</div>
         {extras.length > 0 && (
           <div className="text-muted-foreground text-xs">{extras.join(", ")}</div>
         )}
@@ -118,10 +166,12 @@ function OrderLineRow({ line, onRemove }: { line: OrderLine; onRemove: () => voi
     Boolean,
   );
   return (
-    <div className={cn("flex items-start gap-2 py-2 text-sm", cancelled && "opacity-50")}>
-      <span className="w-6 shrink-0 font-semibold tabular-nums">{line.quantity}×</span>
+    <div className={cn("flex items-start gap-2 py-2.5 text-sm", cancelled && "opacity-50")}>
+      <span className="bg-muted flex h-6 min-w-7 shrink-0 items-center justify-center rounded-md px-1 text-xs font-bold tabular-nums">
+        {line.quantity}×
+      </span>
       <div className="min-w-0 flex-1">
-        <div className={cn("leading-tight", cancelled && "line-through")}>
+        <div className={cn("leading-tight font-medium", cancelled && "line-through")}>
           {line.productSnapshot.name}
         </div>
         {extras.length > 0 && (
@@ -130,10 +180,10 @@ function OrderLineRow({ line, onRemove }: { line: OrderLine; onRemove: () => voi
         {line.note && <div className="text-muted-foreground text-xs italic">“{line.note}”</div>}
         <span
           className={cn(
-            "mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium",
+            "mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold",
             line.sentToKitchenAt
               ? KITCHEN_STATUS_CLASS[line.kitchenStatus]
-              : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+              : "bg-muted text-muted-foreground border border-dashed",
           )}
         >
           {line.sentToKitchenAt ? KITCHEN_STATUS_LABEL[line.kitchenStatus] : "Chưa gửi bếp"}
@@ -145,7 +195,7 @@ function OrderLineRow({ line, onRemove }: { line: OrderLine; onRemove: () => voi
       {removable && (
         <button
           onClick={onRemove}
-          className="text-muted-foreground hover:text-destructive shrink-0 pt-0.5"
+          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 -my-1 flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors"
           aria-label={`Bỏ ${line.productSnapshot.name}`}
           title={line.sentToKitchenAt ? "Huỷ món (cần quản lý)" : "Bỏ món"}
         >
@@ -177,37 +227,42 @@ const CartPanelInner = ({
   const hasUnsentInOrder =
     openOrder?.lines.some((l) => !l.sentToKitchenAt && l.kitchenStatus !== "cancelled") ?? false;
   const canSend = !isEmpty || hasUnsentInOrder;
+  const canPay = !!openOrder && isEmpty && !hasPending;
 
   return (
-    <aside className="bg-card flex h-full flex-col border-l">
+    <aside className="bg-muted/40 flex h-full flex-col border-l">
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b p-4">
-        <div>
-          <div className="text-muted-foreground text-xs">
+      <div className="bg-card flex shrink-0 items-center justify-between gap-2 border-b px-4 py-3">
+        <div className="min-w-0">
+          <div className="text-muted-foreground text-xs font-medium">
             {openOrder ? `Đơn ${openOrder.orderNumber}` : "Đang phục vụ"}
           </div>
-          <div className="text-base font-semibold">{contextLabel}</div>
+          <div className="truncate text-lg font-bold tracking-tight">{contextLabel}</div>
         </div>
-        <Button variant="ghost" size="sm" onClick={onCancel}>
+        <Button variant="outline" size="sm" onClick={onCancel} className="shrink-0 rounded-full">
+          <ArrowLeftRight className="size-3.5" />
           Đổi bàn
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4">
+      <div className="flex-1 overflow-y-auto px-4 pb-3">
         {/* Món đã gọi */}
         {openOrder && (
-          <section className="border-b py-2">
-            <div className="text-muted-foreground flex items-center justify-between pt-1 text-xs font-medium tracking-wide uppercase">
+          <section className="border-b pb-2">
+            <SectionTitle amount={orderTotal} className="text-muted-foreground">
               <span>Đã gọi</span>
-              <span className="tabular-nums">{formatVnd(orderTotal)}</span>
-            </div>
+            </SectionTitle>
             <div className="divide-y">
-              {openOrder.lines.map((l) => (
-                <OrderLineRow key={l.id} line={l} onRemove={() => onRemoveOrderLine(l)} />
-              ))}
+              <AnimatePresence initial={false}>
+                {openOrder.lines.map((l) => (
+                  <motion.div key={l.id} {...lineMotion}>
+                    <OrderLineRow line={l} onRemove={() => onRemoveOrderLine(l)} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
             {openOrder.pricing.discount.amount > 0 && (
-              <div className="text-muted-foreground flex justify-between py-1 text-xs">
+              <div className="text-success flex justify-between py-1 text-xs font-medium">
                 <span>Giảm giá</span>
                 <span className="tabular-nums">
                   −{formatVnd(openOrder.pricing.discount.amount)}
@@ -219,14 +274,19 @@ const CartPanelInner = ({
 
         {/* Đã lưu lúc mất mạng, chưa tới server */}
         {hasPending && (
-          <section className="border-b py-2" data-testid="pending-section">
-            <div className="flex items-center justify-between pt-1 text-xs font-medium tracking-wide text-amber-700 uppercase dark:text-amber-400">
+          <section
+            className="border-warning/40 bg-warning-soft/40 mt-3 rounded-xl border border-dashed px-3 pb-1"
+            data-testid="pending-section"
+          >
+            <SectionTitle
+              amount={pendingTotal}
+              className="dark:text-warning pt-2.5 text-[oklch(0.5_0.12_70)]"
+            >
               <span className="flex items-center gap-1">
                 <CloudOff className="size-3.5" /> Chờ gửi (offline)
               </span>
-              <span className="tabular-nums">{formatVnd(pendingTotal)}</span>
-            </div>
-            <div className="divide-y">
+            </SectionTitle>
+            <div className="divide-warning/20 divide-y">
               {pendingLines.map((l, i) => (
                 <PendingLineRow key={i} line={l} />
               ))}
@@ -239,56 +299,69 @@ const CartPanelInner = ({
           !openOrder &&
           !hasPending && (
             <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2 py-12 text-center">
-              <Receipt className="size-12 opacity-40" />
-              <div className="text-sm">Chưa có món nào</div>
+              <div className="bg-muted mb-1 flex size-16 items-center justify-center rounded-full">
+                <Receipt className="size-7 opacity-60" />
+              </div>
+              <div className="text-foreground text-sm font-semibold">Chưa có món nào</div>
               <div className="text-xs">Chạm vào món để thêm</div>
             </div>
           )
         ) : (
           <section>
             {(openOrder || hasPending) && (
-              <div className="text-primary pt-3 text-xs font-medium tracking-wide uppercase">
-                Gọi thêm
-              </div>
+              <SectionTitle className="text-primary">
+                <span>Gọi thêm</span>
+              </SectionTitle>
             )}
-            {lines.map((l) => (
-              <MemoCartLineRow key={l.clientLineId} cartKey={cartKey} line={l} />
-            ))}
+            <div className="space-y-2 pt-2">
+              <AnimatePresence initial={false} mode="popLayout">
+                {lines.map((l) => (
+                  <motion.div key={l.clientLineId} {...lineMotion}>
+                    <MemoCartLineRow cartKey={cartKey} line={l} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
           </section>
         )}
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 space-y-3 border-t p-4">
+      <div className="bg-card shrink-0 space-y-3 border-t p-4 shadow-[0_-4px_12px_-8px_rgb(0_0_0/0.12)]">
         {!isEmpty && (
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">{count} món chưa gửi</span>
-            <span className="font-semibold tabular-nums">+{formatVnd(subtotal)}</span>
+            <span className="text-primary flex items-baseline font-semibold">
+              +<AnimatedNumber value={subtotal} format="vnd" />
+            </span>
           </div>
         )}
-        <div className="flex items-center justify-between">
-          <div className="text-muted-foreground text-sm">Tổng cộng</div>
-          <div className="text-2xl font-bold tabular-nums">
-            {formatVnd(orderTotal + pendingTotal + subtotal)}
-          </div>
+        <div className="flex items-end justify-between">
+          <div className="text-muted-foreground pb-1 text-sm font-medium">Tổng cộng</div>
+          <AnimatedNumber
+            value={orderTotal + pendingTotal + subtotal}
+            format="vnd"
+            className="text-3xl font-bold tracking-tight"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <Button
             size="lg"
+            variant={canSend || !canPay ? "default" : "outline"}
             disabled={!canSend || isSending}
             onClick={onSendToKitchen}
-            className="font-semibold"
+            className="h-14 rounded-xl font-semibold"
           >
-            <Send className="mr-1.5 size-4" />
+            <Send className="size-4" />
             {isSending ? "Đang gửi..." : openOrder || hasPending ? "Gửi thêm" : "Gửi bếp"}
           </Button>
           <Button
             size="lg"
-            variant={openOrder ? "default" : "outline"}
+            variant={canPay ? "success" : "outline"}
             disabled={!openOrder || !isEmpty || hasPending}
             onClick={onPay}
-            className="font-semibold"
+            className="h-14 rounded-xl font-semibold"
             title={
               hasPending
                 ? "Còn món chờ gửi (offline) — thanh toán sau khi đã gửi được"
@@ -297,7 +370,7 @@ const CartPanelInner = ({
                   : undefined
             }
           >
-            <CreditCard className="mr-1.5 size-4" />
+            <CreditCard className="size-4" />
             Thanh toán
           </Button>
         </div>

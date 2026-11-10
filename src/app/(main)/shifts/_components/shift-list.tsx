@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { CalendarClock, ChevronRight } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -32,7 +32,7 @@ export function ShiftListSkeleton() {
   return (
     <div className="space-y-2">
       {Array.from({ length: 5 }).map((_, i) => (
-        <Skeleton key={i} className="h-12 w-full" />
+        <Skeleton key={i} className="h-14 w-full rounded-xl" />
       ))}
     </div>
   );
@@ -44,9 +44,12 @@ export function ShiftList({ shifts }: { shifts: Shift[] }) {
 
   if (shifts.length === 0) {
     return (
-      <div className="text-muted-foreground py-12 text-center text-sm">
-        Không có ca nào trong khoảng ngày này.
-      </div>
+      <EmptyState
+        icon={CalendarClock}
+        title="Không có ca nào trong khoảng ngày này."
+        description="Mở ca ở màn POS để bắt đầu đối soát tiền mặt."
+        className="border-0"
+      />
     );
   }
 
@@ -70,10 +73,10 @@ export function ShiftList({ shifts }: { shifts: Shift[] }) {
             {shifts.map((s) => (
               <TableRow
                 key={s.id}
-                className="cursor-pointer"
+                className="hover:bg-muted/50 h-14 cursor-pointer"
                 onClick={() => router.push(`/shifts/${s.id}`)}
               >
-                <TableCell className="tabular-nums">
+                <TableCell className="tabular font-medium">
                   <Link
                     href={`/shifts/${s.id}`}
                     className="hover:underline"
@@ -99,26 +102,28 @@ export function ShiftList({ shifts }: { shifts: Shift[] }) {
       </div>
 
       {/* Mobile */}
-      <div className="space-y-2 md:hidden">
+      <div className="-mx-2 divide-y md:hidden">
         {shifts.map((s) => (
-          <Link key={s.id} href={`/shifts/${s.id}`} className="block">
-            <Card className="transition-shadow hover:shadow-md">
-              <CardContent className="flex min-h-[44px] items-center gap-3 p-3">
-                <div className="min-w-0 flex-1 space-y-0.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold tabular-nums">{timeRange(s)}</span>
-                    <DifferenceBadge shift={s} />
-                  </div>
-                  <div className="text-muted-foreground text-xs">
-                    {s.openedByName ?? "—"} · đầu ca {money(s.openingCash)}
-                  </div>
-                  <div className="text-muted-foreground text-xs tabular-nums">
-                    Dự kiến {money(s.expectedCash)} · đếm {money(s.countedCash)}
-                  </div>
+          <Link
+            key={s.id}
+            href={`/shifts/${s.id}`}
+            className="hover:bg-muted/50 block rounded-xl px-2 transition-colors"
+          >
+            <div className="flex min-h-14 items-center gap-3 py-2.5">
+              <div className="min-w-0 flex-1 space-y-0.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold tabular-nums">{timeRange(s)}</span>
+                  <DifferenceBadge shift={s} />
                 </div>
-                <ChevronRight className="text-muted-foreground h-4 w-4 shrink-0" />
-              </CardContent>
-            </Card>
+                <div className="text-muted-foreground text-xs">
+                  {s.openedByName ?? "—"} · đầu ca {money(s.openingCash)}
+                </div>
+                <div className="text-muted-foreground text-xs tabular-nums">
+                  Dự kiến {money(s.expectedCash)} · đếm {money(s.countedCash)}
+                </div>
+              </div>
+              <ChevronRight className="text-muted-foreground h-4 w-4 shrink-0" />
+            </div>
           </Link>
         ))}
       </div>
