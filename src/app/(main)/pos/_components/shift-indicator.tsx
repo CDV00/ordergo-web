@@ -32,11 +32,11 @@ export function ShiftIndicator() {
     <div className="ml-auto flex shrink-0 items-center gap-2">
       {shift ? (
         <>
-          <span className="text-muted-foreground hidden items-center gap-1 text-xs lg:flex">
+          <span className="bg-success-soft text-success hidden items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium lg:flex">
             <Clock className="h-3.5 w-3.5" />
             Ca mở từ {formatTime(shift.openedAt)} · tiền đầu ca {formatVnd(shift.openingCash)}
           </span>
-          <span className="text-muted-foreground flex items-center gap-1 text-xs lg:hidden">
+          <span className="bg-success-soft text-success flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium tabular-nums lg:hidden">
             <Clock className="h-3.5 w-3.5" />
             {formatTime(shift.openedAt)}
           </span>
@@ -44,7 +44,7 @@ export function ShiftIndicator() {
             <Button
               variant="outline"
               size="sm"
-              className="min-h-[36px]"
+              className="min-h-[36px] rounded-full"
               onClick={() => {
                 setClosing(shift);
                 setCloseDialog(true);
@@ -61,7 +61,7 @@ export function ShiftIndicator() {
           <Button
             size="sm"
             variant="outline"
-            className="min-h-[36px] border-amber-400 text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950"
+            className="border-warning bg-warning-soft hover:bg-warning-soft/70 dark:text-warning min-h-[36px] rounded-full text-[oklch(0.5_0.12_70)]"
             onClick={() => setOpenDialog(true)}
             title="Chưa mở ca — tiền thu sẽ không được tính vào ca nào"
           >

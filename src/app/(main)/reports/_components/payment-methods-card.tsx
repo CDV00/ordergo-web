@@ -18,7 +18,7 @@ import { ChartCard, EmptyNote } from "./chart-card";
 const methodLabel = (m: string) => PAYMENT_METHOD_LABEL[m as PaymentMethod] ?? m;
 
 /**
- * Cơ cấu theo phương thức thanh toán: cột ngang 1 chuỗi (màu `primary`), nhãn + số tiền ghi trực tiếp
+ * Cơ cấu theo phương thức thanh toán: cột ngang 1 chuỗi (màu `chart-1`), nhãn + số tiền ghi trực tiếp
  * bằng màu chữ trung tính, tooltip khi rê chuột/focus.
  */
 export function PaymentMethodsCard({
@@ -42,7 +42,7 @@ export function PaymentMethodsCard({
         rows.length === 0 ? (
           <EmptyNote>Chưa có giao dịch trong khoảng này.</EmptyNote>
         ) : (
-          <ul className="space-y-3" aria-label="Biểu đồ theo phương thức thanh toán">
+          <ul className="space-y-4" aria-label="Biểu đồ theo phương thức thanh toán">
             {rows.map((r) => {
               const share = total > 0 ? Math.round((Math.max(0, r.amount) / total) * 100) : 0;
               return (
@@ -53,19 +53,19 @@ export function PaymentMethodsCard({
                   onMouseLeave={() => setActive(null)}
                   onFocus={() => setActive(r.method)}
                   onBlur={() => setActive(null)}
-                  className="focus-visible:ring-ring relative rounded-sm outline-none focus-visible:ring-2"
+                  className="focus-visible:ring-ring relative rounded-md outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 >
                   <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
-                    <span className="truncate">{methodLabel(r.method)}</span>
+                    <span className="truncate font-medium">{methodLabel(r.method)}</span>
                     <span className="text-muted-foreground shrink-0 tabular-nums">
                       <span className="text-foreground font-medium">{formatVnd(r.amount)}</span> ·{" "}
                       {share}%
                     </span>
                   </div>
-                  <div className="h-3">
+                  <div className="bg-muted h-2.5 overflow-hidden rounded-full">
                     <div
                       className={cn(
-                        "bg-primary h-full rounded-r-[4px] transition-opacity",
+                        "bg-chart-1 h-full rounded-full transition-[opacity,width] duration-300",
                         active !== null && active !== r.method && "opacity-40",
                       )}
                       style={{ width: `${(Math.max(0, r.amount) / max) * 100}%` }}
@@ -74,7 +74,7 @@ export function PaymentMethodsCard({
                   {active === r.method && (
                     <div
                       role="status"
-                      className="bg-popover text-popover-foreground pointer-events-none absolute top-full right-0 z-10 mt-1 rounded-md border px-2.5 py-1.5 text-xs whitespace-nowrap shadow-md"
+                      className="bg-popover text-popover-foreground pointer-events-none absolute top-full right-0 z-10 mt-1 rounded-lg border px-3 py-2 text-xs whitespace-nowrap shadow-lg"
                     >
                       <div className="text-muted-foreground">{methodLabel(r.method)}</div>
                       <div className="font-semibold tabular-nums">{formatVnd(r.amount)}</div>

@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
-import { Banknote, QrCode, Receipt, RotateCcw, Wallet } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
+import { motion } from "motion/react";
+import { Banknote, PieChart, QrCode, Receipt, RotateCcw, Wallet } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatCard } from "@/components/stat-card";
+import { cn } from "@/lib/utils";
 import type { Payment } from "@/hooks/api/use-payments";
 import { formatVnd } from "@/lib/format";
 import { isCollected, netCollected, refundedOf } from "./payment-status";
@@ -48,36 +50,46 @@ function summarize(payments: Payment[]): Summary {
   return s;
 }
 
-function StatCard({
-  title,
-  icon,
-  loading,
-  children,
-}: {
-  title: string;
-  icon: ReactNode;
-  loading: boolean;
-  children: ReactNode;
-}) {
+/** Thẻ "Theo phương thức": thanh tỉ lệ + từng dòng. */
+function MethodCard({ s }: { s: Summary }) {
+  const rows = [
+    { key: "cash", label: "Tiền mặt", value: s.cash, icon: Banknote, bar: "bg-success" },
+    { key: "qr", label: "QR", value: s.qr, icon: QrCode, bar: "bg-info" },
+    { key: "other", label: "Khác", value: s.other, icon: Wallet, bar: "bg-primary" },
+  ];
+  const sum = s.cash + s.qr + s.other;
   return (
-    <Card className="min-h-[80px]">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-xs font-medium">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>{loading ? <Skeleton className="h-8 w-28" /> : children}</CardContent>
-    </Card>
-  );
-}
-
-function MethodRow({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
-  return (
-    <div className="flex items-center justify-between gap-2 text-sm">
-      <span className="text-muted-foreground flex items-center gap-1.5">
-        {icon}
-        {label}
-      </span>
-      <span className="font-medium tabular-nums">{formatVnd(value)}</span>
+    <div className="bg-card text-card-foreground rounded-2xl border p-4 shadow-xs sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-muted-foreground text-sm font-medium">Theo phương thức</p>
+        <div className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-xl">
+          <PieChart className="size-[18px]" />
+        </div>
+      </div>
+      <div className="bg-muted mt-3 flex h-2 overflow-hidden rounded-full" aria-hidden>
+        {sum > 0 &&
+          rows.map((r) => (
+            <motion.span
+              key={r.key}
+              className={cn("h-full", r.bar)}
+              initial={{ width: 0 }}
+              animate={{ width: `${(r.value / sum) * 100}%` }}
+              transition={{ type: "spring", stiffness: 200, damping: 30 }}
+            />
+          ))}
+      </div>
+      <div className="mt-3 space-y-1.5">
+        {rows.map((r) => (
+          <div key={r.key} className="flex items-center justify-between gap-2 text-sm">
+            <span className="text-muted-foreground flex items-center gap-1.5">
+              <span className={cn("size-2 rounded-full", r.bar)} />
+              <r.icon className="size-3.5" />
+              {r.label}
+            </span>
+            <span className="tabular font-medium">{formatVnd(r.value)}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -92,50 +104,46 @@ export function PaymentSummary({
 }) {
   const s = useMemo(() => summarize(payments ?? []), [payments]);
 
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-[124px] rounded-2xl" />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <StatCard
-        title="Tổng thực thu"
-        icon={<Wallet className="h-4 w-4 text-emerald-600" />}
-        loading={loading}
-      >
-        <div className="text-lg font-bold tabular-nums sm:text-2xl">{formatVnd(s.total)}</div>
-        <p className="text-muted-foreground text-xs">Đã trừ tiền hoàn</p>
-      </StatCard>
-
+        label="Tổng thực thu"
+        value={s.total}
+        format="vnd"
+        icon={Wallet}
+        tone="success"
+        hint="Đã trừ tiền hoàn"
+      />
       <StatCard
-        title="Số giao dịch"
-        icon={<Receipt className="h-4 w-4 text-blue-600" />}
-        loading={loading}
-      >
-        <div className="text-lg font-bold sm:text-2xl">{s.count}</div>
-        <p className="text-muted-foreground text-xs">
-          {s.failedOrPending > 0
+        label="Số giao dịch"
+        value={s.count}
+        icon={Receipt}
+        tone="info"
+        hint={
+          s.failedOrPending > 0
             ? `${s.failedOrPending} thất bại / đang chờ`
-            : "Giao dịch thành công"}
-        </p>
-      </StatCard>
-
+            : "Giao dịch thành công"
+        }
+      />
+      <MethodCard s={s} />
       <StatCard
-        title="Theo phương thức"
-        icon={<Banknote className="h-4 w-4 text-violet-600" />}
-        loading={loading}
-      >
-        <div className="space-y-1">
-          <MethodRow icon={<Banknote className="h-3.5 w-3.5" />} label="Tiền mặt" value={s.cash} />
-          <MethodRow icon={<QrCode className="h-3.5 w-3.5" />} label="QR" value={s.qr} />
-          <MethodRow icon={<Wallet className="h-3.5 w-3.5" />} label="Khác" value={s.other} />
-        </div>
-      </StatCard>
-
-      <StatCard
-        title="Đã hoàn tiền"
-        icon={<RotateCcw className="h-4 w-4 text-rose-600" />}
-        loading={loading}
-      >
-        <div className="text-lg font-bold tabular-nums sm:text-2xl">{formatVnd(s.refunded)}</div>
-        <p className="text-muted-foreground text-xs">{s.refundCount} giao dịch có hoàn tiền</p>
-      </StatCard>
+        label="Đã hoàn tiền"
+        value={s.refunded}
+        format="vnd"
+        icon={RotateCcw}
+        tone={s.refunded > 0 ? "warning" : "neutral"}
+        hint={`${s.refundCount} giao dịch có hoàn tiền`}
+      />
     </div>
   );
 }

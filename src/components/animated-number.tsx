@@ -17,14 +17,11 @@ interface Props {
 export function AnimatedNumber({ value, format = "count", className }: Props) {
   const n = Math.round(Number.isFinite(value) ? value : 0);
   return (
-    <span className={cn("tabular inline-flex items-baseline", className)} aria-label={label(n, format)}>
+    <span className={cn("tabular inline-flex items-baseline", className)} data-animated-number={n}>
+      {/* Giá trị thật cho trình đọc màn hình / tìm kiếm văn bản; phần số trượt chỉ để nhìn */}
+      <span className="sr-only">{label(n, format)}</span>
       {n < 0 && <span aria-hidden>-</span>}
-      <SlidingNumber
-        aria-hidden
-        number={Math.abs(n)}
-        thousandSeparator="."
-        decimalSeparator=","
-      />
+      <SlidingNumber aria-hidden number={Math.abs(n)} thousandSeparator="." decimalSeparator="," />
       {format === "vnd" && <span aria-hidden>đ</span>}
     </span>
   );

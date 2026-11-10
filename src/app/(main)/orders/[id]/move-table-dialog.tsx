@@ -68,7 +68,7 @@ export function MoveTableDialog({ order, open, onOpenChange }: Props) {
         {tables.isLoading ? (
           <div className="grid grid-cols-3 gap-2">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-16" />
+              <Skeleton key={i} className="h-16 rounded-xl" />
             ))}
           </div>
         ) : tables.isError ? (
@@ -90,7 +90,7 @@ export function MoveTableDialog({ order, open, onOpenChange }: Props) {
                         disabled={disabled}
                         onClick={() => setSelected(t.id)}
                         className={cn(
-                          "rounded-md border-2 p-2 text-left text-sm transition-colors",
+                          "min-h-16 rounded-xl border-2 p-3 text-left text-sm transition-colors",
                           "hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50",
                           selected === t.id ? "border-primary bg-primary/5" : "border-border",
                         )}

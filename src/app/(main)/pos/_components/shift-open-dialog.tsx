@@ -76,7 +76,7 @@ function OpenShiftForm({ onDone }: { onDone: () => void }) {
           placeholder="0"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className="min-h-[44px] text-lg tabular-nums"
+          className="h-12 rounded-xl text-lg font-bold tabular-nums"
         />
         <div className="flex flex-wrap gap-2">
           {QUICK_AMOUNTS.map((a) => (
@@ -85,7 +85,10 @@ function OpenShiftForm({ onDone }: { onDone: () => void }) {
               type="button"
               variant="outline"
               size="sm"
-              className={cn("min-h-[40px]", value === a && "border-primary bg-primary/10")}
+              className={cn(
+                "h-11 rounded-full px-4 tabular-nums",
+                value === a && "border-primary bg-primary/10 text-primary",
+              )}
               onClick={() => setAmount(String(a))}
             >
               {formatVnd(a)}

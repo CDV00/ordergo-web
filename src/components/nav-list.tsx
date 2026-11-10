@@ -69,7 +69,7 @@ export function NavList({ collapsed, onItemClick }: NavListProps) {
 
   const renderItem = (item: NavItem) => (
     <HighlightItem key={item.url} value={item.url}>
-      <div>
+      <div className="relative">
         <NavLink
           item={item}
           collapsed={collapsed}
@@ -86,7 +86,7 @@ export function NavList({ collapsed, onItemClick }: NavListProps) {
         value={activeUrl}
         click={false}
         controlledItems
-        className="bg-sidebar-accent rounded-lg shadow-sm shadow-black/20"
+        className="bg-sidebar-accent inset-0 rounded-lg shadow-sm shadow-black/20"
         transition={{ type: "spring", stiffness: 380, damping: 32 }}
       >
         <nav

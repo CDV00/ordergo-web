@@ -43,15 +43,22 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   cancelled: "Đã huỷ",
 };
 
+/**
+ * Màu trạng thái: nền nhạt + chữ đậm (không tô đặc) — dễ đọc trên tablet, không chói.
+ * Dùng token ngữ nghĩa (success/warning/info/primary) để tự đổi theo dark mode.
+ */
+const WARNING_TEXT = "text-[oklch(0.5_0.12_70)] dark:text-warning";
+
 export const ORDER_STATUS_CLASS: Record<OrderStatus, string> = {
-  draft: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-  sent: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300",
-  in_progress: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
-  ready: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
-  served: "bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-300",
-  paid: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300",
-  refunded: "bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300",
-  cancelled: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
+  draft: "bg-muted text-muted-foreground",
+  sent: `bg-warning-soft ${WARNING_TEXT}`,
+  in_progress: "bg-primary/10 text-primary dark:bg-primary/20",
+  ready: "bg-info-soft text-info",
+  served: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
+  paid: "bg-success-soft text-success",
+  refunded: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
+  cancelled:
+    "bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive-foreground",
 };
 
 export const KITCHEN_STATUS_LABEL: Record<KitchenStatus, string> = {
@@ -63,11 +70,12 @@ export const KITCHEN_STATUS_LABEL: Record<KitchenStatus, string> = {
 };
 
 export const KITCHEN_STATUS_CLASS: Record<KitchenStatus, string> = {
-  queued: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300",
-  preparing: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
-  ready: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
-  served: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300",
-  cancelled: "bg-red-100 text-red-800 line-through dark:bg-red-900/50 dark:text-red-300",
+  queued: `bg-warning-soft ${WARNING_TEXT}`,
+  preparing: "bg-primary/10 text-primary dark:bg-primary/20",
+  ready: "bg-info-soft text-info",
+  served: "bg-success-soft text-success",
+  cancelled:
+    "bg-destructive/10 text-destructive line-through dark:bg-destructive/20 dark:text-destructive-foreground",
 };
 
 export const TABLE_STATUS_LABEL: Record<TableStatus, string> = {
@@ -76,4 +84,31 @@ export const TABLE_STATUS_LABEL: Record<TableStatus, string> = {
   reserved: "Đã đặt",
   cleaning: "Cần dọn",
   out_of_order: "Tạm ngưng",
+};
+
+/** Chip trạng thái bàn (nền nhạt + chữ đậm). */
+export const TABLE_STATUS_CLASS: Record<TableStatus, string> = {
+  available: "bg-success-soft text-success",
+  occupied: "bg-primary/10 text-primary dark:bg-primary/20",
+  reserved: "bg-info-soft text-info",
+  cleaning: `bg-warning-soft ${WARNING_TEXT}`,
+  out_of_order: "bg-muted text-muted-foreground",
+};
+
+/** Chấm màu trạng thái bàn (chú thích + thẻ bàn). */
+export const TABLE_STATUS_DOT: Record<TableStatus, string> = {
+  available: "bg-success",
+  occupied: "bg-primary",
+  reserved: "bg-info",
+  cleaning: "bg-warning",
+  out_of_order: "bg-muted-foreground/50",
+};
+
+/** Viền nhấn bên trái của thẻ bàn. */
+export const TABLE_STATUS_ACCENT: Record<TableStatus, string> = {
+  available: "border-l-success",
+  occupied: "border-l-primary",
+  reserved: "border-l-info",
+  cleaning: "border-l-warning",
+  out_of_order: "border-l-muted-foreground/40",
 };

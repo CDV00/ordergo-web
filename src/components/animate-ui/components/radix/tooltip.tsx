@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react";
 
 import {
   TooltipProvider as TooltipProviderPrimitive,
@@ -11,20 +11,17 @@ import {
   type TooltipProps as TooltipPrimitiveProps,
   type TooltipTriggerProps as TooltipTriggerPrimitiveProps,
   type TooltipContentProps as TooltipContentPrimitiveProps,
-} from '@/components/animate-ui/primitives/radix/tooltip';
-import { cn } from '@/lib/utils';
+} from "@/components/animate-ui/primitives/radix/tooltip";
+import { cn } from "@/lib/utils";
 
 type TooltipProviderProps = TooltipProviderPrimitiveProps;
 
-function TooltipProvider({
-  delayDuration = 0,
-  ...props
-}: TooltipProviderProps) {
+function TooltipProvider({ delayDuration = 0, ...props }: TooltipProviderProps) {
   return <TooltipProviderPrimitive delayDuration={delayDuration} {...props} />;
 }
 
 type TooltipProps = TooltipPrimitiveProps & {
-  delayDuration?: TooltipPrimitiveProps['delayDuration'];
+  delayDuration?: TooltipPrimitiveProps["delayDuration"];
 };
 
 function Tooltip({ delayDuration = 0, ...props }: TooltipProps) {
@@ -43,18 +40,13 @@ function TooltipTrigger({ ...props }: TooltipTriggerProps) {
 
 type TooltipContentProps = TooltipContentPrimitiveProps;
 
-function TooltipContent({
-  className,
-  sideOffset,
-  children,
-  ...props
-}: TooltipContentProps) {
+function TooltipContent({ className, sideOffset, children, ...props }: TooltipContentProps) {
   return (
     <TooltipPortalPrimitive>
       <TooltipContentPrimitive
         sideOffset={sideOffset}
         className={cn(
-          'bg-primary text-primary-foreground z-50 w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-balance',
+          "bg-primary text-primary-foreground z-50 w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-balance",
           className,
         )}
         {...props}

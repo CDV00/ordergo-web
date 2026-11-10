@@ -7,12 +7,13 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Store } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUpdateVenue } from "@/hooks/api/use-tenant";
 import type { Venue } from "@/types/api";
-import { apiErrorMessage, FieldError } from "./shared";
+import { apiErrorMessage, FieldError, SettingsCardHeader } from "./shared";
 
 const schema = z.object({
   logoUrl: z.string().nullable(),
@@ -70,10 +71,11 @@ export function VenueInfoCard({ venue }: { venue: Venue }) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Thông tin quán</CardTitle>
-        <CardDescription>Hiển thị trên hoá đơn và trang gọi món của khách.</CardDescription>
-      </CardHeader>
+      <SettingsCardHeader
+        icon={Store}
+        title="Thông tin quán"
+        description="Hiển thị trên hoá đơn và trang gọi món của khách."
+      />
       <CardContent>
         <form onSubmit={onSubmit} noValidate className="grid gap-6 md:grid-cols-[auto_1fr]">
           <ImageUpload

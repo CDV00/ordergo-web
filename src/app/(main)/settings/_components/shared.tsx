@@ -1,4 +1,29 @@
+import type { ComponentType, ReactNode } from "react";
+import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ApiException } from "@/lib/api-client";
+
+/** Đầu thẻ cài đặt: chip icon màu nhạt + tiêu đề + mô tả. */
+export function SettingsCardHeader({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  title: ReactNode;
+  description?: ReactNode;
+}) {
+  return (
+    <CardHeader className="flex flex-row items-start gap-3 space-y-0">
+      <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
+        <Icon className="size-5" />
+      </div>
+      <div className="min-w-0 space-y-1">
+        <CardTitle className="text-base">{title}</CardTitle>
+        {description && <CardDescription>{description}</CardDescription>}
+      </div>
+    </CardHeader>
+  );
+}
 
 /** Dòng báo lỗi nhỏ dưới ô nhập. */
 export function FieldError({ message }: { message?: string }) {

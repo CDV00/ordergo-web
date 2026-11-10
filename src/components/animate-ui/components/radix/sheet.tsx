@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react";
 
 import {
   Sheet as SheetPrimitive,
@@ -20,9 +20,9 @@ import {
   type SheetFooterProps as SheetFooterPrimitiveProps,
   type SheetTitleProps as SheetTitlePrimitiveProps,
   type SheetDescriptionProps as SheetDescriptionPrimitiveProps,
-} from '@/components/animate-ui/primitives/radix/sheet';
-import { cn } from '@/lib/utils';
-import { XIcon } from 'lucide-react';
+} from "@/components/animate-ui/primitives/radix/sheet";
+import { cn } from "@/lib/utils";
+import { XIcon } from "lucide-react";
 
 type SheetProps = SheetPrimitiveProps;
 
@@ -41,7 +41,7 @@ type SheetOverlayProps = SheetOverlayPrimitiveProps;
 function SheetOverlay({ className, ...props }: SheetOverlayProps) {
   return (
     <SheetOverlayPrimitive
-      className={cn('fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]', className)}
+      className={cn("fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]", className)}
       {...props}
     />
   );
@@ -60,7 +60,7 @@ type SheetContentProps = SheetContentPrimitiveProps & {
 function SheetContent({
   className,
   children,
-  side = 'right',
+  side = "right",
   showCloseButton = true,
   ...props
 }: SheetContentProps) {
@@ -69,11 +69,11 @@ function SheetContent({
       <SheetOverlay />
       <SheetContentPrimitive
         className={cn(
-          'bg-card text-card-foreground fixed z-50 flex flex-col gap-4 p-6 shadow-2xl shadow-black/10',
-          side === 'right' && 'h-full w-3/4 border-l sm:max-w-sm',
-          side === 'left' && 'h-full w-3/4 border-r sm:max-w-sm',
-          side === 'top' && 'w-full max-h-[90svh] rounded-b-2xl border-b',
-          side === 'bottom' && 'w-full max-h-[90svh] rounded-t-2xl border-t',
+          "bg-card text-card-foreground fixed z-50 flex flex-col gap-4 p-6 shadow-2xl shadow-black/10",
+          side === "right" && "h-full w-3/4 border-l sm:max-w-sm",
+          side === "left" && "h-full w-3/4 border-r sm:max-w-sm",
+          side === "top" && "max-h-[90svh] w-full rounded-b-2xl border-b",
+          side === "bottom" && "max-h-[90svh] w-full rounded-t-2xl border-t",
           className,
         )}
         side={side}
@@ -81,7 +81,7 @@ function SheetContent({
       >
         {children}
         {showCloseButton && (
-          <SheetClose className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-full p-1 opacity-60 hover:bg-muted transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+          <SheetClose className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary hover:bg-muted absolute top-4 right-4 rounded-full p-1 opacity-60 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
             <XIcon className="size-4" />
             <span className="sr-only">Đóng</span>
           </SheetClose>
@@ -94,22 +94,14 @@ function SheetContent({
 type SheetHeaderProps = SheetHeaderPrimitiveProps;
 
 function SheetHeader({ className, ...props }: SheetHeaderProps) {
-  return (
-    <SheetHeaderPrimitive
-      className={cn('flex flex-col gap-1.5 p-4', className)}
-      {...props}
-    />
-  );
+  return <SheetHeaderPrimitive className={cn("flex flex-col gap-1.5 p-4", className)} {...props} />;
 }
 
 type SheetFooterProps = SheetFooterPrimitiveProps;
 
 function SheetFooter({ className, ...props }: SheetFooterProps) {
   return (
-    <SheetFooterPrimitive
-      className={cn('mt-auto flex flex-col gap-2 p-4', className)}
-      {...props}
-    />
+    <SheetFooterPrimitive className={cn("mt-auto flex flex-col gap-2 p-4", className)} {...props} />
   );
 }
 
@@ -117,10 +109,7 @@ type SheetTitleProps = SheetTitlePrimitiveProps;
 
 function SheetTitle({ className, ...props }: SheetTitleProps) {
   return (
-    <SheetTitlePrimitive
-      className={cn('text-foreground font-semibold', className)}
-      {...props}
-    />
+    <SheetTitlePrimitive className={cn("text-foreground font-semibold", className)} {...props} />
   );
 }
 
@@ -129,7 +118,7 @@ type SheetDescriptionProps = SheetDescriptionPrimitiveProps;
 function SheetDescription({ className, ...props }: SheetDescriptionProps) {
   return (
     <SheetDescriptionPrimitive
-      className={cn('text-muted-foreground text-sm', className)}
+      className={cn("text-muted-foreground text-sm", className)}
       {...props}
     />
   );

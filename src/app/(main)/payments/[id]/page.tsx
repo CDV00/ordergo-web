@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Printer, RotateCcw } from "lucide-react";
+import { ArrowLeft, Printer, ReceiptText, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePayment } from "@/hooks/api/use-payments";
@@ -28,8 +28,8 @@ export default function PaymentDetailPage() {
     return (
       <PaymentsShell title="Đang tải...">
         <div className="grid gap-4 lg:grid-cols-2">
-          <Skeleton className="h-96 w-full" />
-          <Skeleton className="h-96 w-full" />
+          <Skeleton className="h-96 w-full rounded-2xl" />
+          <Skeleton className="h-96 w-full rounded-2xl" />
         </div>
       </PaymentsShell>
     );
@@ -54,30 +54,33 @@ export default function PaymentDetailPage() {
   return (
     <PaymentsShell title={p.orderNumber}>
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-xl font-bold sm:text-2xl">Giao dịch {p.orderNumber}</h2>
-          <p className="text-muted-foreground font-mono text-xs break-all">{p.id}</p>
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
+            <ReceiptText className="size-5" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
+              Giao dịch {p.orderNumber}
+            </h1>
+            <p className="text-muted-foreground font-mono text-xs break-all">{p.id}</p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" className="min-h-[44px]" asChild>
+          <Button variant="outline" className="h-11" asChild>
             <Link href="/payments">
-              <ArrowLeft className="mr-2 h-4 w-4" />
+              <ArrowLeft className="size-4" />
               Quay lại
             </Link>
           </Button>
-          <Button variant="outline" className="min-h-[44px]" asChild>
+          <Button variant="outline" className="h-11" asChild>
             <Link href={`/print/receipt/${p.orderId}`} target="_blank" rel="noopener noreferrer">
-              <Printer className="mr-2 h-4 w-4" />
+              <Printer className="size-4" />
               In hoá đơn
             </Link>
           </Button>
           {canRefund && (
-            <Button
-              variant="destructive"
-              className="min-h-[44px]"
-              onClick={() => setRefundOpen(true)}
-            >
-              <RotateCcw className="mr-2 h-4 w-4" />
+            <Button variant="destructive" className="h-11" onClick={() => setRefundOpen(true)}>
+              <RotateCcw className="size-4" />
               Hoàn tiền
             </Button>
           )}

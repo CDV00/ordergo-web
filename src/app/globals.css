@@ -5,7 +5,7 @@
 
 /* Tông "cà phê": nền kem ấm, màu chính cam đất, sidebar espresso. Mọi màu đi qua token — không hard-code. */
 :root {
-  --background: oklch(0.985 0.004 75);
+  --background: oklch(1 0 0);
   --foreground: oklch(0.22 0.02 50);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.22 0.02 50);
@@ -159,7 +159,9 @@
     font-variant-numeric: tabular-nums;
   }
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
     }

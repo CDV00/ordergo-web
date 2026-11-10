@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarClock, ReceiptText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/empty-state";
 import {
   Table,
   TableBody,
@@ -44,8 +45,8 @@ export default function ShiftDetailPage() {
     return (
       <ShiftsShell title="Đang tải...">
         <div className="grid gap-4 lg:grid-cols-2">
-          <Skeleton className="h-96 w-full" />
-          <Skeleton className="h-96 w-full" />
+          <Skeleton className="h-96 w-full rounded-2xl" />
+          <Skeleton className="h-96 w-full rounded-2xl" />
         </div>
       </ShiftsShell>
     );
@@ -70,13 +71,18 @@ export default function ShiftDetailPage() {
   return (
     <ShiftsShell title={title}>
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-xl font-bold sm:text-2xl">{title}</h2>
-          <DifferenceBadge shift={s} />
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
+            <CalendarClock className="size-5" />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
+            <DifferenceBadge shift={s} />
+          </div>
         </div>
-        <Button variant="outline" className="min-h-[44px]" asChild>
+        <Button variant="outline" className="h-11" asChild>
           <Link href="/shifts">
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="size-4" />
             Quay lại
           </Link>
         </Button>
@@ -87,7 +93,7 @@ export default function ShiftDetailPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Thông tin ca</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1.5">
+          <CardContent className="divide-y [&>*]:py-2.5 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
             <InfoRow label="Mở ca" value={formatDateTime(s.openedAt)} />
             <InfoRow label="Người mở ca" value={s.openedByName ?? "—"} />
             <InfoRow label="Đóng ca" value={s.closedAt ? formatDateTime(s.closedAt) : "Đang mở"} />
@@ -112,9 +118,11 @@ export default function ShiftDetailPage() {
         </CardHeader>
         <CardContent>
           {s.payments.length === 0 ? (
-            <div className="text-muted-foreground py-8 text-center text-sm">
-              Chưa có khoản thu nào trong ca này.
-            </div>
+            <EmptyState
+              icon={ReceiptText}
+              title="Chưa có khoản thu nào trong ca này."
+              className="border-0 py-8"
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -127,10 +135,12 @@ export default function ShiftDetailPage() {
               </TableHeader>
               <TableBody>
                 {s.payments.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="tabular-nums">{formatTime(p.receivedAt)}</TableCell>
+                  <TableRow key={p.id} className="h-12">
+                    <TableCell className="text-muted-foreground tabular">
+                      {formatTime(p.receivedAt)}
+                    </TableCell>
                     <TableCell className="font-medium">
-                      <Link href={`/payments/${p.id}`} className="hover:underline">
+                      <Link href={`/payments/${p.id}`} className="text-primary hover:underline">
                         {p.orderNumber}
                       </Link>
                     </TableCell>
@@ -138,7 +148,7 @@ export default function ShiftDetailPage() {
                     <TableCell className="text-right tabular-nums">
                       <div className="font-semibold">{formatVnd(p.amount.amount)}</div>
                       {p.refundedAmount.amount > 0 && (
-                        <div className="text-xs text-rose-600 dark:text-rose-400">
+                        <div className="text-destructive text-xs">
                           −{formatVnd(p.refundedAmount.amount)}
                         </div>
                       )}

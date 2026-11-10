@@ -111,7 +111,7 @@ export function ClaimSheet({ open, sessionId, onClose, onClaimed }: Props) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Nguyễn Văn A"
-                  className="bg-background focus:ring-primary h-11 w-full rounded-lg border px-3 focus:ring-2 focus:outline-none"
+                  className="bg-background focus:ring-primary/40 h-12 w-full rounded-xl border px-3 focus:ring-2 focus:outline-none"
                 />
               </div>
 
@@ -123,7 +123,7 @@ export function ClaimSheet({ open, sessionId, onClose, onClaimed }: Props) {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="0901234567"
-                  className="bg-background focus:ring-primary h-11 w-full rounded-lg border px-3 focus:ring-2 focus:outline-none"
+                  className="bg-background focus:ring-primary/40 h-12 w-full rounded-xl border px-3 focus:ring-2 focus:outline-none"
                 />
               </div>
             </div>
@@ -131,7 +131,7 @@ export function ClaimSheet({ open, sessionId, onClose, onClaimed }: Props) {
             <button
               onClick={handleRequestOtp}
               disabled={requestOtp.isPending || !phone}
-              className="bg-primary text-primary-foreground h-12 w-full rounded-full font-bold active:scale-95 disabled:opacity-50"
+              className="bg-primary text-primary-foreground h-12 w-full rounded-full font-bold shadow-sm active:scale-95 disabled:opacity-50"
             >
               {requestOtp.isPending ? (
                 <>
@@ -173,14 +173,14 @@ export function ClaimSheet({ open, sessionId, onClose, onClaimed }: Props) {
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               placeholder="······"
-              className="bg-background focus:ring-primary h-16 w-full rounded-lg border px-3 text-center text-2xl font-bold tracking-[0.5em] tabular-nums focus:ring-2 focus:outline-none"
+              className="bg-background focus:ring-primary h-16 w-full rounded-xl border px-3 text-center text-2xl font-bold tracking-[0.5em] tabular-nums focus:ring-2 focus:outline-none"
               autoFocus
             />
 
             <button
               onClick={handleVerify}
               disabled={claim.isPending || code.length !== 6}
-              className="bg-primary text-primary-foreground h-12 w-full rounded-full font-bold active:scale-95 disabled:opacity-50"
+              className="bg-primary text-primary-foreground h-12 w-full rounded-full font-bold shadow-sm active:scale-95 disabled:opacity-50"
             >
               {claim.isPending ? (
                 <>
@@ -212,8 +212,8 @@ export function ClaimSheet({ open, sessionId, onClose, onClaimed }: Props) {
 
         {step === "success" && (
           <div className="space-y-4 py-6 text-center">
-            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950">
-              <CheckCircle2 className="size-10 text-emerald-600 dark:text-emerald-400" />
+            <div className="bg-success-soft mx-auto flex size-16 items-center justify-center rounded-full">
+              <CheckCircle2 className="text-success size-10" />
             </div>
             <h2 className="text-xl font-bold">Cảm ơn bạn đã đăng ký!</h2>
             <p className="text-muted-foreground text-sm">

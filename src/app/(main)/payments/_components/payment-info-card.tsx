@@ -28,7 +28,12 @@ export function PaymentInfoCard({ payment: p }: { payment: Payment }) {
         <CardDescription>Mã đơn {p.orderNumber}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="text-3xl font-bold tabular-nums">{formatVnd(p.amount.amount)}</div>
+        <div className="bg-primary/5 rounded-xl px-4 py-3">
+          <div className="text-muted-foreground text-xs font-medium">Số tiền</div>
+          <div className="text-primary text-3xl font-bold tracking-tight tabular-nums">
+            {formatVnd(p.amount.amount)}
+          </div>
+        </div>
         <Row label="Trạng thái">
           <PaymentStatusBadge status={p.status} />
         </Row>
@@ -48,7 +53,7 @@ export function PaymentInfoCard({ payment: p }: { payment: Payment }) {
         {refunded > 0 && (
           <>
             <Row label="Đã hoàn">
-              <span className="text-rose-600 dark:text-rose-400">−{formatVnd(refunded)}</span>
+              <span className="text-destructive">−{formatVnd(refunded)}</span>
             </Row>
             <Row label="Thực thu">{formatVnd(p.amount.amount - refunded)}</Row>
           </>
@@ -65,7 +70,7 @@ export function PaymentInfoCard({ payment: p }: { payment: Payment }) {
               {p.refunds.map((r, i) => (
                 <li
                   key={`${r.refundedAt}-${i}`}
-                  className="flex items-start justify-between gap-3 rounded-md border p-2 text-sm"
+                  className="bg-muted/50 flex items-start justify-between gap-3 rounded-xl p-3 text-sm"
                 >
                   <div className="min-w-0">
                     <div className="text-muted-foreground text-xs">
@@ -73,7 +78,7 @@ export function PaymentInfoCard({ payment: p }: { payment: Payment }) {
                     </div>
                     <div className="break-words">{r.reason || "Không ghi lý do"}</div>
                   </div>
-                  <span className="shrink-0 font-semibold text-rose-600 tabular-nums dark:text-rose-400">
+                  <span className="text-destructive shrink-0 font-semibold tabular-nums">
                     −{formatVnd(r.amount.amount)}
                   </span>
                 </li>

@@ -128,7 +128,7 @@ function OrderBody({ order: o }: { order: Order }) {
               </>
             }
             value={`−${formatVnd(discount.amount)}`}
-            className="text-emerald-700 dark:text-emerald-400"
+            className="text-success"
           />
         )}
         {serviceCharge.amount > 0 && (

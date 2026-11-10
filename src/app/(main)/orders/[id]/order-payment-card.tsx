@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AnimatedNumber } from "@/components/animated-number";
 import { PAYMENT_METHOD_LABEL, usePaymentsForOrder, type Payment } from "@/hooks/api/use-payments";
 import { formatDateTime, formatVnd } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -30,7 +31,7 @@ function MoneyRow({
   return (
     <div className={cn("flex items-start justify-between gap-3 text-sm", className)}>
       <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
+      <span className="tabular font-medium">{value}</span>
     </div>
   );
 }
@@ -63,16 +64,20 @@ export function OrderPaymentCard({ order }: { order: Order }) {
           <MoneyRow
             label={discountLabel(order)}
             value={`−${formatVnd(pricing.discount.amount)}`}
-            className="text-emerald-700 dark:text-emerald-400"
+            className="text-success"
           />
         )}
         {pricing.serviceCharge.amount > 0 && (
           <MoneyRow label="Phí phục vụ" value={formatVnd(pricing.serviceCharge.amount)} />
         )}
         {pricing.tax.amount > 0 && <MoneyRow label="Thuế" value={formatVnd(pricing.tax.amount)} />}
-        <div className="flex items-center justify-between border-t pt-2 text-base font-semibold">
-          <span>Tổng cộng</span>
-          <span>{formatVnd(pricing.total.amount)}</span>
+        <div className="bg-primary/5 -mx-2 flex items-center justify-between rounded-xl px-3 py-3">
+          <span className="font-semibold">Tổng cộng</span>
+          <AnimatedNumber
+            value={pricing.total.amount}
+            format="vnd"
+            className="text-primary text-2xl font-bold tracking-tight"
+          />
         </div>
 
         <div className="space-y-2 border-t pt-3">
@@ -88,7 +93,7 @@ export function OrderPaymentCard({ order }: { order: Order }) {
               {list.map((p) => {
                 const note = PAYMENT_STATUS_NOTE[p.status];
                 return (
-                  <li key={p.id} className="bg-muted/50 rounded-md px-3 py-2 text-sm">
+                  <li key={p.id} className="bg-muted/50 rounded-xl px-3 py-2.5 text-sm">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium">
                         {PAYMENT_METHOD_LABEL[p.method] ?? p.method}
@@ -96,7 +101,7 @@ export function OrderPaymentCard({ order }: { order: Order }) {
                           <span className="text-muted-foreground font-normal"> · {note}</span>
                         )}
                       </span>
-                      <span className="font-semibold">{formatVnd(p.amount.amount)}</span>
+                      <span className="tabular font-semibold">{formatVnd(p.amount.amount)}</span>
                     </div>
                     <div className="text-muted-foreground flex flex-wrap justify-between gap-x-3 text-xs">
                       <span>{formatDateTime(p.receivedAt)}</span>
@@ -108,7 +113,7 @@ export function OrderPaymentCard({ order }: { order: Order }) {
                       )}
                     </div>
                     {p.refundedAmount.amount > 0 && (
-                      <p className="text-xs text-rose-600 dark:text-rose-400">
+                      <p className="text-destructive text-xs">
                         Đã hoàn {formatVnd(p.refundedAmount.amount)}
                       </p>
                     )}
@@ -120,14 +125,14 @@ export function OrderPaymentCard({ order }: { order: Order }) {
           {showRemaining && !payments.isLoading && (
             <div
               className={cn(
-                "flex items-center justify-between pt-1 text-base font-semibold",
+                "flex items-center justify-between rounded-xl px-3 py-2.5 text-base font-semibold",
                 remaining > 0
-                  ? "text-amber-700 dark:text-amber-400"
-                  : "text-emerald-700 dark:text-emerald-400",
+                  ? "bg-warning-soft dark:text-warning text-[oklch(0.45_0.12_60)]"
+                  : "bg-success-soft text-success",
               )}
             >
               <span>{remaining > 0 ? "Còn phải thu" : "Đã thu đủ"}</span>
-              <span>{formatVnd(remaining)}</span>
+              <AnimatedNumber value={remaining} format="vnd" />
             </div>
           )}
         </div>

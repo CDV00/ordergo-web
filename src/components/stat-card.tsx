@@ -45,7 +45,12 @@ export function StatCard({
       <div className="flex items-start justify-between gap-3">
         <p className="text-muted-foreground text-sm font-medium">{label}</p>
         {Icon && (
-          <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl", TONE[tone])}>
+          <div
+            className={cn(
+              "flex size-9 shrink-0 items-center justify-center rounded-xl",
+              TONE[tone],
+            )}
+          >
             <Icon className="size-[18px]" />
           </div>
         )}

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ReceiptText } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ function OrderRow({ order }: { order: Order }) {
   const active = order.lines.filter((l) => l.kitchenStatus !== "cancelled");
   const unsent = active.filter((l) => !l.sentToKitchenAt).length;
   return (
-    <li className="rounded-lg border p-3">
+    <li className="bg-card rounded-xl border p-3.5 shadow-xs">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Link href={`/orders/${order.id}`} className="font-semibold hover:underline">
@@ -37,10 +38,7 @@ function OrderRow({ order }: { order: Order }) {
             {ORDER_STATUS_LABEL[order.status]}
           </Badge>
           {unsent > 0 && (
-            <Badge
-              variant="outline"
-              className="border-dashed border-slate-400 text-slate-700 dark:text-slate-300"
-            >
+            <Badge variant="outline" className="text-muted-foreground border-dashed">
               {unsent} món chưa gửi bếp
             </Badge>
           )}
@@ -65,7 +63,9 @@ function OrderRow({ order }: { order: Order }) {
         <p className="text-muted-foreground mt-2 text-sm">Chưa có món.</p>
       )}
       <div className="mt-2 flex items-center justify-between border-t pt-2">
-        <span className="font-semibold">Tổng: {formatVnd(order.pricing.total.amount)}</span>
+        <span className="font-semibold tabular-nums">
+          Tổng: {formatVnd(order.pricing.total.amount)}
+        </span>
         <Button asChild size="sm" variant="ghost">
           <Link href={`/orders/${order.id}`}>
             Chi tiết <ChevronRight className="ml-1 h-4 w-4" />
@@ -81,7 +81,7 @@ export function TableOpenOrders({ orders, isLoading, isError, onRetry }: Props) 
   const sum = list.reduce((s, o) => s + o.pricing.total.amount, 0);
 
   return (
-    <Card>
+    <Card className="shadow-xs">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Đơn đang mở</CardTitle>
         <CardDescription>
@@ -104,9 +104,7 @@ export function TableOpenOrders({ orders, isLoading, isError, onRetry }: Props) 
             </Button>
           </div>
         ) : list.length === 0 ? (
-          <div className="text-muted-foreground py-6 text-center text-sm">
-            Bàn chưa có đơn nào đang mở.
-          </div>
+          <EmptyState icon={ReceiptText} title="Bàn chưa có đơn nào đang mở." className="py-8" />
         ) : (
           <ul className="space-y-3">
             {list.map((o) => (

@@ -14,10 +14,7 @@ interface Props {
 export function PageHeader({ title, description, actions, icon: Icon, className }: Props) {
   return (
     <div
-      className={cn(
-        "flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between",
-        className,
-      )}
+      className={cn("flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between", className)}
     >
       <div className="flex min-w-0 items-center gap-3">
         {Icon && (
@@ -27,9 +24,7 @@ export function PageHeader({ title, description, actions, icon: Icon, className 
         )}
         <div className="min-w-0">
           <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
-          {description && (
-            <p className="text-muted-foreground mt-0.5 text-sm">{description}</p>
-          )}
+          {description && <p className="text-muted-foreground mt-0.5 text-sm">{description}</p>}
         </div>
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}

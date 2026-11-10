@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MenuToggle } from "@/components/menu-toggle";
 import { useOrders } from "@/hooks/api/use-orders";
 import { useTables } from "@/hooks/api/use-tables";
-import { TABLE_STATUS_LABEL } from "@/lib/format";
+import { TABLE_STATUS_DOT, TABLE_STATUS_LABEL } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { TABLE_STATUS_CLASS, TableInfoCard } from "./table-info-card";
 import { TableOpenOrders } from "./table-open-orders";
@@ -28,7 +28,7 @@ function PageShell({
 }) {
   return (
     <div className="flex flex-col">
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+      <header className="bg-background/85 sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
         <MenuToggle />
         <Separator orientation="vertical" className="mr-2 h-4" />
         <nav className="flex min-w-0 items-center gap-2 text-lg font-semibold">
@@ -55,7 +55,7 @@ function Message({
   onRetry?: () => void;
 }) {
   return (
-    <Card>
+    <Card className="shadow-xs">
       <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
         <h2 className="text-lg font-semibold">{title}</h2>
         <p className="text-muted-foreground max-w-md text-sm">{description}</p>
@@ -136,8 +136,12 @@ export default function TableDetailPage() {
     >
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-xl font-bold sm:text-2xl">{table.name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{table.name}</h1>
           <Badge className={cn("border-transparent", TABLE_STATUS_CLASS[table.status])}>
+            <span
+              aria-hidden
+              className={cn("size-1.5 rounded-full", TABLE_STATUS_DOT[table.status])}
+            />
             {TABLE_STATUS_LABEL[table.status]}
           </Badge>
         </div>

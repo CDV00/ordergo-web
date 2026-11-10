@@ -23,7 +23,7 @@ function niceMax(max: number): number {
 }
 
 /**
- * Biểu đồ cột dọc 1 chuỗi (HTML thuần, không thư viện): cột mảnh màu `primary`, bo 4px phía trên,
+ * Biểu đồ cột dọc 1 chuỗi (HTML thuần, không thư viện): cột mảnh màu `chart-1`, bo tròn phía trên,
  * neo ở đường gốc, cách nhau 2px; lưới/trục mờ; tooltip khi rê chuột/focus trên MỌI cột.
  * Một chuỗi nên không có chú giải — tiêu đề thẻ gọi tên số liệu.
  */
@@ -34,6 +34,7 @@ export function BarChart({
   ariaLabel,
   height = 200,
   maxLabels = 8,
+  barMaxWidth = 24,
 }: {
   data: BarDatum[];
   formatValue: (v: number) => string;
@@ -41,6 +42,8 @@ export function BarChart({
   ariaLabel: string;
   height?: number;
   maxLabels?: number;
+  /** Độ rộng tối đa của 1 cột (px) — cột mảnh dễ đọc hơn. */
+  barMaxWidth?: number;
 }) {
   const [active, setActive] = useState<number | null>(null);
   const top = niceMax(Math.max(0, ...data.map((d) => d.value)));
@@ -76,7 +79,7 @@ export function BarChart({
               aria-hidden
               className={cn(
                 "absolute inset-x-0 border-t",
-                t === 0 ? "border-border" : "border-border/50 border-dashed",
+                t === 0 ? "border-border" : "border-border/40 border-dashed",
               )}
               style={{ top: `${(i / (ticks.length - 1)) * 100}%` }}
             />
@@ -99,11 +102,15 @@ export function BarChart({
                 >
                   <div
                     className={cn(
-                      "bg-primary w-full max-w-6 rounded-t-[4px] transition-opacity",
-                      active !== null && active !== i && "opacity-40",
-                      "group-focus-visible:ring-ring group-focus-visible:ring-2",
+                      "bg-chart-1 w-full rounded-t-md transition-[opacity,height] duration-300 ease-out",
+                      active !== null && active !== i && "opacity-35",
+                      "group-focus-visible:ring-ring group-focus-visible:ring-2 group-focus-visible:ring-offset-2",
                     )}
-                    style={{ height: `${pct * 100}%`, minHeight: d.value > 0 ? 2 : 0 }}
+                    style={{
+                      height: `${pct * 100}%`,
+                      minHeight: d.value > 0 ? 3 : 0,
+                      maxWidth: barMaxWidth,
+                    }}
                   />
                 </div>
               );
@@ -113,7 +120,7 @@ export function BarChart({
           {hovered && active !== null && (
             <div
               role="status"
-              className="bg-popover text-popover-foreground pointer-events-none absolute top-0 z-10 -translate-x-1/2 rounded-md border px-2.5 py-1.5 text-xs whitespace-nowrap shadow-md"
+              className="bg-popover text-popover-foreground pointer-events-none absolute top-0 z-10 -translate-x-1/2 rounded-lg border px-3 py-2 text-xs whitespace-nowrap shadow-lg"
               style={{
                 left: `clamp(56px, ${((active + 0.5) / data.length) * 100}%, calc(100% - 56px))`,
               }}

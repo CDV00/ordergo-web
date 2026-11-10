@@ -1,21 +1,36 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { BarChart3, ShieldAlert } from "lucide-react";
 import { MenuToggle } from "@/components/menu-toggle";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { FadeIn } from "@/components/motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 
-/** Khung trang báo cáo: header (MenuToggle + tiêu đề) và nội dung. */
-export function ReportsShell({ children }: { children: ReactNode }) {
+/** Khung trang báo cáo: tiêu đề (MenuToggle + PageHeader + hành động) và nội dung. */
+export function ReportsShell({
+  description,
+  actions,
+  children,
+}: {
+  description?: ReactNode;
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <div className="flex flex-col">
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-        <MenuToggle />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <h1 className="text-lg font-semibold">Báo cáo</h1>
-      </header>
-      <main className="flex-1 space-y-4 p-4 md:p-6">{children}</main>
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6 lg:p-8">
+      <FadeIn className="flex items-start gap-2">
+        <MenuToggle className="mt-1" />
+        <PageHeader
+          className="min-w-0 flex-1"
+          icon={BarChart3}
+          title="Báo cáo bán hàng"
+          description={description}
+          actions={actions}
+        />
+      </FadeIn>
+      {children}
     </div>
   );
 }
@@ -31,16 +46,18 @@ export function StateMessage({
   onRetry?: () => void;
 }) {
   return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
-        <p className="text-lg font-semibold">{title}</p>
-        {description && <p className="text-muted-foreground text-sm">{description}</p>}
-        {onRetry && (
-          <Button className="mt-2 min-h-[44px]" onClick={onRetry}>
+    <EmptyState
+      icon={ShieldAlert}
+      title={title}
+      description={description}
+      className="bg-muted/30"
+      action={
+        onRetry && (
+          <Button className="mt-1" onClick={onRetry}>
             Thử lại
           </Button>
-        )}
-      </CardContent>
-    </Card>
+        )
+      }
+    />
   );
 }

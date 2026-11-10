@@ -64,11 +64,7 @@ export function CancelOrderDialog({ order, open, onOpenChange }: Props) {
           <Button variant="outline" onClick={() => close(false)} disabled={cancel.isPending}>
             Đóng
           </Button>
-          <Button
-            className="bg-destructive hover:bg-destructive/90 text-white"
-            onClick={onConfirm}
-            disabled={cancel.isPending}
-          >
+          <Button variant="destructive" onClick={onConfirm} disabled={cancel.isPending}>
             {cancel.isPending ? "Đang huỷ…" : "Huỷ đơn"}
           </Button>
         </DialogFooter>

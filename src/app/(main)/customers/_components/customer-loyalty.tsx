@@ -70,9 +70,7 @@ export function LoyaltyTransactionsCard({ customer }: { customer: CustomerDetail
                   <div
                     className={cn(
                       "text-sm font-semibold",
-                      t.points >= 0
-                        ? "text-emerald-700 dark:text-emerald-400"
-                        : "text-rose-600 dark:text-rose-400",
+                      t.points >= 0 ? "text-success" : "text-destructive",
                     )}
                   >
                     {t.points >= 0 ? "+" : "−"}

@@ -64,11 +64,9 @@ export function ItemStatusCard({ item }: { item: MenuItem }) {
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base">Trạng thái</CardTitle>
         <Badge
+          variant={item.isAvailable ? "success" : "outline"}
           className={cn(
-            "border-transparent",
-            item.isAvailable
-              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300"
-              : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
+            !item.isAvailable && "bg-destructive/10 text-destructive border-transparent",
           )}
         >
           {item.isAvailable ? "Còn món" : "Hết món"}

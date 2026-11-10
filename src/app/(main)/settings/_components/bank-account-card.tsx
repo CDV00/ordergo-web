@@ -4,10 +4,10 @@ import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AlertTriangle, CheckCircle2, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, QrCode, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { useBanks, useUpdateVenue } from "@/hooks/api/use-tenant";
 import type { Venue } from "@/types/api";
-import { apiErrorMessage, FieldError, toBankAccountName } from "./shared";
+import { apiErrorMessage, FieldError, SettingsCardHeader, toBankAccountName } from "./shared";
 
 const schema = z.object({
   bankBin: z.string().regex(/^\d{6}$/, "Chọn ngân hàng"),
@@ -92,15 +92,14 @@ export function BankAccountCard({ venue }: { venue: Venue }) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Thanh toán VietQR</CardTitle>
-        <CardDescription>
-          Mã VietQR trên màn hình POS và trang gọi món của khách sẽ chuyển tiền vào tài khoản này.
-        </CardDescription>
-      </CardHeader>
+      <SettingsCardHeader
+        icon={QrCode}
+        title="Thanh toán VietQR"
+        description="Mã VietQR trên màn hình POS và trang gọi món của khách sẽ chuyển tiền vào tài khoản này."
+      />
       <CardContent className="space-y-4">
         {current ? (
-          <div className="flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+          <div className="bg-success-soft text-success border-success/25 flex items-start gap-2 rounded-xl border p-3 text-sm">
             <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
             <span>
               Đang nhận tiền vào: <b>{current.bankName ?? current.bankBin}</b> ·{" "}
@@ -108,7 +107,7 @@ export function BankAccountCard({ venue }: { venue: Venue }) {
             </span>
           </div>
         ) : (
-          <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          <div className="bg-warning-soft text-foreground border-warning/30 [&>svg]:text-warning flex items-start gap-2 rounded-xl border p-3 text-sm">
             <AlertTriangle className="mt-0.5 size-4 shrink-0" />
             <span>
               Chưa cài đặt tài khoản nhận tiền — không tạo được mã VietQR, khách phải thanh toán tại

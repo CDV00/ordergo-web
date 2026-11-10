@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/animate-ui/components/radix/switch";
+import { Highlight, HighlightItem } from "@/components/animate-ui/primitives/effects/highlight";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { FadeIn, Stagger, StaggerItem } from "@/components/motion";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,8 +30,7 @@ import {
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/image-upload";
 import { MenuToggle } from "@/components/menu-toggle";
-import { Separator } from "@/components/ui/separator";
-import { Plus, Pencil, Trash2, ImageOff } from "lucide-react";
+import { FolderPlus, ImageOff, Pencil, Plus, Store, Trash2, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import {
@@ -44,6 +51,9 @@ import type { MenuCategory, MenuItem } from "@/types/api";
 function formatVnd(amount: number) {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
 }
+
+/** Giá trị chip "Tất cả" (không trùng id nhóm). */
+const ALL_KEY = "__all__";
 
 interface CategoryForm {
   name: string;
@@ -181,117 +191,248 @@ export default function MenuPage() {
     }
   };
 
+  const activeCategory = cats.data?.find((c) => c.id === activeCategoryId) ?? null;
+  const chips = [
+    { id: ALL_KEY, name: "Tất cả", count: items.data?.length ?? 0 },
+    ...(cats.data ?? []).map((c) => ({
+      id: c.id,
+      name: c.name,
+      count: items.data?.filter((i) => i.categoryId === c.id).length ?? 0,
+    })),
+  ];
+
   return (
-    <div className="flex flex-col">
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-        <MenuToggle />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <h1 className="text-lg font-semibold">Menu &amp; Món ăn</h1>
-        <div className="ml-auto flex gap-2">
-          <Button variant="outline" onClick={() => openCatDialog()}>
-            <Plus className="mr-1 size-4" /> Nhóm món
-          </Button>
-          <Button onClick={() => openItemDialog()} disabled={!cats.data?.length}>
-            <Plus className="mr-1 size-4" /> Thêm món
-          </Button>
-        </div>
-      </header>
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6 lg:p-8">
+      <FadeIn className="flex items-start gap-2">
+        <MenuToggle className="mt-1" />
+        <PageHeader
+          className="min-w-0 flex-1"
+          icon={Store}
+          title="Menu & Món ăn"
+          description={
+            items.data
+              ? `${items.data.length} món · ${cats.data?.length ?? 0} nhóm món`
+              : "Quản lý nhóm món, giá và trạng thái bán"
+          }
+          actions={
+            <>
+              <Button variant="outline" onClick={() => openCatDialog()}>
+                <FolderPlus className="size-4" /> Nhóm món
+              </Button>
+              <Button onClick={() => openItemDialog()} disabled={!cats.data?.length}>
+                <Plus className="size-4" /> Thêm món
+              </Button>
+            </>
+          }
+        />
+      </FadeIn>
 
-      <main className="flex-1 space-y-6 p-4 md:p-6">
-        {/* Category list */}
-        <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant={activeCategoryId === null ? "default" : "outline"}
-            onClick={() => setActiveCategoryId(null)}
+      {/* Nhóm món: chip có nền trượt (Highlight) */}
+      <FadeIn delay={0.04} className="space-y-3">
+        <div className="-mx-4 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+          <Highlight
+            value={activeCategoryId ?? ALL_KEY}
+            click={false}
+            controlledItems
+            className="bg-primary inset-0 rounded-full shadow-xs"
+            transition={{ type: "spring", stiffness: 420, damping: 34 }}
           >
-            Tất cả ({items.data?.length ?? 0})
-          </Button>
-          {cats.data?.map((c) => {
-            const count = items.data?.filter((i) => i.categoryId === c.id).length ?? 0;
-            return (
-              <div key={c.id} className="flex items-center gap-1">
-                <Button
-                  size="sm"
-                  variant={activeCategoryId === c.id ? "default" : "outline"}
-                  onClick={() => setActiveCategoryId(c.id)}
-                >
-                  {c.name} ({count})
-                </Button>
-                <Button size="icon" variant="ghost" onClick={() => openCatDialog(c)}>
-                  <Pencil className="size-3" />
-                </Button>
-                <Button size="icon" variant="ghost" onClick={() => handleDeleteCategory(c)}>
-                  <Trash2 className="text-destructive size-3" />
-                </Button>
-              </div>
-            );
-          })}
+            <div
+              role="group"
+              aria-label="Lọc theo nhóm món"
+              className="flex w-max gap-1.5 md:w-auto md:flex-wrap"
+            >
+              {chips.map((c) => {
+                const active = (activeCategoryId ?? ALL_KEY) === c.id;
+                return (
+                  <HighlightItem key={c.id} value={c.id}>
+                    <button
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setActiveCategoryId(c.id === ALL_KEY ? null : c.id)}
+                      className={cn(
+                        "flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium whitespace-nowrap transition-colors",
+                        active
+                          ? "text-primary-foreground border-transparent"
+                          : "bg-card text-muted-foreground hover:text-foreground hover:border-primary/40",
+                      )}
+                    >
+                      {c.name}
+                      <span
+                        className={cn(
+                          "tabular rounded-full px-1.5 text-xs",
+                          active ? "bg-primary-foreground/20" : "bg-muted",
+                        )}
+                      >
+                        {c.count}
+                      </span>
+                    </button>
+                  </HighlightItem>
+                );
+              })}
+            </div>
+          </Highlight>
         </div>
 
-        {/* Items grid */}
-        {items.isLoading ? (
-          <p className="text-muted-foreground">Đang tải...</p>
-        ) : filteredItems.length === 0 ? (
-          <Card>
-            <CardContent className="text-muted-foreground py-12 text-center">
-              {cats.data?.length === 0
-                ? "Chưa có nhóm món nào. Tạo nhóm trước để bắt đầu."
-                : "Chưa có món nào trong nhóm này."}
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredItems.map((it) => (
-              <Card key={it.id} className={it.isAvailable ? "" : "opacity-60"}>
-                <CardHeader className="flex flex-row items-start gap-3 space-y-0">
-                  <div className="bg-muted flex size-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-md">
-                    {mediaUrl(it.imageUrl) ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={mediaUrl(it.imageUrl)!}
-                        alt={it.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <ImageOff className="text-muted-foreground size-6" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <CardTitle className="truncate text-base">
-                      <Link href={`/menu/${it.id}`} className="hover:underline">
-                        {it.name}
-                      </Link>
-                    </CardTitle>
-                    <CardDescription className="text-foreground text-sm font-medium">
-                      {formatVnd(it.basePrice.amount)}
-                    </CardDescription>
-                    {it.sku && <p className="text-muted-foreground mt-1 text-xs">SKU: {it.sku}</p>}
-                  </div>
-                </CardHeader>
-                <CardContent className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant={it.isAvailable ? "outline" : "default"}
-                    onClick={() => handleToggle(it)}
-                    className="flex-1"
-                  >
-                    {it.isAvailable ? "Tạm hết" : "Mở bán"}
-                  </Button>
-                  <Button asChild size="icon" variant="ghost" aria-label="Sửa món">
-                    <Link href={`/menu/${it.id}`}>
-                      <Pencil className="size-4" />
-                    </Link>
-                  </Button>
-                  <Button size="icon" variant="ghost" onClick={() => handleDeleteItem(it)}>
-                    <Trash2 className="text-destructive size-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+        {activeCategory && (
+          <div className="bg-muted/40 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2">
+            <div className="min-w-0 text-sm">
+              <span className="text-muted-foreground">Nhóm: </span>
+              <span className="font-semibold">{activeCategory.name}</span>
+              {activeCategory.description && (
+                <span className="text-muted-foreground"> · {activeCategory.description}</span>
+              )}
+            </div>
+            <div className="flex gap-1">
+              <Button size="sm" variant="ghost" onClick={() => openCatDialog(activeCategory)}>
+                <Pencil className="size-3.5" /> Sửa nhóm
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive hover:text-destructive"
+                onClick={() => handleDeleteCategory(activeCategory)}
+              >
+                <Trash2 className="size-3.5" /> Xoá nhóm
+              </Button>
+            </div>
           </div>
         )}
-      </main>
+      </FadeIn>
+
+      {/* Lưới món */}
+      {items.isLoading ? (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="aspect-[4/5] w-full rounded-2xl" />
+          ))}
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <EmptyState
+          icon={UtensilsCrossed}
+          title={cats.data?.length === 0 ? "Chưa có nhóm món nào" : "Chưa có món nào"}
+          description={
+            cats.data?.length === 0
+              ? "Tạo nhóm trước để bắt đầu."
+              : "Chưa có món nào trong nhóm này."
+          }
+          className="bg-muted/30"
+          action={
+            cats.data?.length === 0 ? (
+              <Button onClick={() => openCatDialog()}>
+                <FolderPlus className="size-4" /> Tạo nhóm món
+              </Button>
+            ) : (
+              <Button onClick={() => openItemDialog()}>
+                <Plus className="size-4" /> Thêm món
+              </Button>
+            )
+          }
+        />
+      ) : (
+        <Stagger
+          key={activeCategoryId ?? ALL_KEY}
+          stagger={0.025}
+          className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4"
+        >
+          {filteredItems.map((it) => {
+            const img = mediaUrl(it.imageUrl);
+            return (
+              <StaggerItem key={it.id}>
+                <Card className="group flex h-full flex-col overflow-hidden transition-shadow hover:shadow-md">
+                  <Link
+                    href={`/menu/${it.id}`}
+                    className="bg-muted relative block aspect-[4/3] overflow-hidden"
+                    tabIndex={-1}
+                    aria-hidden
+                  >
+                    {img ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={img}
+                        alt=""
+                        className={cn(
+                          "h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]",
+                          !it.isAvailable && "grayscale",
+                        )}
+                      />
+                    ) : (
+                      <div className="text-muted-foreground/60 flex h-full items-center justify-center">
+                        <ImageOff className="size-8" />
+                      </div>
+                    )}
+                    {!it.isAvailable && (
+                      <Badge variant="warning" className="absolute top-2 left-2 shadow-xs">
+                        Tạm hết
+                      </Badge>
+                    )}
+                  </Link>
+                  <div className="flex flex-1 flex-col gap-3 p-3 sm:p-4">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-semibold sm:text-base">
+                        <Link
+                          href={`/menu/${it.id}`}
+                          className="hover:text-primary transition-colors"
+                        >
+                          {it.name}
+                        </Link>
+                      </h3>
+                      <p className="text-primary tabular mt-0.5 text-sm font-bold">
+                        {formatVnd(it.basePrice.amount)}
+                      </p>
+                      {it.sku && (
+                        <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                          SKU: {it.sku}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between gap-2 border-t pt-3">
+                      <label className="flex min-w-0 cursor-pointer items-center gap-2">
+                        <Switch
+                          checked={it.isAvailable}
+                          onCheckedChange={() => handleToggle(it)}
+                          disabled={toggleAvail.isPending && toggleAvail.variables?.id === it.id}
+                          aria-label={it.isAvailable ? `Tạm hết ${it.name}` : `Mở bán ${it.name}`}
+                        />
+                        <span
+                          className={cn(
+                            "truncate text-xs font-medium",
+                            it.isAvailable ? "text-success" : "text-muted-foreground",
+                          )}
+                        >
+                          {it.isAvailable ? "Đang bán" : "Tạm hết"}
+                        </span>
+                      </label>
+                      <div className="flex shrink-0">
+                        <Button
+                          asChild
+                          size="icon"
+                          variant="ghost"
+                          className="size-8"
+                          aria-label="Sửa món"
+                        >
+                          <Link href={`/menu/${it.id}`}>
+                            <Pencil className="size-4" />
+                          </Link>
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive size-8"
+                          aria-label="Xoá món"
+                          onClick={() => handleDeleteItem(it)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </StaggerItem>
+            );
+          })}
+        </Stagger>
+      )}
 
       {/* Category Dialog */}
       <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>

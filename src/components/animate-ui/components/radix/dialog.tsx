@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { XIcon } from 'lucide-react';
+import * as React from "react";
+import { XIcon } from "lucide-react";
 
 import {
   Dialog as DialogPrimitive,
@@ -21,8 +21,8 @@ import {
   type DialogTriggerProps as DialogTriggerPrimitiveProps,
   type DialogOverlayProps as DialogOverlayPrimitiveProps,
   type DialogCloseProps as DialogClosePrimitiveProps,
-} from '@/components/animate-ui/primitives/radix/dialog';
-import { cn } from '@/lib/utils';
+} from "@/components/animate-ui/primitives/radix/dialog";
+import { cn } from "@/lib/utils";
 
 type DialogProps = DialogPrimitiveProps;
 
@@ -47,7 +47,7 @@ type DialogOverlayProps = DialogOverlayPrimitiveProps;
 function DialogOverlay({ className, ...props }: DialogOverlayProps) {
   return (
     <DialogOverlayPrimitive
-      className={cn('fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]', className)}
+      className={cn("fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]", className)}
       {...props}
     />
   );
@@ -68,14 +68,14 @@ function DialogContent({
       <DialogOverlay />
       <DialogContentPrimitive
         className={cn(
-          'bg-card text-card-foreground fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-2xl border border-border/70 p-6 shadow-2xl shadow-black/10 sm:max-w-lg',
+          "bg-card text-card-foreground border-border/70 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-2xl border p-6 shadow-2xl shadow-black/10 sm:max-w-lg",
           className,
         )}
         {...props}
       >
         {children}
         {showCloseButton && (
-          <DialogClosePrimitive className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-full p-1 opacity-60 hover:bg-muted transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+          <DialogClosePrimitive className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground hover:bg-muted absolute top-4 right-4 rounded-full p-1 opacity-60 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
             <XIcon />
             <span className="sr-only">Đóng</span>
           </DialogClosePrimitive>
@@ -90,7 +90,7 @@ type DialogHeaderProps = DialogHeaderPrimitiveProps;
 function DialogHeader({ className, ...props }: DialogHeaderProps) {
   return (
     <DialogHeaderPrimitive
-      className={cn('flex flex-col gap-2 text-center sm:text-left', className)}
+      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
       {...props}
     />
   );
@@ -101,10 +101,7 @@ type DialogFooterProps = DialogFooterPrimitiveProps;
 function DialogFooter({ className, ...props }: DialogFooterProps) {
   return (
     <DialogFooterPrimitive
-      className={cn(
-        'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
-        className,
-      )}
+      className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
       {...props}
     />
   );
@@ -115,7 +112,7 @@ type DialogTitleProps = DialogTitlePrimitiveProps;
 function DialogTitle({ className, ...props }: DialogTitleProps) {
   return (
     <DialogTitlePrimitive
-      className={cn('text-lg leading-tight font-semibold tracking-tight', className)}
+      className={cn("text-lg leading-tight font-semibold tracking-tight", className)}
       {...props}
     />
   );
@@ -126,7 +123,7 @@ type DialogDescriptionProps = DialogDescriptionPrimitiveProps;
 function DialogDescription({ className, ...props }: DialogDescriptionProps) {
   return (
     <DialogDescriptionPrimitive
-      className={cn('text-muted-foreground text-sm', className)}
+      className={cn("text-muted-foreground text-sm", className)}
       {...props}
     />
   );

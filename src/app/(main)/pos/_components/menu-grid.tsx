@@ -3,9 +3,13 @@
 import { mediaUrl } from "@/lib/media";
 import { memo, useMemo, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ImageOff, Search } from "lucide-react";
+import { Coffee, Search, SearchX, UtensilsCrossed } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/empty-state";
+import { Pressable, Stagger, StaggerItem } from "@/components/motion";
+import { Highlight, HighlightItem } from "@/components/animate-ui/primitives/effects/highlight";
 import { useMenuCategories, useMenuItems } from "@/hooks/api/use-menu";
+import { cn } from "@/lib/utils";
 import type { MenuItem } from "@/types/api";
 
 interface Props {
@@ -16,40 +20,59 @@ function formatVnd(n: number) {
   return new Intl.NumberFormat("vi-VN").format(n) + "đ";
 }
 
+const ALL = "__all__";
+
 function MenuItemCard({ item, onClick }: { item: MenuItem; onClick: (item: MenuItem) => void }) {
   const disabled = !item.isAvailable;
   return (
-    <button
-      type="button"
+    <Pressable
       disabled={disabled}
       onClick={() => onClick(item)}
-      className={`group bg-card relative flex flex-col overflow-hidden rounded-xl border-2 text-left transition-all ${disabled ? "cursor-not-allowed opacity-50" : "hover:border-primary hover:shadow-md active:scale-[0.98]"} focus:ring-primary focus:ring-2 focus:outline-none`}
+      {...(disabled ? { whileHover: undefined, whileTap: undefined } : {})}
+      className={cn(
+        "group bg-card relative flex h-full w-full flex-col overflow-hidden rounded-2xl border text-left shadow-xs transition-[box-shadow,border-color]",
+        "focus-visible:ring-ring/40 focus-visible:ring-[3px] focus-visible:outline-none",
+        disabled ? "cursor-not-allowed" : "hover:border-primary/40 hover:shadow-md",
+      )}
     >
-      <div className="bg-muted flex aspect-[4/3] items-center justify-center overflow-hidden">
+      {/* Ảnh đứng đầu (alt = tên món) — tên nút bắt đầu bằng tên món */}
+      <div className="bg-muted relative flex aspect-[4/3] items-center justify-center overflow-hidden">
         {item.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={mediaUrl(item.imageUrl) ?? undefined}
             alt={item.name}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+            className={cn(
+              "h-full w-full object-cover transition-transform duration-300",
+              disabled ? "grayscale" : "group-hover:scale-105",
+            )}
           />
         ) : (
-          <ImageOff className="text-muted-foreground size-8" />
+          <Coffee className="text-muted-foreground/50 size-8" />
         )}
         {disabled && (
-          <span className="absolute top-2 right-2 rounded bg-rose-600 px-2 py-1 text-xs font-bold text-white">
-            HẾT
-          </span>
+          <div className="bg-background/55 absolute inset-0 flex items-center justify-center backdrop-blur-[1px]">
+            <span className="bg-foreground/85 text-background rounded-full px-3 py-1 text-xs font-bold tracking-wide">
+              HẾT
+            </span>
+          </div>
         )}
       </div>
-      <div className="space-y-1 p-3">
-        <div className="line-clamp-2 min-h-[2.5rem] text-sm leading-tight font-medium">
+      <div className={cn("flex flex-1 flex-col gap-1 p-3", disabled && "opacity-60")}>
+        <div className="line-clamp-2 min-h-[2.5rem] text-sm leading-tight font-semibold">
           {item.name}
         </div>
-        <div className="text-primary text-base font-bold">{formatVnd(item.basePrice.amount)}</div>
+        <div
+          className={cn(
+            "mt-auto text-base font-bold tabular-nums",
+            disabled ? "text-muted-foreground line-through" : "text-primary",
+          )}
+        >
+          {formatVnd(item.basePrice.amount)}
+        </div>
       </div>
-    </button>
+    </Pressable>
   );
 }
 
@@ -78,69 +101,121 @@ function MenuGridInner({ onPickItem }: Props) {
 
   if (cats.isLoading || items.isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Skeleton key={i} className="h-48 rounded-xl" />
-        ))}
+      <div className="space-y-3 p-4">
+        <Skeleton className="h-11 w-full rounded-xl" />
+        <div className="flex gap-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-24 rounded-full" />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-52 rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (cats.data?.length === 0 || items.data?.length === 0) {
     return (
-      <div className="text-muted-foreground p-12 text-center">
-        Chưa có món nào. Vào <strong>Menu &amp; Món ăn</strong> để thêm.
+      <div className="p-6">
+        <EmptyState
+          icon={UtensilsCrossed}
+          title="Chưa có món nào"
+          description={
+            <>
+              Vào <strong>Menu &amp; Món ăn</strong> để thêm.
+            </>
+          }
+        />
       </div>
     );
   }
 
+  const chips = [
+    { id: ALL, name: "Tất cả", count: items.data?.length ?? 0 },
+    ...(cats.data ?? []).map((c) => ({
+      id: c.id,
+      name: c.name,
+      count: items.data?.filter((i) => i.categoryId === c.id).length ?? 0,
+    })),
+  ];
+  const activeChip = activeCategoryId ?? ALL;
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      {/* Search */}
-      <div className="shrink-0 border-b p-3">
+      {/* Tìm món + danh mục */}
+      <div className="bg-muted/40 shrink-0 space-y-3 border-b px-3 pt-3 pb-2 md:px-4">
         <div className="relative">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+          <Search className="text-muted-foreground absolute top-1/2 left-3.5 size-4 -translate-y-1/2" />
           <Input
             placeholder="Tìm món..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 pl-9"
+            className="bg-card h-11 rounded-xl pl-10"
           />
+        </div>
+
+        {/* Danh mục: nền "viên thuốc" trượt theo mục đang chọn */}
+        <div className="-mx-3 overflow-x-auto px-3 pb-1 md:-mx-4 md:px-4 [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-max gap-1.5">
+            <Highlight
+              controlledItems
+              click={false}
+              value={activeChip}
+              className="bg-primary inset-0 rounded-full shadow-sm"
+              transition={{ type: "spring", stiffness: 500, damping: 40 }}
+            >
+              {chips.map((c) => {
+                const active = c.id === activeChip;
+                return (
+                  <HighlightItem key={c.id} value={c.id} className="rounded-full">
+                    <button
+                      type="button"
+                      onClick={() => setActiveCategoryId(c.id === ALL ? null : c.id)}
+                      aria-pressed={active}
+                      className={cn(
+                        "flex h-10 items-center gap-1.5 rounded-full border px-4 text-sm font-medium whitespace-nowrap transition-colors",
+                        active
+                          ? "text-primary-foreground border-transparent"
+                          : "bg-card text-foreground/80 hover:bg-muted shadow-xs",
+                      )}
+                    >
+                      {c.name}
+                      <span
+                        className={cn(
+                          "text-xs tabular-nums",
+                          active ? "text-primary-foreground/80" : "text-muted-foreground",
+                        )}
+                      >
+                        ({c.count})
+                      </span>
+                    </button>
+                  </HighlightItem>
+                );
+              })}
+            </Highlight>
+          </div>
         </div>
       </div>
 
-      {/* Categories tab */}
-      <div className="flex shrink-0 gap-2 overflow-x-auto border-b p-3">
-        <button
-          onClick={() => setActiveCategoryId(null)}
-          className={`rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${activeCategoryId === null ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80"}`}
-        >
-          Tất cả ({items.data?.length ?? 0})
-        </button>
-        {cats.data?.map((c) => {
-          const count = items.data?.filter((i) => i.categoryId === c.id).length ?? 0;
-          return (
-            <button
-              key={c.id}
-              onClick={() => setActiveCategoryId(c.id)}
-              className={`rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${activeCategoryId === c.id ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80"}`}
-            >
-              {c.name} ({count})
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Items grid */}
-      <div className="flex-1 overflow-y-auto p-3">
+      {/* Lưới món */}
+      <div className="flex-1 overflow-y-auto p-3 md:p-4">
         {filteredItems.length === 0 ? (
-          <div className="text-muted-foreground py-12 text-center">Không tìm thấy món.</div>
+          <EmptyState icon={SearchX} title="Không tìm thấy món." className="mt-4" />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <Stagger
+            key={activeCategoryId ?? ALL}
+            stagger={0.015}
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+          >
             {filteredItems.map((it) => (
-              <MemoMenuItemCard key={it.id} item={it} onClick={onPickItem} />
+              <StaggerItem key={it.id}>
+                <MemoMenuItemCard item={it} onClick={onPickItem} />
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         )}
       </div>
     </div>
