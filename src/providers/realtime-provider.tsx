@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
+import { usePermissions } from "@/hooks/use-permissions";
 import { apiGet } from "@/lib/api-client";
 import { authStorage } from "@/lib/auth-storage";
 import {
@@ -57,7 +58,14 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const listeners = useRef(new Set<Listener>());
   /** Trạng thái đơn đã biết — để chỉ báo "món đã xong" khi vừa chuyển sang ready */
   const lastStatus = useRef(new Map<string, string>());
+  /** Yêu cầu thanh toán đã nhắc (orderId → requestedAt) — mỗi lần khách báo chỉ nhắc 1 lần */
   const lastRequest = useRef(new Map<string, string>());
+  /** Mốc mở trang: yêu cầu báo từ trước đó (đã nhắc ở lần mở trước) không nhắc lại khi đơn đổi */
+  const mountedAt = useRef(Date.now());
+  // Chỉ người thu tiền mới cần nhắc; đọc qua ref vì handler socket gắn 1 lần cho mỗi kết nối
+  const { can } = usePermissions();
+  const canPay = useRef(false);
+  canPay.current = can("order.pay");
 
   const onOrderChanged = useCallback((fn: Listener) => {
     listeners.current.add(fn);
@@ -99,9 +107,16 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       if (e.tableId) qc.invalidateQueries({ queryKey: ["tables"] });
       listeners.current.forEach((fn) => fn(e));
 
-      // Khách báo thanh toán từ trang QR → nhắc thu ngân (mỗi lần báo chỉ nhắc 1 lần)
+      // Khách báo thanh toán từ trang QR → nhắc thu ngân (mỗi lần báo chỉ nhắc 1 lần).
+      // Sự kiện đơn sau đó (bếp xong món...) vẫn mang paymentRequest → bỏ qua yêu cầu đã nhắc
+      // hoặc báo từ trước khi mở trang (trừ hao 60s lệch giờ máy).
       const req = e.paymentRequest;
-      if (req && lastRequest.current.get(e.id) !== req.requestedAt) {
+      if (
+        req &&
+        canPay.current &&
+        lastRequest.current.get(e.id) !== req.requestedAt &&
+        Date.parse(req.requestedAt) >= mountedAt.current - 60_000
+      ) {
         lastRequest.current.set(e.id, req.requestedAt);
         const label =
           req.method === "vietqr"
@@ -134,6 +149,9 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     });
     socket.on(RT.PaymentChanged, (e: PaymentChangedEvent) => {
       qc.invalidateQueries({ queryKey: ["payments"] });
+      // Thu từng phần không đổi đơn → tự làm mới số "còn phải thu"
+      qc.invalidateQueries({ queryKey: ["orders", "unpaid"] });
+      qc.invalidateQueries({ queryKey: ["orders", "payment-requests"] });
       qc.invalidateQueries({ queryKey: ["payment-qr", e.orderId] });
       qc.invalidateQueries({ queryKey: ["reports"] });
     });

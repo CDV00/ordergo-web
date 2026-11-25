@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useOrders } from "@/hooks/api/use-orders";
+import { useUnpaidOrders } from "@/hooks/api/use-payments";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
   formatTime,
@@ -23,20 +23,20 @@ import { PaymentDialog } from "../../pos/_components/payment-dialog";
 
 /**
  * "Chưa thu": mọi đơn đang mở của cơ sở (chưa thanh toán, chưa huỷ), đơn chờ lâu nhất lên đầu.
- * Thu tiền ngay tại đây bằng hộp thoại thanh toán của POS (giảm giá, tiền mặt/QR/thẻ, tiền thối).
- * Đơn khách đã báo thanh toán nằm ở thẻ "Chờ xác nhận" phía trên nên không lặp lại ở đây.
+ * Số tiền là phần còn phải thu (đã trừ phần thu trước). Thu tiền ngay tại đây bằng hộp thoại
+ * thanh toán của POS (giảm giá, tiền mặt/QR/thẻ, tiền thối).
+ * Đơn khách đã báo thanh toán nằm ở thẻ "Chờ xác nhận" phía trên nên API không trả ở đây.
  */
 export function UnpaidOrdersCard() {
   const { can } = usePermissions();
-  const open = useOrders({ status: "open" });
+  const open = useUnpaidOrders();
   const [payingId, setPayingId] = useState<string | null>(null);
 
   if (!can("order.pay")) return null;
 
-  const orders = (open.data ?? [])
-    .filter((o) => !o.paymentRequest && o.lines.length > 0)
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  const total = orders.reduce((s, o) => s + o.pricing.total.amount, 0);
+  // API đã lọc (đơn mở có món, chưa báo thanh toán) và xếp chờ lâu nhất trước
+  const orders = open.data ?? [];
+  const total = orders.reduce((s, o) => s + o.amountDue, 0);
 
   return (
     <>
@@ -83,7 +83,7 @@ export function UnpaidOrdersCard() {
                   const mins = minutesSince(o.createdAt);
                   return (
                     <motion.li
-                      key={o.id}
+                      key={o.orderId}
                       layout
                       initial={{ opacity: 0, y: -6 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -97,7 +97,7 @@ export function UnpaidOrdersCard() {
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <Link
-                              href={`/orders/${o.id}`}
+                              href={`/orders/${o.orderId}`}
                               className="truncate font-semibold hover:underline"
                             >
                               {o.orderNumber}
@@ -119,6 +119,7 @@ export function UnpaidOrdersCard() {
                           <div className="text-muted-foreground mt-0.5 text-xs">
                             {o.tableName ? `Bàn ${o.tableName}` : "Mang về"} · từ{" "}
                             {formatTime(o.createdAt)}
+                            {o.paidAmount > 0 && ` · đã thu ${formatVnd(o.paidAmount)}`}
                             <span className={cn(mins >= 60 && "text-destructive font-medium")}>
                               {" "}
                               (
@@ -129,10 +130,8 @@ export function UnpaidOrdersCard() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between gap-3 sm:justify-end">
-                        <div className="tabular text-lg font-bold">
-                          {formatVnd(o.pricing.total.amount)}
-                        </div>
-                        <Button onClick={() => setPayingId(o.id)}>Thu tiền</Button>
+                        <div className="tabular text-lg font-bold">{formatVnd(o.amountDue)}</div>
+                        <Button onClick={() => setPayingId(o.orderId)}>Thu tiền</Button>
                       </div>
                     </motion.li>
                   );

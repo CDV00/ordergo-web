@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/lib/api-client";
 import { useAuth } from "@/contexts/auth-context";
 import { useLiveInterval } from "@/providers/realtime-provider";
+import type { OrderStatus } from "@/types/api";
 
 export type PaymentMethod =
   | "cash"
@@ -177,5 +178,36 @@ export function usePendingPaymentRequests() {
     refetchInterval: interval,
     queryFn: () =>
       apiGet<PendingPaymentRequest[]>(`/payments/pending?venueId=${activeVenueId ?? ""}`),
+  });
+}
+
+/** Đơn đang mở chưa thu đủ, khách chưa báo thanh toán ("Chưa thu" ở màn Thanh toán). */
+export interface UnpaidOrder {
+  orderId: string;
+  orderNumber: string;
+  venueId: string;
+  tableName: string | null;
+  source: string;
+  status: OrderStatus;
+  createdAt: string;
+  lineCount: number;
+  total: number;
+  /** Đã thu (trừ hoàn) — > 0 khi thanh toán từng phần */
+  paidAmount: number;
+  amountDue: number;
+}
+
+/**
+ * "Chưa thu": số tiền còn phải thu đã trừ phần thu trước. Key nằm dưới ["orders"] để
+ * order.changed làm mới; payment.changed (thu từng phần không đổi đơn) cũng làm mới — xem realtime-provider.
+ */
+export function useUnpaidOrders() {
+  const { isAuthenticated, activeVenueId } = useAuth();
+  const interval = useLiveInterval(10_000);
+  return useQuery({
+    queryKey: ["orders", "unpaid", activeVenueId],
+    enabled: isAuthenticated && !!activeVenueId,
+    refetchInterval: interval,
+    queryFn: () => apiGet<UnpaidOrder[]>(`/payments/unpaid?venueId=${activeVenueId ?? ""}`),
   });
 }
