@@ -20,13 +20,22 @@ import {
   PAYMENT_REQUEST_LABEL,
   useCreatePayment,
   usePendingPaymentRequests,
+  type PaymentRequestMethod,
   type PendingPaymentRequest,
 } from "@/hooks/api/use-payments";
 import { usePermissions } from "@/hooks/use-permissions";
 import { formatTime, formatVnd } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { ApiException } from "@/lib/api-client";
 
 const ICON = { vietqr: QrCode, cash: Banknote, card: CreditCard } as const;
+
+/** Phương thức thu thực tế — mặc định theo khách báo, thu ngân đổi được (vd báo chuyển khoản nhưng trả tiền mặt). */
+const METHODS: Array<{ value: PaymentRequestMethod; label: string }> = [
+  { value: "cash", label: "Tiền mặt" },
+  { value: "vietqr", label: "Chuyển khoản QR" },
+  { value: "card", label: "Thẻ" },
+];
 
 /**
  * "Chờ xác nhận": đơn khách gọi qua QR đã báo thanh toán (đã chuyển khoản / muốn trả tại quầy).
@@ -121,15 +130,23 @@ function ConfirmDialog({
 }) {
   const create = useCreatePayment();
   const r = request;
+  const [method, setMethod] = useState<PaymentRequestMethod>("cash");
+  // Mở cho yêu cầu khác → đặt lại phương thức theo khách báo
+  const [methodFor, setMethodFor] = useState<string | null>(null);
+  const key = r ? `${r.orderId}:${r.requestedAt}` : null;
+  if (r && key !== methodFor) {
+    setMethodFor(key);
+    setMethod(r.method);
+  }
 
   const confirm = async () => {
     if (!r) return;
     try {
       await create.mutateAsync({
         orderId: r.orderId,
-        method: r.method,
+        method,
         amount: r.amountDue,
-        tenderedAmount: r.method === "cash" ? r.amountDue : undefined,
+        tenderedAmount: method === "cash" ? r.amountDue : undefined,
       });
       toast.success(`Đã ghi nhận ${formatVnd(r.amountDue)} — ${r.orderNumber}`);
       onClose();
@@ -144,7 +161,7 @@ function ConfirmDialog({
         <DialogHeader>
           <DialogTitle>Xác nhận đã thu tiền?</DialogTitle>
           <DialogDescription>
-            {r?.method === "vietqr"
+            {method === "vietqr"
               ? "Kiểm tra app ngân hàng: đã nhận đúng số tiền, đúng nội dung chuyển khoản của đơn này."
               : "Thu đủ tiền của khách trước khi xác nhận."}
           </DialogDescription>
@@ -158,15 +175,36 @@ function ConfirmDialog({
                 {r.tableName && ` · Bàn ${r.tableName}`}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Phương thức</span>
-              <span className="font-medium">
-                {r.method === "vietqr"
-                  ? "Chuyển khoản QR"
-                  : r.method === "cash"
-                    ? "Tiền mặt"
-                    : "Thẻ"}
-              </span>
+            <div className="space-y-2 pt-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Phương thức</span>
+                <span className="text-muted-foreground text-xs">
+                  Khách: {PAYMENT_REQUEST_LABEL[r.method].toLowerCase()}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5" role="group" aria-label="Phương thức thu">
+                {METHODS.map((m) => {
+                  const Icon = ICON[m.value];
+                  const active = method === m.value;
+                  return (
+                    <button
+                      key={m.value}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setMethod(m.value)}
+                      className={cn(
+                        "bg-card flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 text-xs font-medium transition-colors",
+                        active
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <Icon className="size-4" />
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <div className="flex items-baseline justify-between pt-1">
               <span className="text-muted-foreground">Số tiền</span>
